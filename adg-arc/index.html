@@ -1,0 +1,24 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>ADG-ARC</title>
+    <!-- TG006G Scope C font delivery: legitimate remote web-font loading
+         (Google Fonts), not a local/system font path or a copied font file.
+         `display=swap` renders in the fallback stack (see --font-ui/
+         --font-editorial in global.css) immediately and swaps once the
+         webfont arrives — a plain stylesheet link, so it never blocks or
+         gates app readiness (useReadiness has no font milestone). -->
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Yrsa:wght@400;500;600&display=swap"
+      rel="stylesheet"
+    />
+  </head>
+  <body>
+    <div id="root"></div>
+    <script type="module" src="/src/main.tsx"></script>
+  </body>
+</html>

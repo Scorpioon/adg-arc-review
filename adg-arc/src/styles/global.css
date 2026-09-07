@@ -1,0 +1,1262 @@
+:root {
+  color-scheme: light dark;
+  /* TG006D-016 map paint registry — CSS half. Mirrors MAP_PAINT in
+     MapView.tsx (map.caseMarker.default / .hover / .selected); every
+     map-overlay/map-chrome rule below resolves through these three
+     tokens, so a future palette swap only touches these lines. Set from JS
+     (useMapPaintOverrides) as rgba() strings since TG006E's corrective
+     pass added per-role alpha. */
+  --map-ink: #1d1d1b;
+  --map-white: #ffffff;
+  --map-accent: #ffed00;
+  /* TG006E corrective pass §8: the accepted yellow/black palette, scoped to
+     LoadingScreen only — mirrors the same two literals as the canonical
+     map defaults in config/mapPaint.ts, kept here rather than in a new
+     shared TS module since LoadingScreen has no color logic of its own to
+     import them into (its styling is pure CSS). */
+  --canonical-yellow: #ffed00;
+  --canonical-ink: #1d1d1b;
+  /* TG006G Scope C — canonical typography-role tokens (FB015). Every rule in
+     this file resolves UI/navigation/controls/body/metadata text through
+     --font-ui and case titles/editorial emphasis through --font-editorial,
+     so a future typeface swap only touches these two lines. Both stacks
+     fall back to system fonts already used elsewhere in this file, so the
+     app stays legible before/without the remote webfont (see index.html for
+     the font <link>s and the readiness-non-gating note there). */
+  --font-ui: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue",
+    Arial, sans-serif;
+  --font-editorial: "Yrsa", Georgia, "Times New Roman", serif;
+  /* TG006G Scope E — single focus-visible accent, reused by the global rule
+     below; was previously duplicated as a literal on .case-sheet__close
+     only. Same value as the existing rust/accent literal already used for
+     .dhub-specimen__plane. */
+  --focus-ring: #c65a24;
+}
+
+body {
+  font-family: var(--font-ui);
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body,
+#root {
+  height: 100%;
+  margin: 0;
+}
+
+.app {
+  position: relative;
+  height: 100%;
+}
+
+.skip-link {
+  position: absolute;
+  left: -9999px;
+  top: 0;
+  z-index: 1000;
+  background: #fff;
+  color: #000;
+  padding: 0.5rem 1rem;
+}
+
+.skip-link:focus {
+  left: 0;
+}
+
+.map-view {
+  position: absolute;
+  inset: 0;
+}
+
+.case-sheet {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 10;
+  background: canvas;
+  color: canvastext;
+  display: flex;
+  flex-direction: column;
+  font-family: var(--font-ui);
+  /* TG006G Scope G — mobile/narrow bottom-sheet bound: without a height cap
+     a tall case (many editorial modules) could grow the panel above the top
+     of the viewport (it is anchored by `bottom: 0` only), pushing the
+     header/close button off-screen. Desktop's floating-panel treatment
+     below (min-width: 768px) overrides this with its own sizing. */
+  max-height: min(80vh, calc(100vh - 32px));
+  border-radius: 16px 16px 0 0;
+}
+
+.case-sheet__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  padding: 1.1rem 1.35rem;
+  border-bottom: 1px solid rgba(90, 42, 18, 0.15);
+}
+
+.case-sheet__header h2 {
+  margin: 0;
+  /* TG006G Scope C — case title: the one editorial-display role in the
+     CaseSheet chrome (everything else — labels, metadata, nav — stays
+     --font-ui per the canonical role list). */
+  font-family: var(--font-editorial);
+  font-size: 1.15rem;
+  font-weight: 600;
+  line-height: 1.25;
+  letter-spacing: 0.01em;
+}
+
+.case-sheet__close {
+  appearance: none;
+  flex: none;
+  width: 28px;
+  height: 28px;
+  padding: 0;
+  border: 1px solid rgba(90, 42, 18, 0.3);
+  border-radius: 50%;
+  background: transparent;
+  color: inherit;
+  font-size: 1.1rem;
+  line-height: 1;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.case-sheet__close:hover {
+  background: rgba(90, 42, 18, 0.08);
+}
+
+/* TG006D: minimal previous/next traversal strip — see case-sheet__traverse-*
+   markup in CaseSheet.tsx. Wireframe-simple per handoff §C/§9. */
+.case-sheet__traverse {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+  padding: 0.6rem 1.35rem;
+  border-bottom: 1px solid rgba(90, 42, 18, 0.14);
+  font-size: 0.8rem;
+}
+
+.case-sheet__traverse-btn {
+  appearance: none;
+  border: 1px solid rgba(90, 42, 18, 0.25);
+  border-radius: 6px;
+  background: canvas;
+  color: canvastext;
+  padding: 0.3rem 0.6rem;
+  font-size: 0.8rem;
+  cursor: pointer;
+}
+
+.case-sheet__traverse-btn:hover:not(:disabled) {
+  background: rgba(90, 42, 18, 0.08);
+}
+
+.case-sheet__traverse-btn:disabled {
+  opacity: 0.4;
+  cursor: default;
+}
+
+.case-sheet__traverse-position {
+  opacity: 0.65;
+  font-variant-numeric: tabular-nums;
+}
+
+.case-sheet__body {
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow-y: auto;
+  padding: 0.25rem 1.35rem 1.5rem;
+}
+
+/* TG006E corrective pass §7: one shared restrained scrollbar treatment for
+   every scrollable app panel — thin, quiet track, visible thumb, strengthens
+   slightly on hover — applied by selector list rather than a duplicated
+   rule block per panel. Native scrolling (wheel/trackpad/keyboard/touch)
+   and the scroll affordance itself are both preserved; only the browser's
+   default chrome is restyled. `scrollbar-width`/`scrollbar-color` cover
+   Firefox; the `::-webkit-scrollbar*` pseudo-elements cover
+   Chromium/WebKit. Does not touch the main document scrollbar. */
+.case-sheet__body,
+.app-modal__body,
+.app-menu__nav,
+.app-menu__pane {
+  scrollbar-width: thin;
+  scrollbar-color: rgba(90, 42, 18, 0.35) transparent;
+}
+
+.case-sheet__body::-webkit-scrollbar,
+.app-modal__body::-webkit-scrollbar,
+.app-menu__nav::-webkit-scrollbar,
+.app-menu__pane::-webkit-scrollbar {
+  width: 8px;
+}
+
+.case-sheet__body::-webkit-scrollbar-track,
+.app-modal__body::-webkit-scrollbar-track,
+.app-menu__nav::-webkit-scrollbar-track,
+.app-menu__pane::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.case-sheet__body::-webkit-scrollbar-thumb,
+.app-modal__body::-webkit-scrollbar-thumb,
+.app-menu__nav::-webkit-scrollbar-thumb,
+.app-menu__pane::-webkit-scrollbar-thumb {
+  background: rgba(90, 42, 18, 0.3);
+  border-radius: 999px;
+}
+
+.case-sheet__body::-webkit-scrollbar-thumb:hover,
+.app-modal__body::-webkit-scrollbar-thumb:hover,
+.app-menu__nav::-webkit-scrollbar-thumb:hover,
+.app-menu__pane::-webkit-scrollbar-thumb:hover {
+  background: rgba(90, 42, 18, 0.45);
+}
+
+/* TG006C: hero-media region, directly beneath the title (ADGARC-FB-006).
+   No case currently has verified local media — see data/cases.ts — so the
+   empty state below is the common path today, not a fallback for a rare
+   case. */
+.case-sheet__hero {
+  margin: 0.15rem 0 0.85rem;
+}
+
+.case-sheet__hero-media {
+  display: block;
+  width: 100%;
+  aspect-ratio: 16 / 10;
+  object-fit: cover;
+  border-radius: 10px;
+}
+
+.case-sheet__hero-empty {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 56px;
+  padding: 0.6rem;
+  border: 1px dashed rgba(90, 42, 18, 0.22);
+  border-radius: 10px;
+  font-size: 0.78rem;
+  font-style: italic;
+  text-align: center;
+  opacity: 0.55;
+}
+
+.case-sheet__hero-credit {
+  margin: 0.35rem 0 0;
+  font-size: 0.72rem;
+  opacity: 0.6;
+}
+
+.case-sheet__module {
+  padding: 1rem 0;
+  border-top: 1px solid rgba(90, 42, 18, 0.14);
+}
+
+.case-sheet__module:first-child,
+.case-sheet__hero + .case-sheet__module {
+  border-top: none;
+}
+
+.case-sheet__module h3 {
+  margin: 0 0 0.35rem;
+  font-size: 0.72rem;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  opacity: 0.7;
+}
+
+.case-sheet__module-empty {
+  margin: 0;
+  font-size: 0.9rem;
+  font-style: italic;
+  opacity: 0.55;
+}
+
+.case-sheet__module p {
+  margin: 0 0 0.5rem;
+  font-size: 0.9rem;
+  line-height: 1.5;
+}
+
+.case-sheet__module p:last-child {
+  margin-bottom: 0;
+}
+
+.case-sheet__note {
+  font-size: 0.82rem;
+  opacity: 0.75;
+}
+
+.case-sheet__facts {
+  margin: 0;
+  display: grid;
+  gap: 0.4rem;
+}
+
+.case-sheet__fact {
+  display: flex;
+  gap: 0.5rem;
+  align-items: baseline;
+  font-size: 0.9rem;
+}
+
+.case-sheet__fact dt {
+  flex: none;
+  width: 6.5rem;
+  font-size: 0.72rem;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  opacity: 0.6;
+}
+
+.case-sheet__fact dd {
+  margin: 0;
+}
+
+.case-sheet__link a {
+  font-size: 0.85rem;
+  color: inherit;
+}
+
+.case-sheet__traits {
+  margin: 0.5rem 0 0;
+  padding: 0;
+  list-style: none;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+}
+
+.case-sheet__traits li {
+  font-size: 0.78rem;
+  padding: 0.2rem 0.55rem;
+  border: 1px solid rgba(90, 42, 18, 0.22);
+  border-radius: 999px;
+  opacity: 0.8;
+}
+
+.dhub-specimen {
+  margin-top: 0.35rem;
+  padding: 1.1rem 0.9rem;
+  border-radius: 10px;
+  background: rgba(90, 42, 18, 0.05);
+  overflow: hidden;
+}
+
+.dhub-specimen__row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.15rem;
+  font-family: "SFMono-Regular", Consolas, "Liberation Mono", Menlo, monospace;
+  font-size: 1.1rem;
+  letter-spacing: 0.02em;
+}
+
+.dhub-specimen__glyph {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 1.6em;
+  height: 1.6em;
+  border: 1px solid rgba(90, 42, 18, 0.22);
+  border-radius: 2px;
+  transform: translateY(calc(var(--i) * 0.6px));
+  opacity: 0;
+  animation: dhub-specimen-enter 0.5s ease forwards;
+  animation-delay: calc(var(--i) * 45ms);
+}
+
+/* Angled-interruption rhythm: a restrained alternating skew, not a
+   fabricated per-index calc — keeps the cantilever-like read without
+   relying on CSS calc()/floor() modulo support. */
+.dhub-specimen__glyph:nth-child(3n + 2) {
+  transform: translateY(calc(var(--i) * 0.6px)) skewX(-4deg);
+}
+
+.dhub-specimen__glyph:nth-child(3n) {
+  transform: translateY(calc(var(--i) * 0.6px)) skewX(4deg);
+}
+
+.dhub-specimen__plane {
+  margin-top: 0.85rem;
+  height: 2px;
+  background: linear-gradient(90deg, rgba(198, 90, 36, 0.65), rgba(198, 90, 36, 0));
+  transform-origin: left center;
+  transform: skewY(-1.2deg);
+}
+
+/* Only opacity is animated — the resting transform (offset/skew, set by
+   the rules above) is a static property so the `forwards` fill-mode can't
+   clobber it back to an un-offset state once the entrance finishes. */
+@keyframes dhub-specimen-enter {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+:focus-visible {
+  /* TG006G Scope E — one focus-visible accent everywhere (was a bare
+     `currentColor`-derived outline, plus one component-local duplicate of
+     this exact value on .case-sheet__close, now removed). */
+  outline: 2px solid var(--focus-ring);
+  outline-offset: 2px;
+}
+
+@media (min-width: 768px) {
+  .case-sheet {
+    left: auto;
+    top: 24px;
+    right: 24px;
+    bottom: 24px;
+    /* preserves the prior ~one-third desktop intent without becoming
+       absurdly wide on very large monitors */
+    width: clamp(320px, 34vw, 440px);
+    /* Cancels the mobile bottom-sheet cap above — desktop height stays
+       driven by the top/bottom offsets, not the mobile viewport-fraction
+       cap. */
+    max-height: none;
+    border-radius: 16px;
+    border: 1px solid rgba(90, 42, 18, 0.16);
+    box-shadow: 0 8px 28px rgba(40, 24, 12, 0.16);
+    overflow: hidden;
+    transform: translateX(calc(100% + 48px));
+    transition: transform 0.38s ease;
+  }
+
+  .case-sheet--visible {
+    transform: translateX(0);
+  }
+}
+
+/* TG006A corrective pass: one coherent bottom-left navigation dock —
+   D-pad (pan + home/reset) plus adjacent zoom and rotation stacks. Replaces
+   the native NavigationControl entirely (removed, not just relocated),
+   since top-right competes with the open desktop CaseSheet. Top-left stays
+   free for the future TG006B application menu. Positioned above the
+   AttributionControl (also relocated to bottom-left) with enough clearance
+   that the two do not overlap. */
+.map-controls {
+  position: absolute;
+  bottom: 40px;
+  left: 16px;
+  z-index: 6;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.map-controls__pad {
+  display: grid;
+  grid-template-columns: repeat(3, 32px);
+  grid-template-rows: repeat(3, 32px);
+  gap: 2px;
+}
+
+.map-controls__zoom,
+.map-controls__rotate {
+  display: grid;
+  grid-template-columns: 32px;
+  grid-template-rows: repeat(2, 32px);
+  gap: 2px;
+}
+
+.map-controls__btn {
+  appearance: none;
+  padding: 0;
+  /* map.mapControls.border role — map chrome sits directly on the map. */
+  border: 1px solid color-mix(in srgb, var(--map-ink) 25%, transparent);
+  border-radius: 6px;
+  background: canvas;
+  color: canvastext;
+  box-shadow: 0 2px 8px rgba(40, 24, 12, 0.1);
+  font-size: 0.85rem;
+  line-height: 1;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.map-controls__btn:hover:not(:disabled) {
+  /* map.mapControls.hover role. */
+  background: color-mix(in srgb, var(--map-ink) 8%, transparent);
+}
+
+.map-controls__btn:disabled {
+  opacity: 0.4;
+  cursor: default;
+}
+
+.map-controls__btn--up {
+  grid-column: 2;
+  grid-row: 1;
+}
+
+.map-controls__btn--left {
+  grid-column: 1;
+  grid-row: 2;
+}
+
+.map-controls__btn--reset {
+  grid-column: 2;
+  grid-row: 2;
+}
+
+.map-controls__btn--right {
+  grid-column: 3;
+  grid-row: 2;
+}
+
+.map-controls__btn--down {
+  grid-column: 2;
+  grid-row: 3;
+}
+
+/* TG006E corrective pass §2: persistent top-left toggle for the centered
+   application-menu modal — the corner intentionally reserved since TG006A.
+   Sits above ordinary map chrome, but the modal backdrop (opened via this
+   trigger) covers it entirely while open — it does not need to keep
+   competing for z-index with the backdrop itself. */
+.app-menu-trigger {
+  position: absolute;
+  top: 16px;
+  left: 16px;
+  z-index: 21;
+  appearance: none;
+  width: 36px;
+  height: 36px;
+  padding: 0;
+  border: 1px solid rgba(90, 42, 18, 0.25);
+  border-radius: 6px;
+  background: canvas;
+  color: canvastext;
+  box-shadow: 0 2px 8px rgba(40, 24, 12, 0.1);
+  font-size: 1rem;
+  line-height: 1;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.app-menu-trigger:hover {
+  background: rgba(90, 42, 18, 0.08);
+}
+
+/* TG006E corrective pass §2: centered floating application-menu modal —
+   replaces the TG006E-initial AppSidebar left-edge overlay. Dims *and*
+   blurs the map/app behind it and blocks all pointer interaction with it
+   (a full-viewport fixed layer above every other layer, like
+   .app-modal-backdrop, but with backdrop-filter added and more generous
+   outer margins for a "floating application panel" read rather than an
+   edge-to-edge dialog). */
+.app-menu-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 55;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: clamp(24px, 6vw, 64px);
+  background: rgba(40, 24, 12, 0.45);
+  backdrop-filter: blur(6px);
+  -webkit-backdrop-filter: blur(6px);
+}
+
+.app-menu {
+  width: min(920px, 100%);
+  /* TG006G Scope A: a fixed `height` (not `max-height`) so the desktop
+     application-menu frame is stable across every destination — switching
+     panes never resizes/recenters the outer frame, and a short pane (e.g.
+     Settings) never collapses it. Each pane's own overflow-y:auto is what
+     absorbs content taller than this. */
+  height: min(720px, calc(100vh - 96px));
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  background: canvas;
+  color: canvastext;
+  border-radius: 16px;
+  border: 1px solid rgba(90, 42, 18, 0.18);
+  box-shadow: 0 20px 60px rgba(20, 12, 6, 0.35);
+}
+
+.app-menu__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  padding: 1rem 1.1rem;
+  border-bottom: 1px solid rgba(90, 42, 18, 0.15);
+}
+
+.app-menu__mark {
+  font-size: 0.85rem;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  opacity: 0.8;
+}
+
+.app-menu__body {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+}
+
+.app-menu__nav {
+  flex: none;
+  width: 200px;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: 0.6rem;
+  overflow-y: auto;
+  border-right: 1px solid rgba(90, 42, 18, 0.15);
+}
+
+.app-menu__nav-btn {
+  appearance: none;
+  width: 100%;
+  border: none;
+  border-radius: 6px;
+  padding: 0.55rem 0.65rem;
+  background: transparent;
+  color: inherit;
+  font-size: 0.9rem;
+  text-align: left;
+  cursor: pointer;
+}
+
+.app-menu__nav-btn:hover {
+  background: rgba(90, 42, 18, 0.08);
+}
+
+.app-menu__nav-btn[aria-current="true"] {
+  background: rgba(90, 42, 18, 0.12);
+  font-weight: 600;
+}
+
+.app-menu__pane {
+  flex: 1;
+  min-width: 0;
+  overflow-y: auto;
+  padding: 1rem 1.35rem 1.5rem;
+  font-size: 0.92rem;
+  line-height: 1.55;
+}
+
+@media (max-width: 640px) {
+  .app-menu__body {
+    flex-direction: column;
+  }
+
+  .app-menu__nav {
+    width: auto;
+    flex-direction: row;
+    flex-wrap: wrap;
+    border-right: none;
+    border-bottom: 1px solid rgba(90, 42, 18, 0.15);
+  }
+}
+
+/* TG006B: the one application-blocking layer — distinct from the non-modal
+   CaseSheet. The full-viewport backdrop sits above every other layer so a
+   background click can never reach the map/dock/menu while it is open. */
+.app-modal-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 50;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+  background: rgba(40, 24, 12, 0.45);
+}
+
+.app-modal {
+  width: min(560px, 100%);
+  max-height: min(640px, calc(100vh - 48px));
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  background: canvas;
+  color: canvastext;
+  border-radius: 16px;
+  border: 1px solid rgba(90, 42, 18, 0.18);
+  box-shadow: 0 20px 60px rgba(20, 12, 6, 0.35);
+}
+
+.app-modal__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  padding: 1.1rem 1.35rem;
+  border-bottom: 1px solid rgba(90, 42, 18, 0.15);
+}
+
+.app-modal__header h2 {
+  margin: 0;
+  font-size: 1.05rem;
+  font-weight: 600;
+  letter-spacing: 0.01em;
+}
+
+.app-modal__close {
+  appearance: none;
+  flex: none;
+  width: 28px;
+  height: 28px;
+  padding: 0;
+  border: 1px solid rgba(90, 42, 18, 0.3);
+  border-radius: 50%;
+  background: transparent;
+  color: inherit;
+  font-size: 1.1rem;
+  line-height: 1;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.app-modal__close:hover {
+  background: rgba(90, 42, 18, 0.08);
+}
+
+.app-modal__body {
+  padding: 0.25rem 1.35rem 1.5rem;
+  overflow-y: auto;
+  font-size: 0.92rem;
+  line-height: 1.55;
+}
+
+.app-modal__note {
+  font-style: italic;
+  opacity: 0.6;
+}
+
+.app-modal__section + .app-modal__section {
+  margin-top: 1.1rem;
+}
+
+.app-modal__section h3 {
+  margin: 0 0 0.35rem;
+  font-size: 0.72rem;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  opacity: 0.7;
+}
+
+/* TG006D: Cases index — functional list, wireframe-simple per handoff §9. */
+.cases-index {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.cases-index__row {
+  appearance: none;
+  width: 100%;
+  display: flex;
+  align-items: baseline;
+  gap: 0.75rem;
+  border: none;
+  border-radius: 8px;
+  padding: 0.55rem 0.6rem;
+  background: transparent;
+  color: inherit;
+  text-align: left;
+  font: inherit;
+  cursor: pointer;
+}
+
+.cases-index__row:hover {
+  background: rgba(90, 42, 18, 0.08);
+}
+
+.cases-index__ordinal {
+  flex: none;
+  width: 1.6rem;
+  font-size: 0.78rem;
+  font-variant-numeric: tabular-nums;
+  opacity: 0.55;
+}
+
+.cases-index__identity {
+  display: flex;
+  flex-direction: column;
+  gap: 0.1rem;
+  min-width: 0;
+}
+
+.cases-index__name {
+  /* TG006G Scope C — case title in list form; the meta line beneath it
+     (year/architect/typeface) stays --font-ui as metadata. */
+  font-family: var(--font-editorial);
+  font-size: 0.92rem;
+  font-weight: 600;
+}
+
+.cases-index__meta {
+  font-size: 0.78rem;
+  opacity: 0.65;
+}
+
+/* TG006D: Settings — real one-off map actions only, no preference store. */
+.settings-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  align-items: flex-start;
+}
+
+.settings-actions__btn {
+  appearance: none;
+  border: 1px solid rgba(90, 42, 18, 0.25);
+  border-radius: 8px;
+  background: canvas;
+  color: canvastext;
+  padding: 0.5rem 0.85rem;
+  font-size: 0.88rem;
+  cursor: pointer;
+}
+
+.settings-actions__btn:hover {
+  background: rgba(90, 42, 18, 0.08);
+}
+
+/* TG006E corrective pass §4: Developer Tools — internal/dev-only palette
+   editor + debug state, reorganized into section-headed groups (Map
+   palette / Map overlays & markers / Runtime & map state / Persistence &
+   config actions). Reuses .app-modal__section / .settings-actions__btn for
+   section/button chrome rather than introducing a second visual language. */
+.dev-tools__section-note {
+  margin: 0 0 0.6rem;
+  font-size: 0.78rem;
+  opacity: 0.65;
+}
+
+.dev-tools__roles {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+}
+
+.dev-tools__role {
+  /* TG006G Scope H: flex-wrap, not a fixed-column grid — the swatch/meta/
+     color-input/hex-input/alpha group wraps onto additional lines instead
+     of forcing a wide minimum row width (grid tracks don't shrink below
+     their content), which was overflowing the Developer Tools pane at
+     narrow widths. */
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.4rem 0.6rem;
+  padding: 0.4rem 0;
+  border-bottom: 1px solid rgba(90, 42, 18, 0.1);
+}
+
+.dev-tools__swatch {
+  width: 20px;
+  height: 20px;
+  flex: none;
+  border-radius: 4px;
+  border: 1px solid rgba(90, 42, 18, 0.25);
+  /* Checkerboard so a swatch with alpha < 1 reads as translucent rather
+     than as an opaque, misleadingly solid color. */
+  background-image: linear-gradient(45deg, rgba(90, 42, 18, 0.12) 25%, transparent 25%),
+    linear-gradient(-45deg, rgba(90, 42, 18, 0.12) 25%, transparent 25%),
+    linear-gradient(45deg, transparent 75%, rgba(90, 42, 18, 0.12) 75%),
+    linear-gradient(-45deg, transparent 75%, rgba(90, 42, 18, 0.12) 75%);
+  background-size: 8px 8px;
+  background-position: 0 0, 0 4px, 4px -4px, -4px 0;
+}
+
+.dev-tools__role-meta {
+  /* TG006G Scope H: allow this group to shrink/wrap instead of forcing an
+     8rem-wide island that, combined with the fixed-width swatch/inputs
+     beside it, was the main source of the row's minimum overflow width. */
+  flex: 1 1 8rem;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.05rem;
+}
+
+.dev-tools__role-label {
+  font-size: 0.82rem;
+  font-weight: 600;
+}
+
+.dev-tools__role-id {
+  font-size: 0.68rem;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  opacity: 0.55;
+  overflow-wrap: anywhere;
+}
+
+.dev-tools__color-input {
+  width: 28px;
+  height: 28px;
+  padding: 0;
+  border: 1px solid rgba(90, 42, 18, 0.25);
+  border-radius: 6px;
+  background: none;
+  cursor: pointer;
+}
+
+.dev-tools__hex-input {
+  width: 5.5rem;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  font-size: 0.78rem;
+  padding: 0.3rem 0.4rem;
+  border: 1px solid rgba(90, 42, 18, 0.25);
+  border-radius: 6px;
+  background: canvas;
+  color: canvastext;
+}
+
+.dev-tools__hex-input[aria-invalid="true"],
+.dev-tools__alpha-input[aria-invalid="true"] {
+  border-color: #c65a24;
+}
+
+.dev-tools__alpha {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+}
+
+.dev-tools__alpha-slider {
+  width: 5.5rem;
+}
+
+.dev-tools__alpha-input {
+  width: 3.6rem;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  font-size: 0.78rem;
+  padding: 0.3rem 0.35rem;
+  border: 1px solid rgba(90, 42, 18, 0.25);
+  border-radius: 6px;
+  background: canvas;
+  color: canvastext;
+}
+
+.dev-tools__error {
+  /* Forces its own line in the now-flex .dev-tools__role row (was
+     `grid-column: 1 / -1`, a no-op once the parent stopped being a grid). */
+  flex-basis: 100%;
+  font-size: 0.72rem;
+  color: #883b20;
+}
+
+.dev-tools__derived {
+  margin-top: 0.75rem;
+  font-size: 0.74rem;
+  opacity: 0.65;
+}
+
+/* TG006F Scope C: Zoom / LOD section — reuses .dev-tools__role's border/
+   spacing rhythm but as a looser wrapping row (variable control count per
+   role) rather than the palette editor's fixed five-column grid. */
+.dev-tools__lod-thresholds {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem 1.25rem;
+  align-items: center;
+  margin: 0.5rem 0 0.85rem;
+}
+
+.dev-tools__lod-roles {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.dev-tools__lod-role {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.6rem 1rem;
+  padding: 0.5rem 0;
+  border-bottom: 1px solid rgba(90, 42, 18, 0.1);
+}
+
+.dev-tools__lod-field {
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+  font-size: 0.78rem;
+  white-space: nowrap;
+}
+
+.dev-tools__lod-number {
+  width: 4.2rem;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  font-size: 0.78rem;
+  padding: 0.25rem 0.35rem;
+  border: 1px solid rgba(90, 42, 18, 0.25);
+  border-radius: 6px;
+  background: canvas;
+  color: canvastext;
+}
+
+.dev-tools__lod-number[aria-invalid="true"] {
+  border-color: #c65a24;
+}
+
+.dev-tools__lod-triplet {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.dev-tools__lod-bands {
+  display: flex;
+  gap: 0.3rem;
+}
+
+.dev-tools__actions {
+  display: flex;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+  margin-top: 0.85rem;
+}
+
+.dev-tools__debug {
+  margin: 0;
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: 0.35rem 0.75rem;
+  font-size: 0.82rem;
+}
+
+.dev-tools__debug dt {
+  opacity: 0.6;
+}
+
+.dev-tools__debug dd {
+  margin: 0;
+  font-variant-numeric: tabular-nums;
+}
+
+/* TG006H Scope G: Physical entry / QR targets — reuses .dev-tools__role's
+   flex-wrap row rhythm/border for each case entry, and .settings-actions__btn
+   for its Copy/Export actions, rather than a new visual language. */
+.dev-tools__physical-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+  margin: 0.5rem 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.dev-tools__physical-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.4rem 0.6rem;
+  padding: 0.4rem 0;
+  border-bottom: 1px solid rgba(90, 42, 18, 0.1);
+}
+
+.dev-tools__physical-name {
+  flex: 0 0 auto;
+  min-width: 8rem;
+  font-size: 0.82rem;
+  font-weight: 600;
+}
+
+.dev-tools__physical-url {
+  flex: 1 1 12rem;
+  min-width: 0;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  font-size: 0.74rem;
+  opacity: 0.75;
+  overflow-wrap: anywhere;
+}
+
+/* TG006B: readiness/boot UI only — not the later TG009 entry curtain.
+   Covers the whole app until the real "ready" milestone lands (App.tsx),
+   then fades out via `--exiting` — a cosmetic dismissal, not part of the
+   truthful progress value itself. */
+.loading-screen {
+  position: fixed;
+  inset: 0;
+  z-index: 100;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 1rem;
+  /* TG006E corrective pass §8: accepted yellow/black palette
+     (--canonical-yellow/--canonical-ink, declared in :root above) — was the
+     older rust/tan literals. Purely visual; readiness semantics/timers are
+     unchanged (see LoadingScreen.tsx). */
+  background: var(--canonical-yellow);
+  color: var(--canonical-ink);
+  transition: opacity 0.4s ease;
+}
+
+.loading-screen--exiting {
+  opacity: 0;
+  pointer-events: none;
+}
+
+.loading-screen__mark {
+  font-size: 1.1rem;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.loading-screen__track {
+  width: min(220px, 60vw);
+  height: 4px;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--canonical-ink) 18%, transparent);
+  overflow: hidden;
+}
+
+.loading-screen__bar {
+  height: 100%;
+  background: var(--canonical-ink);
+  transition: width 0.25s ease;
+}
+
+.loading-screen__status {
+  margin: 0;
+  font-size: 0.8rem;
+  opacity: 0.75;
+}
+
+.loading-screen__error {
+  margin: 0;
+  max-width: 280px;
+  text-align: center;
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--canonical-ink);
+}
+
+.map-tether {
+  position: absolute;
+  inset: 0;
+  z-index: 5;
+  pointer-events: none;
+  overflow: visible;
+}
+
+.map-tether__line {
+  /* TG006D-016: map.tether.line role — see the paint-registry comment
+     in :root above. */
+  stroke: var(--map-ink);
+  stroke-width: 1.5;
+  stroke-dasharray: 5 4;
+  fill: none;
+}
+
+.map-tether__joint {
+  /* map.tether.joint role. */
+  fill: var(--map-ink);
+}
+
+/* TG006D: hover-only case-name label, screen-space positioned next to the
+   hovered map point — identifies the case without a conventional
+   pin+popup. Desktop-pointer only; never shown for touch. */
+.map-hover-label {
+  position: absolute;
+  z-index: 6;
+  transform: translate(14px, -50%);
+  padding: 0.2rem 0.5rem;
+  border-radius: 6px;
+  background: canvas;
+  color: canvastext;
+  /* map.hoverLabel.border role — 25% of the ink token. */
+  border: 1px solid color-mix(in srgb, var(--map-ink) 25%, transparent);
+  box-shadow: 0 2px 8px rgba(40, 24, 12, 0.14);
+  font-size: 0.78rem;
+  white-space: nowrap;
+  pointer-events: none;
+}
+
+/* TG006G Scope E: unified pressed/:active feedback. Every one of these
+   controls already had a rest state and a :hover background but no
+   distinct pressed state — one alpha step darker than each control's own
+   :hover, so the step reads consistently across the app without ever
+   reducing text/icon legibility (only the background tint changes). */
+.map-controls__btn:active:not(:disabled),
+.app-menu-trigger:active,
+.case-sheet__close:active,
+.case-sheet__traverse-btn:active:not(:disabled),
+.app-menu__nav-btn:active,
+.app-modal__close:active,
+.cases-index__row:active,
+.settings-actions__btn:active {
+  background: rgba(90, 42, 18, 0.16);
+}
+
+/* TG006G Scope F: touch targets trend toward ~44px on narrow/touch
+   viewports without changing the compact desktop-mouse chrome sizing
+   (Scope A's desktop menu-frame work is unaffected — this only touches
+   button/control hit areas). */
+@media (max-width: 480px), (pointer: coarse) {
+  .case-sheet__close,
+  .app-modal__close,
+  .app-menu-trigger {
+    width: 44px;
+    height: 44px;
+  }
+
+  .map-controls__pad {
+    grid-template-columns: repeat(3, 44px);
+    grid-template-rows: repeat(3, 44px);
+  }
+
+  .map-controls__zoom,
+  .map-controls__rotate {
+    grid-template-columns: 44px;
+    grid-template-rows: repeat(2, 44px);
+  }
+
+  .case-sheet__traverse-btn,
+  .app-menu__nav-btn,
+  .settings-actions__btn,
+  .dev-tools__actions .settings-actions__btn {
+    min-height: 44px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  * {
+    animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.001ms !important;
+    scroll-behavior: auto !important;
+  }
+}
