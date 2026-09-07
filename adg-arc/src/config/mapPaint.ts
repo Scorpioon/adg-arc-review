@@ -5,8 +5,19 @@
 // runtime-effective config built from these defaults; it holds no
 // independent palette authority of its own (see useMapPaintOverrides.ts).
 //
-// Canonical defaults remain only the three TG006D-accepted literals — no
-// fourth dominant color is introduced by this milestone.
+// TG006H corrective pass: the canonical defaults below are the operator-
+// accepted map appearance, promoted out of persisted Developer Tools state
+// (`adgarc.devtools.mapPaint.v2`) into source. Remote deployment parity
+// testing showed local production preview and the public review build
+// matched each other but not local DEV — because the accepted paint existed
+// only in the operator's browser. Promoting it makes a fresh browser with
+// no `adgarc.*` localStorage render the accepted baseline, and leaves
+// Developer Tools as a DEV-only temporary override layer above these
+// values. This supersedes TG006E's "only the three TG006D-accepted
+// literals" note: a fourth literal (`#D6D6D6`) is now canonical. The two
+// marker roles absent from the accepted evidence
+// (`map.caseMarker.default`, `map.caseMarker.selected`) keep their TG006D
+// values.
 //
 // TG006E corrective pass: each editable role's color is now a base
 // `#RRGGBB` hex plus a separate `alpha` (0..1) rather than an opaque hex
@@ -76,16 +87,16 @@ export interface MapPaintColor {
 }
 
 export const MAP_PAINT_DEFAULTS: Record<EditableMapPaintRoleId, MapPaintColor> = {
-  "map.background": { hex: "#FFFFFF", alpha: 1 },
-  "map.water.fill": { hex: "#FFED00", alpha: 1 },
-  "map.building.fill": { hex: "#FFFFFF", alpha: 1 },
-  "map.building.outline": { hex: "#1D1D1B", alpha: 1 },
-  "map.road.fill": { hex: "#FFFFFF", alpha: 1 },
-  "map.road.casing": { hex: "#1D1D1B", alpha: 1 },
-  "map.road.label": { hex: "#1D1D1B", alpha: 1 },
-  "map.road.labelHalo": { hex: "#FFFFFF", alpha: 1 },
+  "map.background": { hex: "#D6D6D6", alpha: 0.63 },
+  "map.water.fill": { hex: "#FFED00", alpha: 0.26 },
+  "map.building.fill": { hex: "#D6D6D6", alpha: 0.62 },
+  "map.building.outline": { hex: "#1D1D1B", alpha: 0.61 },
+  "map.road.fill": { hex: "#D6D6D6", alpha: 0.61 },
+  "map.road.casing": { hex: "#1D1D1B", alpha: 0.65 },
+  "map.road.label": { hex: "#1D1D1B", alpha: 0.65 },
+  "map.road.labelHalo": { hex: "#D6D6D6", alpha: 0.64 },
   "map.caseMarker.default": { hex: "#1D1D1B", alpha: 1 },
-  "map.caseMarker.hover": { hex: "#FFFFFF", alpha: 1 },
+  "map.caseMarker.hover": { hex: "#D6D6D6", alpha: 1 },
   "map.caseMarker.selected": { hex: "#FFED00", alpha: 1 },
 };
 
