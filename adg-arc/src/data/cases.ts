@@ -42,9 +42,11 @@ export interface CaseTypography {
 }
 
 export interface CaseCorrelation {
-  // Concise, interface-readable adaptation of the source argument. Only
-  // populated where an editorial pass has actually happened (DhUB in
-  // TG005) — see handoff §14.
+  // Concise, interface-readable Spanish adaptation of the source argument
+  // (`Justificació`) — conservative paraphrase/shortening only, no new
+  // facts or criticism. Populated for all 10 cases as of TG007; DhUB's
+  // (TG005) predates the Spanish-display-copy convention and was kept
+  // as-is rather than rewritten. See TG007 handoff §"El diálogo".
   rationale?: string;
   // Verbatim architecture<->typography justification transcribed from the
   // spreadsheet's `Justificació` column, kept separate from any adapted
@@ -124,10 +126,11 @@ export interface CaseRecord {
   // future case this evidence pack does not cover. Each case is still
   // fully reachable via `?case=<slug>` regardless of coordinate presence.
   coordinates: CaseCoordinates | null;
-  // True only for cases with a full editorial ficha in TG005 (DhUB). All
-  // other cases exist correctly in this dataset but their Architecture/
-  // Correlation/Specimen modules are honestly "not developed yet", not
-  // "no source data" — see handoff §16.
+  // True only for the fuller editorial ficha produced in TG005 (DhUB):
+  // architecture `traits` and case-specific `specimenMode` stay scoped to
+  // this flag by product decision (ADGARC-DEC-001 parks case-specific
+  // specimen expansion) — it no longer gates `correlation.rationale`,
+  // which TG007 populates for all 10 cases. See TG007 handoff.
   editorial: boolean;
   specimenMode: SpecimenMode;
 }
@@ -151,6 +154,8 @@ export const cases: CaseRecord[] = [
       secondarySourceNoted: true,
     },
     correlation: {
+      rationale:
+        "Glucosa es una tipografía sans serif de construcción moderna, pero con remates suaves, orgánicos y redondeados que evocan formas manuscritas o caligráficas. El edificio funciona casi como una letra decorada: su marcada estructura vertical —columnas, pilastras y divisiones entre balcones— recuerda los trazos principales que sostienen una letra, mientras que los balcones laterales y los volúmenes curvos evocan los remates o terminales de algunas letras, aportando personalidad y movimiento. Las decoraciones vegetales blancas sobre el fondo rojizo remiten a los contrastes internos de una letra —llenos y vacíos, positivo y negativo—, del mismo modo que las ventanas, los balcones y los huecos generan ese ritmo visual entre masa construida y espacio vacío. El carácter ornamental de la fachada, casi como una tipografía de display, comunica una identidad marcada incluso antes de poder leerse.",
       sourceRationale:
         "Glucosa es una font de construcció (anatomia) moderna, ja que es una font sans serif (de pal sec), però amb uns acabats suaus, orgànics i arrodonits, imitant les formes manuscrites o cal·ligràfiques.\n\n" +
         "Relació edifici-tipografia\n" +
@@ -191,6 +196,8 @@ export const cases: CaseRecord[] = [
       secondarySourceNoted: true,
     },
     correlation: {
+      rationale:
+        "Arboria parte del concepto de un «sans» arquitectónico arquetípico, introduciendo rasgos de estilo grotesco en formas geométricas para atemperar las letras; su generosa altura de x aporta modernidad sin renunciar a un aire art déco. La tipografía muestra un predominio de formas limpias y sans serif, con trazos rectos y una construcción muy racional, lo que conecta directamente con la fachada del edificio, organizada a partir de una retícula regular de ventanas, balcones y aberturas repetidas: igual que en las letras, la arquitectura se basa en el orden, la repetición y el equilibrio. Las líneas verticales y horizontales de la tipografía se relacionan con los ejes estructurales de la fachada, y las aberturas rectangulares, los balcones y la cubierta superior refuerzan esa sensación de composición construida con una lógica clara, casi tipográfica. Tanto la tipografía como el edificio comparten una estética funcional, contenida y moderna, que no busca la ornamentación excesiva sino una belleza basada en la proporción, el ritmo y la claridad formal.",
       sourceRationale:
         "Arboria parteix del concepte d'un “sans” arquitectònic arquetípic. Introdueix elements d'estil “grotesc (sans serif classic)” a les formes geomètriques per a templar més les lletres. Amb la seva generosa altura de x, els caràcters d'Arboria llueixen modernitat sense renunciar a un aire art déco i aportar una variant alternativa personal i extrovertida als dissenys més reservats del gènere.\n\n" +
         "Relació edifici-tipografia\n" +
@@ -234,6 +241,8 @@ export const cases: CaseRecord[] = [
       secondarySourceNoted: true,
     },
     correlation: {
+      rationale:
+        "AT Aero es un dispositivo elegante de inspiración aerodinámica, donde formas curvas y líneas nítidas conviven en una tipografía sans serif de gran personalidad, abierta y potente. Sus formas limpias y estilizadas, con trazos rectos y una apariencia ligera pero precisa, conectan directamente con la fachada del edificio, organizada mediante franjas verticales muy marcadas y una repetición regular de lamas o paneles: en ambos casos la estructura visual se basa en el orden y la repetición. El contraste entre los distintos pesos de la familia tipográfica —de Thin a Black— dialoga con el juego del edificio entre partes más ligeras, como las celosías blancas, y partes más pesadas o macizas, como los volúmenes laterales de color terroso, generando ritmo y jerarquía visual. Las versiones itálicas aportan cierta sensación de dinamismo, mientras que el edificio, pese a su marcada ortogonalidad, gana tensión visual gracias a la perspectiva de la esquina y a la repetición vertical de los cerramientos. Tipografía y arquitectura comparten así una estética contemporánea y racional, en la que la forma es clara y funcional, sostenida por la proporción, el ritmo y la estructura antes que por el ornamento.",
       sourceRationale:
         "At Aero és un elegant dispositiu de futurisme inspirat en el disseny aerodinàmic. Formes corbes i línies nítides coexisteixen en una esfera tipogràfica pura concebuda per a veus úniques. At Aero és una bella peça de maquinària i una tipografia carismàtica: una esfera sans-serif sensible amb una gran personalitat. Oberta, forta i omnipotent; és una font per a exploradors.\n\n" +
         "Relació edifici-tipografia\n" +
@@ -276,6 +285,8 @@ export const cases: CaseRecord[] = [
       secondaryStatus: "parked",
     },
     correlation: {
+      rationale:
+        "Aribau Grotesk nace de la intersección entre tipografías geométricas y grotescas, combinando un bajo contraste y proporciones generosas con rasgos propios del gótico americano de principios del siglo XX, como aberturas amplias en los ojales y una «g» de doble piso, lo que le da un aspecto afable y contemporáneo. La familia combina pesos muy contrastados, desde trazos finos y ligeros hasta formas muy negras y contundentes, lo que se relaciona con el edificio: los volúmenes de ladrillo tienen una presencia fuerte y compacta, mientras que los huecos, las aberturas y los retranqueos aportan ligereza y respiración. Las astas verticales y los trazos rectos recuerdan la estructura repetitiva de la fachada —balcones, pilares y ejes de aberturas—, y las contraformas de las letras pueden compararse con los espacios interiores que generan los balcones encastados y los retranqueos del volumen. También hay una relación clara en el ritmo modular: la tipografía alterna cuerpos grandes y pequeños, pesos fuertes y líneas más finas, igual que el edificio repite módulos de balcón y alterna volúmenes salientes y entrantes, creando una fachada muy rítmica. Tipografía y edificio comparten así un carácter moderno, estructurado y expresivo, cuya identidad nace del juego entre solidez y ligereza, entre estructura y ritmo.",
       sourceRationale:
         "Nascuda de la intersecció de les tipografies geomètriques i grotesques, Aribau Grotesk combina un baix contrast i unes proporcions d'amplada generoses amb trets típics del gòtic americà de principis del segle XX, com l'obertura dels comptadors i una \"g\" de doble pis. Impulsada pel procés, van sorgir alguns detalls que provenen de l'estil geomètric, com les figures de formes netes i els punts circulars que transmeten un aspecte més afable i contemporani.\n\n" +
         "Relació edifici-tipografia\n" +
@@ -319,6 +330,8 @@ export const cases: CaseRecord[] = [
       secondaryStatus: "parked",
     },
     correlation: {
+      rationale:
+        "Mecano se inspira en formas geométricas: sus líneas limpias y amplias capturan la esencia de la tecnología mecánica, evocando la ciencia ficción y una visión lúdica pero imaginativa del futuro. Su carácter mecánico y futurista, con formas sans serif, trazos rectos, proporciones condensadas y acabados muy limpios, conecta directamente con la arquitectura high-tech del edificio, donde la estructura metálica exterior es visible y se convierte en parte esencial de su identidad visual. Las astas verticales de las letras recuerdan la altura y esbeltez de la torre, y sus trazos gruesos se relacionan con los grandes elementos estructurales del edificio, mientras que las versiones más finas evocan las líneas más ligeras de la retícula metálica. Las diagonales tienen un papel importante: en la fachada, las cruces metálicas forman una red de ejes inclinados que recuerda los trazos diagonales de letras como la K, la V, la W o la X, aportando tensión, dinamismo y una sensación de ingeniería propia de una tipografía de carácter técnico. Las contraformas de las letras —sus espacios interiores— pueden compararse con los huecos entre la estructura metálica y los vidrios de la fachada. Tipografía y edificio comparten así un lenguaje racional, modular y tecnológico que comunica modernidad, potencia y una cierta idea de futuro.",
       sourceRationale:
         "Mecano és una tipografia inspirada en formes geomètriques. Les seves formes netes i àmplies capturen l'essència de la tecnologia mecànica, evocant connexions amb pel·lícules de ciència-ficció, futurs imprevisibles, cinema de sèrie B, l'univers Trekkie i diverses visions de la cultura pop futurista contemporània. Mecano ofereix una visió juganera però imaginativa del futur.\n\n" +
         "Relació edifici-tipografia\n" +
@@ -362,6 +375,8 @@ export const cases: CaseRecord[] = [
       secondaryStatus: "parked",
     },
     correlation: {
+      rationale:
+        "Shentox nació de la fascinación de su diseñador por la tipografía cuadrada de las matrículas británicas, evolucionando hasta convertirse en una familia contemporánea y muy legible, con una gama completa de pesos. Sus formas sans serif, de trazos limpios y geométricos y estética muy técnica, tienen un peso visual contundente que se relaciona con la presencia masiva del edificio: una arquitectura sólida, horizontal y estructurada. Las astas verticales y los trazos rectos recuerdan la repetición regular de las ventanas de la fachada, que funcionan casi como una retícula tipográfica, ordenada y sistemática, donde cada ventana actúa como un módulo dentro de la composición. Existe además un paralelismo en el contraste entre peso y ligereza: la tipografía combina formas muy gruesas con otras más finas y condensadas, igual que el edificio combina volúmenes más compactos de piedra u hormigón con los huecos regulares de las ventanas, generando ritmo y evitando la monotonía. Tipografía y edificio comparten así un lenguaje racional, industrial y contemporáneo que comunica eficiencia, estabilidad y una cierta idea de ingeniería.",
       sourceRationale:
         "Durant una visita a Londres l'any 2008 em va enamorar de la font cuadrada utilitzada a les matrícules dels cotxes britànics. Immediatament m'inspiré per començar a treballar en aquest tipus de lletra i des d'aleshores que vaig desenvolupar la forma intermitent. Varis viatges més a Londres i el projecte ha estat evolucionant fins que finalment es va despegar i es va convertir en Shentox.\n\n" +
         "Relació edifici-tipografia\n" +
@@ -467,6 +482,8 @@ export const cases: CaseRecord[] = [
       secondaryStatus: "parked",
     },
     correlation: {
+      rationale:
+        "Geogrotesque Stencil, perteneciente a la popular familia Geogrotesque, se concibió como tipografía de visualización que va un paso más allá al resolver los problemas típicos de las fuentes stencil, con tres anchuras de trazo que permiten adaptarse a distintos tamaños y materiales de impresión. Sus formas sans serif, muy geométricas y robustas, aparecen interrumpidas por pequeñas aberturas propias del estilo stencil, que recuerdan las celosías y persianas correderas de la fachada, capaces de fragmentar la superficie sin perder la continuidad del conjunto. Las astas rectas y gruesas se relacionan con la estructura metálica del edificio, mientras que las contraformas de las letras evocan los espacios abiertos entre balcones, pasarelas y cerramientos, donde el vacío tiene tanta importancia como el lleno. Existe también una clara correspondencia en la retícula modular: las letras se construyen a partir de formas repetitivas y proporcionadas, igual que la fachada se organiza en una sucesión regular de módulos, montantes y franjas horizontales, generando orden, ritmo y coherencia visual. Tipografía y edificio comparten así una estética industrial, funcional y contemporánea, cuya identidad nace de la sinceridad constructiva, la geometría y la repetición de los elementos estructurales.",
       sourceRationale:
         "La Geogrotesque Stencil és un membre de la popular família Geogrotesque, i tot i estar pensada com una tipografia de visualització, va un pas més enllà i intenta resoldre alguns dels problemes típics de les fonts stencil. La plantilla Geogrotesque ve amb 3 amplades de tall (A, B i C). Aquests talls no només permeten un millor rendiment en imprimir a diferents mides, sinó que també podeu canviar de versió segons la rigidesa del material utilitzat.\n\n" +
         "Relació edifici-tipografia\n" +
@@ -507,6 +524,8 @@ export const cases: CaseRecord[] = [
       secondaryStatus: "parked",
     },
     correlation: {
+      rationale:
+        "La familia Sisters reúne cuatro tipografías que comparten principios fundamentales de construcción pero se diferencian entre sí, como hermanas, mediante variaciones de contraste, peso y rasgos de diseño; concebida originalmente como un proyecto de letras a medida para la identidad de una exposición de arte. Sus formas sans serif muy estilizadas, con trazos rectos e interrupciones propias del estilo stencil, recuerdan las lamas verticales de la fachada, que fragmentan la superficie sin perder una composición uniforme y ordenada. Las astas verticales de las letras se relacionan con el ritmo constante de los paneles de la fachada, mientras que las contraformas evocan los grandes ventanales de vidrio, donde el vacío y la transparencia tienen tanto protagonismo como los elementos construidos. Existe también una correspondencia en la repetición modular: las letras mantienen una estructura geométrica y repetitiva, igual que el edificio, que combina franjas horizontales, lamas verticales y voladizos en una composición equilibrada. Tipografía y edificio comparten así una estética minimalista y contemporánea, basada en la simplicidad formal, la precisión geométrica y el juego entre luz, sombra y estructura.",
       sourceRationale:
         "La família Sisters presenta quatre fonts noves que comparteixen principis fonamentals de construcció, però que es complementen entre si, com fan les germanes, celebrant les seves diferències. Les variacions en contrast, pes i característiques de disseny donen lloc a quatre estils diferents anomenats de l'U al Quatre. Aquest quartet modern no conté minúscules, afirmant el lloc que li correspon a la família en l'espai de la tipografia de títols. Sisters es va concebre com un projecte de lletres personalitzades; en aquest cas, el disseny es va elaborar per a la identitat d'una exposició d'art.\n\n" +
         "Relació edifici-tipografia\n" +
@@ -547,6 +566,8 @@ export const cases: CaseRecord[] = [
       secondaryStatus: "parked",
     },
     correlation: {
+      rationale:
+        "Quadrata es una tipografía experimental pensada para encajar cada glifo en un cuadrado, con un enfoque brutalista en los remates pero un filete orgánico, lo que le da un aspecto de letras de estilo Far West con un toque contemporáneo. Sus formas geométricas y modulares, de trazos gruesos interrumpidos por pequeñas separaciones que recuerdan una construcción a base de piezas, se relacionan con la fachada del edificio, formada por una retícula regular de pilares y lamas verticales donde cada módulo se repite de manera ordenada. Las astas verticales evocan los esbeltos pilares de la fachada, mientras que los trazos horizontales recuerdan las líneas continuas de los forjados y los balcones; las interrupciones propias de las letras generan contraformas que pueden asociarse a los espacios abiertos entre los elementos estructurales, dando al vacío el mismo protagonismo que a la materia. Las formas redondeadas de algunas letras contrastan con la rigidez de la retícula y aportan dinamismo, igual que los espacios abiertos y los retranqueos del edificio rompen la monotonía de la composición. Tipografía y edificio comparten así una estética contemporánea, precisa y racional, basada en la repetición de módulos, la claridad estructural y el equilibrio entre solidez y ligereza.",
       sourceRationale:
         "Quadrata és una tipografia experimental pensada per encaixar cada glif en un quadrat. Amb un enfocament brutalista als serifs però un filetejat orgànic, aquesta tipografia molt contrastada ens recorda les lletres lloses d'estil Far West però amb un toc contemporani.\n\n" +
         "Relació edifici-tipografia\n" +

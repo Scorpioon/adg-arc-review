@@ -27,11 +27,12 @@ const ENTER_DELAY_MS = 120;
 // Floating, modular CaseSheet — museum technical ficha, not a blog article
 // or dashboard. Identity and Typography are shown for every case from
 // verified source data. Architecture shows the single verified movement
-// fact (or an honest TBD) for every case. Architecture/Correlation/
-// Specimen only become a full editorial ficha for `editorial` cases (DhUB
-// in TG005) — the other 9 cases are real, source-backed entries whose
-// editorial modules are honestly "not developed yet", never fabricated and
-// never confused with "no verified content" — see TG005 handoff §16.
+// fact (or an honest TBD) for every case. El diálogo renders
+// `correlation.rationale` whenever it is populated — as of TG007 that is
+// all 10 cases. Architecture `traits` and Specimen stay gated behind
+// `editorial`, which remains scoped to the fuller TG005 DhUB ficha per
+// ADGARC-DEC-001 (case-specific specimen expansion stays parked) — see
+// TG007 handoff.
 export default function CaseSheet({
   activeCase,
   onClose,
@@ -226,7 +227,7 @@ export default function CaseSheet({
 
         <section className="case-sheet__module case-sheet__module--dialogue">
           <h3>{t("caseSheet.section.dialogue")}</h3>
-          {editorial && correlation.rationale ? (
+          {correlation.rationale ? (
             <p>{correlation.rationale}</p>
           ) : (
             <p className="case-sheet__module-empty">{t("caseSheet.correlationEmpty")}</p>
