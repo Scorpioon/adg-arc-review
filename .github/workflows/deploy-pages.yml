@@ -46,6 +46,12 @@ jobs:
         working-directory: adg-arc
         env:
           VITE_BASE: ${{ steps.pages-base.outputs.base }}
+          # TG006H corrective pass: the temporary board-review Pages build must
+          # be product-visible 1:1 with the accepted local DEV review
+          # experience, including Developer Tools and the D hotkey. Scoped to
+          # this review-only workflow; the final production-host DevTools
+          # policy is not decided here and may disable them later.
+          VITE_ENABLE_DEVTOOLS: "true"
         run: npm run build
 
       - name: Setup Pages
