@@ -4,6 +4,7 @@ import "maplibre-gl/dist/maplibre-gl.css";
 import type { CaseRecord } from "../data/cases";
 import type { PanelAnchor } from "./CaseSheet";
 import { usePrefersReducedMotion } from "../hooks/usePrefersReducedMotion";
+import { useViewportClass } from "../hooks/useViewportClass";
 import type { Milestone } from "../hooks/useReadiness";
 import { paintToCss, type EditableMapPaintRoleId, type EffectiveMapPaint } from "../config/mapPaint";
 import {
@@ -11,6 +12,8 @@ import {
   type EditableLodRoleId,
   type EffectiveLodConfig,
 } from "../config/mapLod";
+import { DESKTOP_MIN } from "../config/breakpoints";
+import { useT } from "../i18n/context";
 import MapControls from "./MapControls";
 
 export interface CameraState {
@@ -48,6 +51,14 @@ interface MapViewProps {
   // pane is actually visible (see App.tsx), so this never runs an
   // unconditional render loop off ordinary map panning.
   onCameraChange?: (state: CameraState) => void;
+  // TG006I Scope A: fires once per real, user-originated map interaction
+  // (drag/zoom/rotate/pitch start) — used by App to dismiss the one-time
+  // gesture coachmark (useGestureCoachmark). Distinguishes genuine user
+  // gestures from the app's own programmatic camera moves (case-focus
+  // easeTo, reset, etc.) by checking each MapLibre event's `originalEvent`,
+  // which MapLibre only ever populates for interaction-driven events — see
+  // the [mapReady] effect below.
+  onUserInteraction?: () => void;
 }
 
 const SOURCE_ID = "cases";
@@ -541,6 +552,7 @@ const MapView = forwardRef<MapViewHandle, MapViewProps>(function MapView(
     onReadinessError,
     onMapWarning,
     onCameraChange,
+    onUserInteraction,
   },
   ref
 ) {
@@ -551,6 +563,17 @@ const MapView = forwardRef<MapViewHandle, MapViewProps>(function MapView(
   // atlas style's layers are active — see captureLodBaselines' comment.
   const lodBaselinesRef = useRef<LodBaselines>({ zoomRange: {}, opacity: {} });
   const reducedMotion = usePrefersReducedMotion();
+  const deviceClass = useViewportClass();
+  const t = useT();
+  // TG006I Scope E: the mount effect below intentionally closes over `[]`
+  // (captures state once at mount, like `paint`/`reducedMotion` already
+  // did pre-TG006I) — a ref keeps its error strings live across re-renders
+  // without needing to add `t` to that effect's deps, since only `es` is
+  // ever actually active/selectable this milestone (ca/en can't be
+  // activated — see i18n/locales.ts), so this ref is a hygiene guard
+  // against staleness rather than a fix for an observable bug today.
+  const errorMessagesRef = useRef({ timeout: t("mapView.errorTimeout"), load: t("mapView.errorLoad") });
+  errorMessagesRef.current = { timeout: t("mapView.errorTimeout"), load: t("mapView.errorLoad") };
   const [mapReady, setMapReady] = useState(false);
   const [tetherPoint, setTetherPoint] = useState<{ x: number; y: number } | null>(null);
   // Hover/focus case-name label — desktop-pointer only (see supportsHover
@@ -657,9 +680,7 @@ const MapView = forwardRef<MapViewHandle, MapViewProps>(function MapView(
         const STYLE_INIT_TIMEOUT_MS = 20000;
         initTimeoutId = window.setTimeout(() => {
           if (!styleHasLoaded) {
-            onReadinessError?.(
-              lastPreLoadError ?? "The map did not finish loading in time. Please reload the page."
-            );
+            onReadinessError?.(lastPreLoadError ?? errorMessagesRef.current.timeout);
           }
         }, STYLE_INIT_TIMEOUT_MS);
 
@@ -759,12 +780,26 @@ const MapView = forwardRef<MapViewHandle, MapViewProps>(function MapView(
             if (typeof slug === "string") onSelectCase(slug);
           });
 
+          // TG006I Scope A: one-shot-per-mount user-interaction signal for
+          // the gesture coachmark (App/useGestureCoachmark). Only events
+          // carrying a real `originalEvent` are user-originated — every
+          // programmatic camera move this app makes (case-focus easeTo,
+          // reset, north-up) passes no `originalEvent`, so it can never
+          // falsely dismiss the coachmark.
+          const reportUserInteraction = (e: { originalEvent?: unknown }) => {
+            if (e.originalEvent) onUserInteraction?.();
+          };
+          map.on("dragstart", reportUserInteraction);
+          map.on("zoomstart", reportUserInteraction);
+          map.on("rotatestart", reportUserInteraction);
+          map.on("pitchstart", reportUserInteraction);
+
           setMapReady(true);
         });
       })
       .catch((err) => {
         console.error("ADG-ARC: failed to load atlas basemap style", err);
-        onReadinessError?.("The map could not be loaded. Please reload the page.");
+        onReadinessError?.(errorMessagesRef.current.load);
       });
 
     return () => {
@@ -856,7 +891,11 @@ const MapView = forwardRef<MapViewHandle, MapViewProps>(function MapView(
     if (!map || !mapReady) return;
 
     const target = mappableCases(cases).find((c) => c.slug === selectedSlug);
-    const isDesktop = () => window.matchMedia("(min-width: 768px)").matches;
+    // TG006I Scope B: tether is a desktop-floating-panel-only affordance —
+    // raised from the pre-TG006I 768px check to DESKTOP_MIN (1024px) now
+    // that 768-1023px is its own tablet adaptive-sheet geometry (see
+    // global.css), which the tether line would misalign against.
+    const isDesktop = () => window.matchMedia(`(min-width: ${DESKTOP_MIN}px)`).matches;
 
     if (!target || !isDesktop()) {
       setTetherPoint(null);
@@ -951,6 +990,7 @@ const MapView = forwardRef<MapViewHandle, MapViewProps>(function MapView(
   return (
     <div ref={containerRef} role="application" aria-label="Map" className="map-view">
       <MapControls
+        mode={deviceClass}
         disabled={!mapReady}
         onPan={handlePan}
         onZoomIn={handleZoomIn}

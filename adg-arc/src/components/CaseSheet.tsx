@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import type { CaseRecord } from "../data/cases";
 import { usePrefersReducedMotion } from "../hooks/usePrefersReducedMotion";
+import { useT } from "../i18n/context";
 import DhubSpecimen from "./DhubSpecimen";
 import { CloseIcon } from "./icons";
 
@@ -40,6 +41,7 @@ export default function CaseSheet({
 }: CaseSheetProps) {
   const [entered, setEntered] = useState(false);
   const reducedMotion = usePrefersReducedMotion();
+  const t = useT();
   const panelRef = useRef<HTMLElement | null>(null);
   const headerRef = useRef<HTMLElement | null>(null);
 
@@ -110,19 +112,25 @@ export default function CaseSheet({
     >
       <header ref={headerRef} className="case-sheet__header">
         <h2>{identity.name}</h2>
-        <button type="button" className="case-sheet__close" onClick={onClose} aria-label="Close case">
+        <button
+          type="button"
+          className="case-sheet__close"
+          onClick={onClose}
+          aria-label={t("caseSheet.returnToMap")}
+        >
           <CloseIcon />
+          <span className="case-sheet__close-label">{t("caseSheet.returnToMap")}</span>
         </button>
       </header>
       {currentIndex >= 0 && (
-        <nav className="case-sheet__traverse" aria-label="Case navigation">
+        <nav className="case-sheet__traverse" aria-label={t("caseSheet.navLabel")}>
           <button
             type="button"
             className="case-sheet__traverse-btn"
             disabled={!previousCase}
             onClick={() => previousCase && onSelectCase(previousCase.slug)}
           >
-            &#8592; Previous
+            &#8592; {t("caseSheet.previous")}
           </button>
           <span className="case-sheet__traverse-position">
             {String(currentIndex + 1).padStart(2, "0")} / {String(cases.length).padStart(2, "0")}
@@ -133,12 +141,12 @@ export default function CaseSheet({
             disabled={!nextCase}
             onClick={() => nextCase && onSelectCase(nextCase.slug)}
           >
-            Next &#8594;
+            {t("caseSheet.next")} &#8594;
           </button>
         </nav>
       )}
       <div className="case-sheet__body">
-        <section className="case-sheet__hero" aria-label="Case media">
+        <section className="case-sheet__hero" aria-label={t("caseSheet.heroLabel")}>
           {heroMedia ? (
             <>
               <img className="case-sheet__hero-media" src={heroMedia.src} alt={heroMedia.alt} />
@@ -149,24 +157,24 @@ export default function CaseSheet({
               )}
             </>
           ) : (
-            <div className="case-sheet__hero-empty">Media pending verification.</div>
+            <div className="case-sheet__hero-empty">{t("caseSheet.heroEmpty")}</div>
           )}
         </section>
 
         <section className="case-sheet__module">
-          <h3>Identity</h3>
+          <h3>{t("caseSheet.section.building")}</h3>
           <dl className="case-sheet__facts">
             <div className="case-sheet__fact">
-              <dt>Year</dt>
+              <dt>{t("caseSheet.fact.year")}</dt>
               <dd>{identity.year}</dd>
             </div>
             <div className="case-sheet__fact">
-              <dt>Architect</dt>
+              <dt>{t("caseSheet.fact.architect")}</dt>
               <dd>{identity.architect}</dd>
             </div>
             {identity.address && (
               <div className="case-sheet__fact">
-                <dt>Address</dt>
+                <dt>{t("caseSheet.fact.address")}</dt>
                 <dd>{identity.address}</dd>
               </div>
             )}
@@ -174,11 +182,11 @@ export default function CaseSheet({
         </section>
 
         <section className="case-sheet__module">
-          <h3>Architecture</h3>
+          <h3>{t("caseSheet.section.architecture")}</h3>
           {editorial ? (
             <>
               <p className="case-sheet__note">
-                Movement: {verifiedMovement ?? "TBD — not settled in source material"}
+                {t("caseSheet.movementPrefix")} {verifiedMovement ?? t("caseSheet.movementTbdInline")}
               </p>
               {architecture.traits && architecture.traits.length > 0 && (
                 <ul className="case-sheet__traits">
@@ -191,48 +199,46 @@ export default function CaseSheet({
           ) : verifiedMovement ? (
             <p>{verifiedMovement}</p>
           ) : (
-            <p className="case-sheet__module-empty">TBD — not specified in source material.</p>
+            <p className="case-sheet__module-empty">{t("caseSheet.movementTbdBlock")}</p>
           )}
         </section>
 
         <section className="case-sheet__module">
-          <h3>Typography</h3>
+          <h3>{t("caseSheet.section.typography")}</h3>
           <dl className="case-sheet__facts">
             <div className="case-sheet__fact">
-              <dt>Primary typeface</dt>
+              <dt>{t("caseSheet.fact.primaryTypeface")}</dt>
               <dd>{typography.primaryFamily}</dd>
             </div>
             <div className="case-sheet__fact">
-              <dt>Designer</dt>
+              <dt>{t("caseSheet.fact.designer")}</dt>
               <dd>{typography.designer}</dd>
             </div>
           </dl>
           {typography.sourceUrl && (
             <p className="case-sheet__link">
               <a href={typography.sourceUrl} target="_blank" rel="noreferrer">
-                Typeface source
+                {t("caseSheet.typefaceSourceLink")}
               </a>
             </p>
           )}
         </section>
 
-        <section className="case-sheet__module">
-          <h3>Correlation</h3>
+        <section className="case-sheet__module case-sheet__module--dialogue">
+          <h3>{t("caseSheet.section.dialogue")}</h3>
           {editorial && correlation.rationale ? (
             <p>{correlation.rationale}</p>
           ) : (
-            <p className="case-sheet__module-empty">
-              Editorial correlation for this case has not been developed yet.
-            </p>
+            <p className="case-sheet__module-empty">{t("caseSheet.correlationEmpty")}</p>
           )}
         </section>
 
         <section className="case-sheet__module">
-          <h3>Specimen</h3>
+          <h3>{t("caseSheet.section.specimen")}</h3>
           {editorial && specimenMode === "dhub" ? (
             <DhubSpecimen />
           ) : (
-            <p className="case-sheet__module-empty">No specimen for this case yet.</p>
+            <p className="case-sheet__module-empty">{t("caseSheet.specimenEmpty")}</p>
           )}
         </section>
       </div>

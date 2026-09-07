@@ -15,21 +15,13 @@ import {
   type ZoomBandThresholds,
 } from "../config/mapLod";
 import { PRODUCT_VERSION } from "../config/devtools";
+import { useT } from "../i18n/context";
 import type { CameraState } from "./MapView";
 import type { Milestone, ReadinessFailure, ReadinessStatus, ReadinessWarning } from "../hooks/useReadiness";
 import type { PhysicalEntryManifest } from "../lib/deepLink";
 
 const EXPORT_SCHEMA = "adgarc.devtools.mapPaint.v2";
 const LOD_EXPORT_SCHEMA = "adgarc.devtools.mapLod.v1";
-
-const MILESTONE_LABELS: Record<Milestone, string> = {
-  boot: "Boot",
-  reactMounted: "React mounted",
-  mapCreated: "Map created",
-  styleLoaded: "Style loaded",
-  layersReady: "Layers ready",
-  ready: "Ready / idle",
-};
 
 export interface DevToolsLodProps {
   roleMeta: EditableLodRoleMeta[];
@@ -82,6 +74,13 @@ function buildLodExportConfig(lod: DevToolsLodProps) {
 // checked in App.tsx/AppMenuModal.tsx — re-checking here is unnecessary
 // since this component is never mounted when disabled). No backend, no
 // auth, no persisted product-content state.
+//
+// TG006I Scope E: section titles/notes, action buttons, status/debug labels
+// and milestone names route through the i18n catalog (ADGARC-FB-010 "...at
+// minimum include: Developer Tools UI/actions/status labels"). Per-role
+// technical labels (EDITABLE_MAP_PAINT_ROLES/EDITABLE_LOD_ROLES `.label`,
+// e.g. "Background / land") are a deliberate exception — see es.ts's header
+// comment for the scoping rationale.
 export default function DevTools({
   roles,
   effective,
@@ -98,6 +97,16 @@ export default function DevTools({
   lod,
   physicalEntry,
 }: DevToolsProps) {
+  const t = useT();
+  const MILESTONE_LABELS: Record<Milestone, string> = {
+    boot: t("devtools.milestone.boot"),
+    reactMounted: t("devtools.milestone.reactMounted"),
+    mapCreated: t("devtools.milestone.mapCreated"),
+    styleLoaded: t("devtools.milestone.styleLoaded"),
+    layersReady: t("devtools.milestone.layersReady"),
+    ready: t("devtools.milestone.ready"),
+  };
+
   // Per-role invalid-input flag only — valid edits flow straight through
   // `effective` (the controlled input value), so there is no separate
   // "draft" text state to keep in sync.
@@ -292,7 +301,11 @@ export default function DevTools({
         </div>
         {(hexInvalid || alphaInvalid) && (
           <span className="dev-tools__error" role="alert">
-            {hexInvalid && alphaInvalid ? "Invalid hex and alpha" : hexInvalid ? "Invalid hex" : "Invalid alpha"}
+            {hexInvalid && alphaInvalid
+              ? t("devtools.error.invalidHexAndAlpha")
+              : hexInvalid
+                ? t("devtools.error.invalidHex")
+                : t("devtools.error.invalidAlpha")}
           </span>
         )}
       </div>
@@ -337,17 +350,17 @@ export default function DevTools({
               checked={value.visible}
               onChange={(e) => lod.onSetRoleOverride(role.id, { visible: e.target.checked })}
             />
-            Visible
+            {t("devtools.lod.visible")}
           </label>
         )}
 
         {capabilities.minZoom && (
           <label className="dev-tools__lod-field">
-            Min zoom
+            {t("devtools.lod.minZoom")}
             <input
               type="number"
               className="dev-tools__lod-number"
-              placeholder="inherited"
+              placeholder={t("devtools.lod.minZoomPlaceholder")}
               defaultValue={value.minZoom ?? ""}
               key={`${role.id}-minzoom-${value.minZoom ?? "inherited"}`}
               min={0}
@@ -364,7 +377,7 @@ export default function DevTools({
           <div className="dev-tools__lod-triplet">
             <label className="dev-tools__lod-field">
               <input type="checkbox" checked={value.opacity !== null} onChange={(e) => handleOpacityToggle(e.target.checked)} />
-              Opacity by band
+              {t("devtools.lod.opacityByBand")}
             </label>
             {value.opacity && (
               <span className="dev-tools__lod-bands">
@@ -391,7 +404,7 @@ export default function DevTools({
           <div className="dev-tools__lod-triplet">
             <label className="dev-tools__lod-field">
               <input type="checkbox" checked={value.scale !== null} onChange={(e) => handleScaleToggle(e.target.checked)} />
-              Scale by band
+              {t("devtools.lod.scaleByBand")}
             </label>
             {value.scale && (
               <span className="dev-tools__lod-bands">
@@ -420,39 +433,35 @@ export default function DevTools({
   return (
     <div className="dev-tools">
       <section className="app-modal__section">
-        <h3>Map palette</h3>
-        <p className="dev-tools__section-note">Land, water, buildings, and road styling.</p>
+        <h3>{t("devtools.mapPalette.title")}</h3>
+        <p className="dev-tools__section-note">{t("devtools.mapPalette.note")}</p>
         <div className="dev-tools__roles">{cartographyRoles.map(renderRole)}</div>
       </section>
 
       <section className="app-modal__section">
-        <h3>Map overlays / markers</h3>
-        <p className="dev-tools__section-note">Case marker states rendered on the map.</p>
+        <h3>{t("devtools.mapOverlays.title")}</h3>
+        <p className="dev-tools__section-note">{t("devtools.mapOverlays.note")}</p>
         <div className="dev-tools__roles">{markerRoles.map(renderRole)}</div>
         <p className="dev-tools__derived">
-          Derived (not independently editable — mirrors the role in parentheses):{" "}
+          {t("devtools.derivedPrefix")}{" "}
           {DERIVED_MAP_PAINT_ROLES.map((d) => `${d.label} (${d.derivedFrom})`).join(", ")}.
         </p>
       </section>
 
       <section className="app-modal__section">
-        <h3>Zoom / LOD</h3>
-        <p className="dev-tools__section-note">
-          Semantic zoom-band density (FB031) — CITY / DISTRICT / BUILDING. Controls the ADG-ARC
-          treatment layered on top of the upstream basemap; roles left "inherited" leave the
-          upstream layer's own zoom behavior untouched.
-        </p>
+        <h3>{t("devtools.zoomLod.title")}</h3>
+        <p className="dev-tools__section-note">{t("devtools.zoomLod.note")}</p>
 
         <dl className="dev-tools__debug">
-          <dt>Current zoom</dt>
+          <dt>{t("devtools.debug.currentZoom")}</dt>
           <dd>{cameraState ? cameraState.zoom.toFixed(2) : "—"}</dd>
-          <dt>Current band</dt>
+          <dt>{t("devtools.debug.currentBand")}</dt>
           <dd>{currentBand ?? "—"}</dd>
         </dl>
 
         <div className="dev-tools__lod-thresholds">
           <label className="dev-tools__lod-field">
-            DISTRICT starts at zoom
+            {t("devtools.lod.districtLabel")}
             <input
               type="number"
               className="dev-tools__lod-number"
@@ -466,7 +475,7 @@ export default function DevTools({
             />
           </label>
           <label className="dev-tools__lod-field">
-            BUILDING starts at zoom
+            {t("devtools.lod.buildingLabel")}
             <input
               type="number"
               className="dev-tools__lod-number"
@@ -481,63 +490,63 @@ export default function DevTools({
           </label>
           {invalidThresholds && (
             <span className="dev-tools__error" role="alert">
-              Thresholds must be ordered (0 ≤ DISTRICT &lt; BUILDING ≤ 24) — rejected, previous
-              value kept.
+              {t("devtools.lod.thresholdError")}
             </span>
           )}
         </div>
 
         <div className="dev-tools__lod-roles">{lod.roleMeta.map(renderLodRole)}</div>
         <p className="dev-tools__derived">
-          Derived (not independently editable — mirrors the role in parentheses):{" "}
-          {DERIVED_LOD_ROLES.map((d) => `${d.label} (${d.derivedFrom})`).join(", ")}. Place/POI
-          labels are not modeled — the atlas classifier already drops them entirely. The optional
-          case hover label is a DOM overlay, not a MapLibre layer, so it has no LOD role either.
+          {t("devtools.derivedPrefix")}{" "}
+          {DERIVED_LOD_ROLES.map((d) => `${d.label} (${d.derivedFrom})`).join(", ")}. {t("devtools.lod.placesNote")}
         </p>
 
         <div className="dev-tools__actions">
           <button type="button" className="settings-actions__btn" onClick={handleLodReset}>
-            Reset LOD
+            {t("devtools.lod.reset")}
           </button>
           <button type="button" className="settings-actions__btn" onClick={handleLodCopy}>
-            Copy LOD config
+            {t("devtools.lod.copy")}
           </button>
           <button type="button" className="settings-actions__btn" onClick={handleLodExport}>
-            Export LOD JSON
+            {t("devtools.lod.export")}
           </button>
         </div>
-        {lodCopyStatus === "copied" && <p className="app-modal__note">Copied to clipboard.</p>}
-        {lodCopyStatus === "failed" && <p className="dev-tools__error">Copy failed — clipboard unavailable.</p>}
+        {lodCopyStatus === "copied" && <p className="app-modal__note">{t("devtools.copiedGeneric")}</p>}
+        {lodCopyStatus === "failed" && <p className="dev-tools__error">{t("devtools.copyFailed")}</p>}
       </section>
 
       <section className="app-modal__section">
-        <h3>Runtime / Map state</h3>
-        <p className="dev-tools__section-note">Read-only values captured live for review.</p>
+        <h3>{t("devtools.runtime.title")}</h3>
+        <p className="dev-tools__section-note">{t("devtools.runtime.note")}</p>
         <dl className="dev-tools__debug">
-          <dt>Zoom</dt>
+          <dt>{t("devtools.runtime.zoom")}</dt>
           <dd>{cameraState ? cameraState.zoom.toFixed(2) : "—"}</dd>
-          <dt>Bearing</dt>
+          <dt>{t("devtools.runtime.bearing")}</dt>
           <dd>{cameraState ? `${cameraState.bearing.toFixed(1)}°` : "—"}</dd>
-          <dt>Pitch</dt>
+          <dt>{t("devtools.runtime.pitch")}</dt>
           <dd>{cameraState ? `${cameraState.pitch.toFixed(1)}°` : "—"}</dd>
-          <dt>Selected case</dt>
-          <dd>{selectedCaseLabel ?? "None"}</dd>
-          <dt>Readiness</dt>
-          <dd>{readinessReady ? "Ready" : `${readinessProgress}%`}</dd>
-          <dt>Readiness status</dt>
+          <dt>{t("devtools.runtime.selectedCase")}</dt>
+          <dd>{selectedCaseLabel ?? t("devtools.runtime.selectedCaseNone")}</dd>
+          <dt>{t("devtools.runtime.readiness")}</dt>
+          <dd>{readinessReady ? t("devtools.runtime.readinessReady") : `${readinessProgress}%`}</dd>
+          <dt>{t("devtools.runtime.readinessStatus")}</dt>
           <dd>{readinessStatus}</dd>
-          <dt>Product version</dt>
+          <dt>{t("devtools.runtime.productVersion")}</dt>
           <dd>{PRODUCT_VERSION}</dd>
         </dl>
 
         {readinessFailure && (
           <p className="dev-tools__error" role="alert">
-            Fatal: {readinessFailure.message} (last completed milestone: {readinessFailure.lastMilestone})
+            {t("devtools.runtime.fatal", {
+              message: readinessFailure.message,
+              milestone: readinessFailure.lastMilestone,
+            })}
           </p>
         )}
 
         <p className="dev-tools__section-note" style={{ marginTop: "0.75rem" }}>
-          Lifecycle timings (ms since boot):
+          {t("devtools.runtime.timingsLabel")}
         </p>
         <dl className="dev-tools__debug">
           {(Object.keys(MILESTONE_LABELS) as Milestone[]).map((m) => (
@@ -551,7 +560,7 @@ export default function DevTools({
         {readinessWarnings.length > 0 && (
           <>
             <p className="dev-tools__section-note" style={{ marginTop: "0.75rem" }}>
-              Recent nonfatal map warnings (most recent first):
+              {t("devtools.runtime.warningsLabel")}
             </p>
             <ul className="dev-tools__derived">
               {readinessWarnings.map((w, i) => (
@@ -563,50 +572,50 @@ export default function DevTools({
       </section>
 
       <section className="app-modal__section">
-        <h3>Persistence / Config actions</h3>
-        <p className="dev-tools__section-note">Save, reset, or export the working palette.</p>
+        <h3>{t("devtools.persistence.title")}</h3>
+        <p className="dev-tools__section-note">{t("devtools.persistence.note")}</p>
         <div className="dev-tools__actions">
           <button type="button" className="settings-actions__btn" onClick={handleReset}>
-            Reset to defaults
+            {t("devtools.persistence.resetDefaults")}
           </button>
           <button type="button" className="settings-actions__btn" onClick={handleCopy}>
-            Copy config
+            {t("devtools.persistence.copyConfig")}
           </button>
           <button type="button" className="settings-actions__btn" onClick={handleExport}>
-            Export JSON
+            {t("devtools.persistence.exportJson")}
           </button>
         </div>
-        {copyStatus === "copied" && <p className="app-modal__note">Copied to clipboard.</p>}
-        {copyStatus === "failed" && <p className="dev-tools__error">Copy failed — clipboard unavailable.</p>}
+        {copyStatus === "copied" && <p className="app-modal__note">{t("devtools.copiedGeneric")}</p>}
+        {copyStatus === "failed" && <p className="dev-tools__error">{t("devtools.copyFailed")}</p>}
       </section>
 
       <section className="app-modal__section">
-        <h3>Physical entry / QR targets</h3>
-        <p className="dev-tools__section-note">
-          Canonical physical-totem → QR → digital-case entry points, derived from the case
-          dataset's physical/digital classification. No QR artwork is generated here.
-        </p>
+        <h3>{t("devtools.physicalEntry.title")}</h3>
+        <p className="dev-tools__section-note">{t("devtools.physicalEntry.note")}</p>
 
         <dl className="dev-tools__debug">
-          <dt>Origin</dt>
+          <dt>{t("devtools.physicalEntry.origin")}</dt>
           <dd>{physicalEntry.origin}</dd>
-          <dt>BASE_URL</dt>
+          <dt>{t("devtools.physicalEntry.baseUrl")}</dt>
           <dd>{physicalEntry.baseUrl}</dd>
-          <dt>Hosting mode</dt>
+          <dt>{t("devtools.physicalEntry.hostingMode")}</dt>
           <dd>{physicalEntry.hostingMode}</dd>
-          <dt>Physical+digital cases</dt>
+          <dt>{t("devtools.physicalEntry.caseCount")}</dt>
           <dd>{physicalEntry.manifest.entries.length}</dd>
         </dl>
 
         {selectedEntry && (
           <p className="dev-tools__section-note" style={{ marginTop: "0.6rem" }}>
-            Selected case URL: <span className="dev-tools__physical-url">{selectedEntry.url}</span>{" "}
+            {t("devtools.physicalEntry.selectedUrlLabel")}{" "}
+            <span className="dev-tools__physical-url">{selectedEntry.url}</span>{" "}
             <button
               type="button"
               className="settings-actions__btn"
               onClick={() => handleCopyEntryUrl(selectedEntry.slug, selectedEntry.url)}
             >
-              {copiedEntrySlug === selectedEntry.slug ? "Copied" : "Copy URL"}
+              {copiedEntrySlug === selectedEntry.slug
+                ? t("devtools.physicalEntry.copied")
+                : t("devtools.physicalEntry.copyUrl")}
             </button>
           </p>
         )}
@@ -621,7 +630,9 @@ export default function DevTools({
                 className="settings-actions__btn"
                 onClick={() => handleCopyEntryUrl(entry.slug, entry.url)}
               >
-                {copiedEntrySlug === entry.slug ? "Copied" : "Copy URL"}
+                {copiedEntrySlug === entry.slug
+                  ? t("devtools.physicalEntry.copied")
+                  : t("devtools.physicalEntry.copyUrl")}
               </button>
             </li>
           ))}
@@ -629,16 +640,16 @@ export default function DevTools({
 
         <div className="dev-tools__actions">
           <button type="button" className="settings-actions__btn" onClick={handleCopyManifest}>
-            Copy manifest
+            {t("devtools.physicalEntry.copyManifest")}
           </button>
           <button type="button" className="settings-actions__btn" onClick={handleExportManifest}>
-            Export manifest JSON
+            {t("devtools.physicalEntry.exportManifest")}
           </button>
         </div>
-        {manifestCopyStatus === "copied" && <p className="app-modal__note">Manifest copied to clipboard.</p>}
-        {manifestCopyStatus === "failed" && (
-          <p className="dev-tools__error">Copy failed — clipboard unavailable.</p>
+        {manifestCopyStatus === "copied" && (
+          <p className="app-modal__note">{t("devtools.physicalEntry.manifestCopied")}</p>
         )}
+        {manifestCopyStatus === "failed" && <p className="dev-tools__error">{t("devtools.copyFailed")}</p>}
       </section>
     </div>
   );

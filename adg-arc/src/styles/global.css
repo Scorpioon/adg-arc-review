@@ -83,13 +83,27 @@ body,
   display: flex;
   flex-direction: column;
   font-family: var(--font-ui);
-  /* TG006G Scope G — mobile/narrow bottom-sheet bound: without a height cap
-     a tall case (many editorial modules) could grow the panel above the top
-     of the viewport (it is anchored by `bottom: 0` only), pushing the
-     header/close button off-screen. Desktop's floating-panel treatment
-     below (min-width: 768px) overrides this with its own sizing. */
-  max-height: min(80vh, calc(100vh - 32px));
+  /* TG006I Scope B (ADGARC-FB-008): mobile is the primary "case-reading /
+     field-guide" surface, not a shrunk desktop dossier — the selected case
+     should dominate, with only a small sliver of map context left visible
+     above it (never a hard 100vh cover, so the map is never fully hidden).
+     Tablet (768-1023px) and desktop (>=1024px) below override this with
+     their own adaptive/floating geometry. */
+  max-height: calc(100vh - 16px);
   border-radius: 16px 16px 0 0;
+}
+
+/* TG006I Scope B: uniform "close = return to map" action at every
+   breakpoint (ADGARC-FB-008's "close... remain usable or are responsively
+   re-expressed without losing semantics"). Icon-only by default (desktop/
+   tablet, unchanged prior 28px circular sizing); the mobile block further
+   below reveals the text label and widens the button into an explicit,
+   unambiguous return-to-map affordance. */
+.case-sheet__close-label {
+  display: none;
+  font-size: 0.8rem;
+  font-weight: 600;
+  white-space: nowrap;
 }
 
 .case-sheet__header {
@@ -301,6 +315,24 @@ body,
   opacity: 0.75;
 }
 
+/* TG006I Scope C (ADGARC-FB-009): "El diálogo" is the editorial
+   architecture↔typography meeting point, not another metadata block — a
+   restrained emphasis (tint + the existing rust/focus accent already used
+   elsewhere in this file, not a new color) separates it visually from the
+   surrounding fact-sheet modules. */
+.case-sheet__module--dialogue {
+  margin-top: 0.25rem;
+  padding: 1rem 0.9rem;
+  border-top: none;
+  border-radius: 10px;
+  background: rgba(198, 90, 36, 0.06);
+}
+
+.case-sheet__module--dialogue h3 {
+  opacity: 1;
+  color: var(--focus-ring);
+}
+
 .case-sheet__facts {
   margin: 0;
   display: grid;
@@ -420,7 +452,39 @@ body,
   outline-offset: 2px;
 }
 
-@media (min-width: 768px) {
+/* TG006I Scope B (ADGARC-FB-008): tablet gets its own intentional adaptive
+   sheet — a large bottom sheet in portrait, a side panel in landscape —
+   rather than inheriting either the mobile near-full-screen treatment or
+   the desktop floating/tethered panel (the tether itself is now gated to
+   >=1024px in MapView.tsx, matching this same boundary). Range matches
+   config/breakpoints.ts's TABLET_MIN/DESKTOP_MIN. */
+@media (min-width: 768px) and (max-width: 1023px) {
+  .case-sheet {
+    max-height: 72vh;
+    border-radius: 20px 20px 0 0;
+  }
+
+  .case-sheet__close-label {
+    display: none;
+  }
+}
+
+@media (min-width: 768px) and (max-width: 1023px) and (orientation: landscape) {
+  .case-sheet {
+    left: auto;
+    top: 20px;
+    right: 20px;
+    bottom: 20px;
+    width: clamp(320px, 46vw, 480px);
+    max-height: none;
+    border-radius: 16px;
+    border: 1px solid rgba(90, 42, 18, 0.16);
+    box-shadow: 0 8px 28px rgba(40, 24, 12, 0.16);
+    overflow: hidden;
+  }
+}
+
+@media (min-width: 1024px) {
   .case-sheet {
     left: auto;
     top: 24px;
@@ -443,6 +507,23 @@ body,
 
   .case-sheet--visible {
     transform: translateX(0);
+  }
+}
+
+/* TG006I Scope B: below tablet — the true mobile "case-reading / field-
+   guide" surface (ADGARC-FB-008). The close action gains its visible
+   "Volver al mapa" text label and widens into an explicit pill so the
+   return-to-map affordance is unambiguous, not just an icon. */
+@media (max-width: 767px) {
+  .case-sheet__close {
+    width: auto;
+    height: 40px;
+    padding: 0 0.85rem;
+    border-radius: 999px;
+  }
+
+  .case-sheet__close-label {
+    display: inline;
   }
 }
 
@@ -478,6 +559,18 @@ body,
   gap: 2px;
 }
 
+/* TG006I Scope A (ADGARC-FB-003 real-device extension): tablet/mobile
+   render a subset of the desktop dock's buttons (see MapControls.tsx's
+   mode branching) — these modifiers only change the outer flex layout,
+   since .map-controls__btn / .map-controls__zoom's own sizing is already
+   shared and correct for every mode. */
+.map-controls--tablet,
+.map-controls--mobile {
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 8px;
+}
+
 .map-controls__btn {
   appearance: none;
   padding: 0;
@@ -496,8 +589,13 @@ body,
 }
 
 .map-controls__btn:hover:not(:disabled) {
-  /* map.mapControls.hover role. */
-  background: color-mix(in srgb, var(--map-ink) 8%, transparent);
+  /* map.mapControls.hover role. TG006I corrective (ADGARC-FB-003/
+     ADGARC-REV-002 NavCross hover-legibility regression): composited
+     against an opaque `canvas` base instead of `transparent`, so hover can
+     never let the live map canvas show through the control — a
+     transparent-mix background here *replaces* the button's own opaque
+     rest-state fill rather than layering on top of it. */
+  background: color-mix(in srgb, canvas 92%, var(--map-ink) 8%);
 }
 
 .map-controls__btn:disabled {
@@ -558,7 +656,10 @@ body,
 }
 
 .app-menu-trigger:hover {
-  background: rgba(90, 42, 18, 0.08);
+  /* TG006I corrective: same fix as .map-controls__btn:hover above — this
+     trigger also sits directly on the live map with no opaque backing of
+     its own, so its hover fill must stay opaque too. */
+  background: color-mix(in srgb, canvas 92%, rgb(90, 42, 18) 8%);
 }
 
 /* TG006E corrective pass §2: centered floating application-menu modal —
@@ -847,6 +948,58 @@ body,
 
 .settings-actions__btn:hover {
   background: rgba(90, 42, 18, 0.08);
+}
+
+/* TG006I Scope E (ADGARC-FB-010): CAT / ES / ENG language selector. Only
+   the "active" locale is a real, clickable choice — disabled locales stay
+   visible (per the accepted "prepared but disabled" contract) but are
+   inert, never accidentally activatable. */
+.settings-actions__lang-group {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+  margin-top: 0.35rem;
+}
+
+.settings-actions__lang-label {
+  font-size: 0.72rem;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  opacity: 0.6;
+}
+
+.lang-switch {
+  display: flex;
+  gap: 0.4rem;
+}
+
+.lang-switch__btn {
+  appearance: none;
+  border: 1px solid rgba(90, 42, 18, 0.25);
+  border-radius: 999px;
+  background: canvas;
+  color: canvastext;
+  padding: 0.35rem 0.8rem;
+  font-size: 0.8rem;
+  font-weight: 600;
+  letter-spacing: 0.03em;
+  cursor: pointer;
+}
+
+.lang-switch__btn:hover:not(:disabled) {
+  background: rgba(90, 42, 18, 0.08);
+}
+
+.lang-switch__btn[aria-pressed="true"] {
+  background: var(--map-accent, #ffed00);
+  border-color: transparent;
+  color: var(--canonical-ink, #1d1d1b);
+}
+
+.lang-switch__btn:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
 }
 
 /* TG006E corrective pass §4: Developer Tools — internal/dev-only palette
@@ -1205,6 +1358,56 @@ body,
   pointer-events: none;
 }
 
+/* TG006I Scope A: non-modal one-time gesture coachmark (ADGARC-FB-003
+   extension). App only mounts this while no case is selected (see
+   App.tsx), so it structurally can never cover the case-sheet's reading
+   surface at any breakpoint. z-index sits above ordinary map chrome but
+   well below the application-menu backdrop (55). Positioned as a bottom
+   banner so it never competes with the top-left menu trigger or the
+   bottom-left map-controls dock. */
+.gesture-coachmark {
+  position: absolute;
+  left: 50%;
+  bottom: max(16px, env(safe-area-inset-bottom));
+  transform: translateX(-50%);
+  z-index: 7;
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  max-width: calc(100vw - 32px);
+  padding: 0.55rem 0.7rem 0.55rem 0.9rem;
+  border-radius: 999px;
+  background: canvas;
+  color: canvastext;
+  border: 1px solid rgba(90, 42, 18, 0.18);
+  box-shadow: 0 8px 24px rgba(40, 24, 12, 0.2);
+}
+
+.gesture-coachmark__text {
+  margin: 0;
+  font-size: 0.82rem;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.gesture-coachmark__dismiss {
+  appearance: none;
+  flex: none;
+  border: none;
+  border-radius: 999px;
+  background: var(--map-accent, #ffed00);
+  color: var(--canonical-ink, #1d1d1b);
+  padding: 0.35rem 0.75rem;
+  font-size: 0.78rem;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.gesture-coachmark__dismiss:hover {
+  filter: brightness(0.96);
+}
+
 /* TG006G Scope E: unified pressed/:active feedback. Every one of these
    controls already had a rest state and a :hover background but no
    distinct pressed state — one alpha step darker than each control's own
@@ -1217,7 +1420,8 @@ body,
 .app-menu__nav-btn:active,
 .app-modal__close:active,
 .cases-index__row:active,
-.settings-actions__btn:active {
+.settings-actions__btn:active,
+.lang-switch__btn:active:not(:disabled) {
   background: rgba(90, 42, 18, 0.16);
 }
 
@@ -1247,7 +1451,9 @@ body,
   .case-sheet__traverse-btn,
   .app-menu__nav-btn,
   .settings-actions__btn,
-  .dev-tools__actions .settings-actions__btn {
+  .dev-tools__actions .settings-actions__btn,
+  .lang-switch__btn,
+  .gesture-coachmark__dismiss {
     min-height: 44px;
   }
 }

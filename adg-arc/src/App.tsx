@@ -3,15 +3,19 @@ import MapView, { type CameraState, type MapViewHandle } from "./components/MapV
 import CaseSheet, { type PanelAnchor } from "./components/CaseSheet";
 import AppMenuModal, { type MenuDestination } from "./components/AppMenuModal";
 import LoadingScreen from "./components/LoadingScreen";
+import GestureCoachmark from "./components/GestureCoachmark";
 import { cases, findCaseBySlug } from "./data/cases";
 import { useCaseParam } from "./hooks/useCaseParam";
 import { usePrefersReducedMotion } from "./hooks/usePrefersReducedMotion";
 import { useReadiness } from "./hooks/useReadiness";
 import { useMapPaintOverrides } from "./hooks/useMapPaintOverrides";
 import { useMapLodOverrides } from "./hooks/useMapLodOverrides";
+import { useViewportClass } from "./hooks/useViewportClass";
+import { useGestureCoachmark } from "./hooks/useGestureCoachmark";
 import { DEVTOOLS_ENABLED } from "./config/devtools";
 import type { EffectiveLodConfig } from "./config/mapLod";
 import { buildPhysicalEntryManifest } from "./lib/deepLink";
+import { useT } from "./i18n/context";
 
 // Purely cosmetic post-ready fade duration for LoadingScreen — see its
 // comment for why this doesn't count as fake progress.
@@ -24,6 +28,9 @@ export default function App() {
   const [caseSlug, setCaseSlug] = useCaseParam();
   const activeCase = useMemo(() => findCaseBySlug(caseSlug), [caseSlug]);
   const reducedMotion = usePrefersReducedMotion();
+  const t = useT();
+  const deviceClass = useViewportClass();
+  const { dismissed: coachmarkDismissed, dismiss: dismissCoachmark } = useGestureCoachmark();
   const [panelAnchor, setPanelAnchor] = useState<PanelAnchor | null>(null);
 
   const readiness = useReadiness();
@@ -158,7 +165,7 @@ export default function App() {
   return (
     <div className="app" data-reduced-motion={reducedMotion}>
       <a className="skip-link" href="#main">
-        Skip to main content
+        {t("app.skipToContent")}
       </a>
       <main id="main">
         <AppMenuModal
@@ -211,7 +218,14 @@ export default function App() {
           onReadinessError={readiness.fail}
           onMapWarning={readiness.warn}
           onCameraChange={devToolsPaneVisible ? handleCameraChange : undefined}
+          onUserInteraction={dismissCoachmark}
         />
+        {/* TG006I Scope A: gesture coachmark — touch-first device classes
+            only, and only while no case is open, so a direct ?case=
+            arrival's reading surface is never covered (ADGARC-FB-008). */}
+        {deviceClass !== "desktop" && !activeCase && !coachmarkDismissed && (
+          <GestureCoachmark onDismiss={dismissCoachmark} />
+        )}
         <CaseSheet
           activeCase={activeCase}
           onClose={() => setCaseSlug(null)}

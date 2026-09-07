@@ -2,17 +2,19 @@ import { useRef, type RefObject } from "react";
 import type { CaseRecord } from "../data/cases";
 import { DEVTOOLS_ENABLED } from "../config/devtools";
 import { useDialogA11y } from "../hooks/useDialogA11y";
+import { useLocale } from "../i18n/context";
+import type { TranslationKey } from "../i18n/es";
 import DevTools, { type DevToolsProps } from "./DevTools";
 import { CloseIcon, MenuIcon } from "./icons";
 
 export type MenuDestination = "cases" | "info" | "about" | "settings" | "devtools";
 
-const NAV_ITEMS: Array<{ id: MenuDestination; label: string }> = [
-  { id: "cases", label: "Cases" },
-  { id: "info", label: "Info" },
-  { id: "about", label: "About" },
-  { id: "settings", label: "Settings" },
-  { id: "devtools", label: "Developer Tools" },
+const NAV_ITEMS: Array<{ id: MenuDestination; labelKey: TranslationKey }> = [
+  { id: "cases", labelKey: "nav.cases" },
+  { id: "info", labelKey: "nav.info" },
+  { id: "about", labelKey: "nav.about" },
+  { id: "settings", labelKey: "nav.settings" },
+  { id: "devtools", labelKey: "nav.devtools" },
 ];
 
 interface AppMenuModalProps {
@@ -50,6 +52,7 @@ export default function AppMenuModal({
   devTools,
 }: AppMenuModalProps) {
   const triggerRef = useRef<HTMLButtonElement | null>(null);
+  const { t } = useLocale();
 
   return (
     <>
@@ -60,7 +63,7 @@ export default function AppMenuModal({
         aria-haspopup="dialog"
         aria-expanded={open}
         aria-controls="app-menu-panel"
-        aria-label={open ? "Close application menu" : "Open application menu"}
+        aria-label={open ? t("menu.trigger.close") : t("menu.trigger.open")}
         onClick={onToggle}
       >
         <MenuIcon />
@@ -118,6 +121,7 @@ function AppMenuDialog({
 }: AppMenuDialogProps) {
   const closeButtonRef = useRef<HTMLButtonElement | null>(null);
   const dialogRef = useDialogA11y({ onClose, triggerRef, initialFocusRef: closeButtonRef });
+  const { t, locale, setLocale, locales } = useLocale();
 
   const visibleNavItems = NAV_ITEMS.filter((item) => item.id !== "devtools" || DEVTOOLS_ENABLED);
 
@@ -134,7 +138,7 @@ function AppMenuDialog({
         className="app-menu"
         role="dialog"
         aria-modal="true"
-        aria-label="Application menu"
+        aria-label={t("menu.dialogLabel")}
       >
         <header className="app-menu__header">
           <span className="app-menu__mark">ADG·ARC</span>
@@ -143,14 +147,14 @@ function AppMenuDialog({
             ref={closeButtonRef}
             className="app-modal__close"
             onClick={onClose}
-            aria-label="Close menu"
+            aria-label={t("menu.close")}
           >
             <CloseIcon />
           </button>
         </header>
 
         <div className="app-menu__body">
-          <nav className="app-menu__nav" aria-label="Application destinations">
+          <nav className="app-menu__nav" aria-label={t("menu.navLabel")}>
             {visibleNavItems.map((item) => (
               <button
                 key={item.id}
@@ -159,7 +163,7 @@ function AppMenuDialog({
                 aria-current={active === item.id ? "true" : undefined}
                 onClick={() => onSelectDestination(item.id)}
               >
-                {item.label}
+                {t(item.labelKey)}
               </button>
             ))}
           </nav>
@@ -189,41 +193,25 @@ function AppMenuDialog({
 
             {active === "info" && (
               <>
-                <p>
-                  ADG-ARC explores relationships between architecture and typography in Barcelona,
-                  pairing each building with a typeface chosen for a resonance between the two.
-                </p>
-                <p>
-                  The map is the primary way to explore the collection — pan, zoom, and select any of
-                  the current 10 cases, or browse them from the Cases menu.
-                </p>
-                <p className="app-modal__note">
-                  This is a functional review build. Visual design, copy, and content are still
-                  provisional.
-                </p>
+                <p>{t("info.p1")}</p>
+                <p>{t("info.p2")}</p>
+                <p className="app-modal__note">{t("info.note")}</p>
               </>
             )}
 
             {active === "about" && (
               <>
                 <section className="app-modal__section">
-                  <h3>Project</h3>
-                  <p>
-                    ADG-ARC pairs Barcelona buildings with typefaces selected for a formal or
-                    conceptual correlation between the architecture and the letterforms.
-                  </p>
+                  <h3>{t("about.project.title")}</h3>
+                  <p>{t("about.project.body")}</p>
                 </section>
                 <section className="app-modal__section">
-                  <h3>Methodology</h3>
-                  <p>
-                    Each case begins from a source-documented building/typeface pairing and a written
-                    architecture-typography rationale; the depth of editorial treatment currently
-                    varies case by case.
-                  </p>
+                  <h3>{t("about.methodology.title")}</h3>
+                  <p>{t("about.methodology.body")}</p>
                 </section>
                 <section className="app-modal__section">
-                  <h3>Team / Credits</h3>
-                  <p className="app-modal__note">Pending team confirmation.</p>
+                  <h3>{t("about.credits.title")}</h3>
+                  <p className="app-modal__note">{t("about.credits.note")}</p>
                 </section>
               </>
             )}
@@ -231,15 +219,33 @@ function AppMenuDialog({
             {active === "settings" && (
               <div className="settings-actions">
                 <button type="button" className="settings-actions__btn" onClick={onResetMap}>
-                  Return to DHub / Reset map
+                  {t("settings.resetMap")}
                 </button>
                 <button type="button" className="settings-actions__btn" onClick={onNorthUp}>
-                  North-up
+                  {t("settings.northUp")}
                 </button>
                 <button type="button" className="settings-actions__btn" onClick={onEditorialOrientation}>
-                  Editorial orientation
+                  {t("settings.editorialOrientation")}
                 </button>
-                <p className="app-modal__note">These are one-off map actions, not saved preferences.</p>
+                <p className="app-modal__note">{t("settings.note")}</p>
+
+                <div className="settings-actions__lang-group">
+                  <span className="settings-actions__lang-label">{t("settings.language.label")}</span>
+                  <div className="lang-switch" role="group" aria-label={t("settings.language.label")}>
+                    {locales.map((l) => (
+                      <button
+                        key={l.code}
+                        type="button"
+                        className="lang-switch__btn"
+                        aria-pressed={locale === l.code}
+                        disabled={l.status !== "active"}
+                        onClick={() => setLocale(l.code)}
+                      >
+                        {l.selectorLabel}
+                      </button>
+                    ))}
+                  </div>
+                </div>
               </div>
             )}
 

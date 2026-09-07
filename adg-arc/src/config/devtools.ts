@@ -9,4 +9,4 @@ export const DEVTOOLS_ENABLED: boolean =
 // Debug-state / export display only — not read from package.json (that
 // file sits outside this project's `src` TypeScript root). Keep this in
 // sync with package.json's "version" field whenever either changes.
-export const PRODUCT_VERSION = "0.0.12";
+export const PRODUCT_VERSION = "0.0.13";
