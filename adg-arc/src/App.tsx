@@ -4,10 +4,12 @@ import CaseSheet, { type PanelAnchor } from "./components/CaseSheet";
 import AppMenuModal, { type MenuDestination } from "./components/AppMenuModal";
 import LoadingScreen from "./components/LoadingScreen";
 import GestureCoachmark from "./components/GestureCoachmark";
+import EntryCurtain from "./components/EntryCurtain";
 import { cases, findCaseBySlug } from "./data/cases";
 import { useCaseParam } from "./hooks/useCaseParam";
 import { usePrefersReducedMotion } from "./hooks/usePrefersReducedMotion";
 import { useReadiness } from "./hooks/useReadiness";
+import { useEntryCurtain } from "./hooks/useEntryCurtain";
 import { useMapPaintOverrides } from "./hooks/useMapPaintOverrides";
 import { useMapLodOverrides } from "./hooks/useMapLodOverrides";
 import { useViewportClass } from "./hooks/useViewportClass";
@@ -58,6 +60,35 @@ export default function App() {
   const [menuOpen, setMenuOpen] = useState(false);
   const [menuActive, setMenuActive] = useState<MenuDestination | null>(null);
   const mapViewRef = useRef<MapViewHandle | null>(null);
+  // TG009: owned here (not inside AppMenuModal) so the same persistent
+  // hamburger button doubles as the entry curtain's manual-reopen
+  // focus-return target — see EntryCurtain's `triggerRef`.
+  const menuTriggerRef = useRef<HTMLButtonElement | null>(null);
+
+  // TG009: editorial entry curtain — see useEntryCurtain.ts and
+  // ADGARC_DEC_005. `activeCase` here is still the value resolved at first
+  // render (the hook only reads `hasValidCase` at mount), matching the
+  // contract's "no valid selected case is resolved on entry."
+  const entryCurtain = useEntryCurtain({ hasValidCase: !!activeCase });
+  // TG009 R1 corrective §1: the case selected immediately before the menu's
+  // closed->open transition — captured by every path that performs that
+  // transition (handleToggleMenu and the DevTools hotkey below), so manual
+  // Introducción re-entry can restore exactly that state. Ordinary menu use
+  // (any other nav item, or closing the menu) never reads this ref — it
+  // stays a write-only shadow of "what was selected before the menu opened,"
+  // never a second case-selection authority.
+  const preMenuCaseSlugRef = useRef<string | null>(null);
+  const handleOpenIntro = () => {
+    // Reverses the clear that handleToggleMenu/the hotkey applied when this
+    // menu session opened, through the same App-owned setCaseSlug the map
+    // and Cases pane use — no second state authority, no camera touch. The
+    // curtain (z-index 90) fully covers the CaseSheet (z-index 10) this
+    // restores, so there is no visible flash before it opens over that
+    // state.
+    setCaseSlug(preMenuCaseSlugRef.current);
+    setMenuOpen(false);
+    entryCurtain.reopen();
+  };
 
   // TG006E corrective pass §3 — overlay exclusivity rule: opening the
   // application menu always clears the canonical case selection first, so
@@ -65,7 +96,10 @@ export default function App() {
   // Cases pane use — never a second, duplicate "close the sheet" path.
   // Closing/toggling the menu closed does not touch case selection.
   const handleToggleMenu = () => {
-    if (!menuOpen) setCaseSlug(null);
+    if (!menuOpen) {
+      preMenuCaseSlugRef.current = caseSlug;
+      setCaseSlug(null);
+    }
     setMenuOpen((open) => !open);
   };
 
@@ -153,14 +187,20 @@ export default function App() {
       // Same overlay-exclusivity rule as handleToggleMenu: only clear the
       // case selection when actually transitioning the menu from closed to
       // open, never when merely switching the already-open menu's pane.
-      if (!menuOpen) setCaseSlug(null);
+      // Also mirrors handleToggleMenu's TG009 R1 capture of the pre-menu
+      // case, so Introducción reached via this hotkey path can still
+      // restore it.
+      if (!menuOpen) {
+        preMenuCaseSlugRef.current = caseSlug;
+        setCaseSlug(null);
+      }
       setMenuActive("devtools");
       setMenuOpen(true);
     };
 
     window.addEventListener("keydown", onKeyDown);
     return () => window.removeEventListener("keydown", onKeyDown);
-  }, [menuOpen, menuActive, setCaseSlug]);
+  }, [menuOpen, menuActive, caseSlug, setCaseSlug]);
 
   return (
     <div className="app" data-reduced-motion={reducedMotion}>
@@ -174,11 +214,13 @@ export default function App() {
           onToggle={handleToggleMenu}
           onClose={() => setMenuOpen(false)}
           onSelectDestination={setMenuActive}
+          triggerRef={menuTriggerRef}
           cases={cases}
           onSelectCase={handleCaseSelect}
           onResetMap={() => mapViewRef.current?.reset()}
           onNorthUp={() => mapViewRef.current?.setNorthUp()}
           onEditorialOrientation={() => mapViewRef.current?.setEditorialOrientation()}
+          onOpenIntro={handleOpenIntro}
           devTools={{
             roles: paintOverrides.roles,
             effective: paintOverrides.effective,
@@ -236,6 +278,24 @@ export default function App() {
       </main>
       {loadingVisible && (
         <LoadingScreen progress={readiness.progress} error={readiness.error} exiting={readiness.ready} />
+      )}
+      {/* TG009: entry curtain — z-index sits below LoadingScreen's (see
+          global.css), so it is already mounted (just covered) while loading
+          is still visible and simply becomes apparent once that fades,
+          with no bare-map flash in between (ADGARC_DEC_005). TG009 R1
+          corrective §2: `interactive` is the same `loadingVisible` truth
+          that gates LoadingScreen's own render — it only becomes the first
+          interactive editorial surface once that operational gate has
+          fully released (matching reduced motion's near-immediate
+          release), never merely once it is visually covered. */}
+      {entryCurtain.open && (
+        <EntryCurtain
+          onRequestClose={entryCurtain.markDismissed}
+          onExited={entryCurtain.close}
+          triggerRef={menuTriggerRef}
+          reducedMotion={reducedMotion}
+          interactive={!loadingVisible}
+        />
       )}
     </div>
   );

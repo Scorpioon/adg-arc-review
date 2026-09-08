@@ -1317,6 +1317,102 @@ body,
   color: var(--canonical-ink);
 }
 
+/* TG009: editorial entry curtain (ADGARC_DEC_005) — the first editorial
+   surface after LoadingScreen's operational boot gate, not a replacement for
+   it. z-index sits just below .loading-screen's 100 (and above every other
+   layer — the app-menu-backdrop at 55 included), so it can mount as soon as
+   App decides it should show without ever visibly racing the loading
+   screen: while loading is still covering it, it simply sits underneath
+   already in place, then is what's left once loading fades. Reuses `canvas`
+   / `canvastext` and the existing --font-ui/--font-editorial roles rather
+   than introducing a new visual system (no bespoke curtain palette). */
+.entry-curtain {
+  position: fixed;
+  inset: 0;
+  z-index: 90;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow-y: auto;
+  padding: clamp(28px, 8vw, 96px) clamp(20px, 6vw, 64px) max(28px, env(safe-area-inset-bottom));
+  background: canvas;
+  color: canvastext;
+  text-align: center;
+  transition: transform 0.72s ease, opacity 0.72s ease;
+}
+
+/* Single coherent exit: a vertical reveal with subtle opacity, ~700ms at
+   normal motion (EntryCurtain.tsx's EXIT_MS). Under
+   `prefers-reduced-motion: reduce` the blanket rule further below forces
+   this transition near-instant already; EntryCurtain also skips the
+   exiting phase entirely in that case so Escape/CTA dismissal never leaves
+   an invisible-but-still-focus-trapped curtain mounted for the unneeded
+   duration. */
+.entry-curtain--exiting {
+  transform: translateY(-4%);
+  opacity: 0;
+  pointer-events: none;
+}
+
+/* TG009 R1 corrective §2: mirrors useDialogA11y's `enabled` gate — while
+   LoadingScreen's cosmetic exit fade briefly sets it to
+   `pointer-events: none` (before `loadingVisible` itself flips false), the
+   curtain must not accept a pointer click either, matching "must not own...
+   modal interaction" while it is not yet the intended interactive surface. */
+.entry-curtain[aria-hidden="true"] {
+  pointer-events: none;
+}
+
+.entry-curtain__content {
+  width: min(560px, 100%);
+  margin: auto;
+}
+
+.entry-curtain__kicker {
+  margin: 0 0 0.9rem;
+  font-family: var(--font-ui);
+  font-size: clamp(0.72rem, 1.6vw, 0.85rem);
+  font-weight: 600;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  opacity: 0.75;
+}
+
+.entry-curtain__title {
+  margin: 0 0 1.2rem;
+  font-family: var(--font-editorial);
+  font-weight: 600;
+  font-size: clamp(2rem, 6vw, 3.4rem);
+  line-height: 1.08;
+}
+
+.entry-curtain__body {
+  margin: 0 auto 2.3rem;
+  max-width: 46ch;
+  font-family: var(--font-ui);
+  font-size: clamp(0.95rem, 2.2vw, 1.05rem);
+  line-height: 1.6;
+  opacity: 0.85;
+}
+
+.entry-curtain__cta {
+  appearance: none;
+  min-height: 44px;
+  border: 1px solid rgba(90, 42, 18, 0.35);
+  border-radius: 999px;
+  padding: 0.8rem 2rem;
+  background: canvas;
+  color: canvastext;
+  font-family: var(--font-ui);
+  font-size: 0.95rem;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.entry-curtain__cta:hover {
+  background: rgba(90, 42, 18, 0.08);
+}
+
 .map-tether {
   position: absolute;
   inset: 0;
@@ -1421,6 +1517,7 @@ body,
 .app-modal__close:active,
 .cases-index__row:active,
 .settings-actions__btn:active,
+.entry-curtain__cta:active,
 .lang-switch__btn:active:not(:disabled) {
   background: rgba(90, 42, 18, 0.16);
 }
@@ -1453,7 +1550,8 @@ body,
   .settings-actions__btn,
   .dev-tools__actions .settings-actions__btn,
   .lang-switch__btn,
-  .gesture-coachmark__dismiss {
+  .gesture-coachmark__dismiss,
+  .entry-curtain__cta {
     min-height: 44px;
   }
 }

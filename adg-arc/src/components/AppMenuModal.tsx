@@ -23,11 +23,19 @@ interface AppMenuModalProps {
   onToggle: () => void;
   onClose: () => void;
   onSelectDestination: (destination: MenuDestination) => void;
+  // TG009: owned by App (not created locally here) so the same persistent
+  // button can also serve as the entry curtain's manual-reopen focus-return
+  // target — see App.tsx's menuTriggerRef.
+  triggerRef: RefObject<HTMLButtonElement>;
   cases: CaseRecord[];
   onSelectCase: (slug: string) => void;
   onResetMap: () => void;
   onNorthUp: () => void;
   onEditorialOrientation: () => void;
+  // TG009: reopens the editorial entry curtain — a menu action, not a
+  // destination pane, so it stays outside the MenuDestination union/pane
+  // switch below (ADGARC_DEC_005 "Dismissal and re-entry").
+  onOpenIntro: () => void;
   devTools: DevToolsProps;
 }
 
@@ -44,14 +52,15 @@ export default function AppMenuModal({
   onToggle,
   onClose,
   onSelectDestination,
+  triggerRef,
   cases,
   onSelectCase,
   onResetMap,
   onNorthUp,
   onEditorialOrientation,
+  onOpenIntro,
   devTools,
 }: AppMenuModalProps) {
-  const triggerRef = useRef<HTMLButtonElement | null>(null);
   const { t } = useLocale();
 
   return (
@@ -80,6 +89,7 @@ export default function AppMenuModal({
           onResetMap={onResetMap}
           onNorthUp={onNorthUp}
           onEditorialOrientation={onEditorialOrientation}
+          onOpenIntro={onOpenIntro}
           devTools={devTools}
         />
       )}
@@ -97,6 +107,7 @@ interface AppMenuDialogProps {
   onResetMap: () => void;
   onNorthUp: () => void;
   onEditorialOrientation: () => void;
+  onOpenIntro: () => void;
   devTools: DevToolsProps;
 }
 
@@ -117,6 +128,7 @@ function AppMenuDialog({
   onResetMap,
   onNorthUp,
   onEditorialOrientation,
+  onOpenIntro,
   devTools,
 }: AppMenuDialogProps) {
   const closeButtonRef = useRef<HTMLButtonElement | null>(null);
@@ -166,6 +178,12 @@ function AppMenuDialog({
                 {t(item.labelKey)}
               </button>
             ))}
+            {/* TG009: menu action, not a destination pane — reopens the
+                editorial entry curtain and closes this menu; never sets
+                `active`/aria-current, unlike the panes above. */}
+            <button type="button" className="app-menu__nav-btn" onClick={onOpenIntro}>
+              {t("menu.introAction")}
+            </button>
           </nav>
 
           <div className="app-menu__pane" aria-live="polite">

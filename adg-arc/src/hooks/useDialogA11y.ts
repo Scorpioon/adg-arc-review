@@ -13,6 +13,15 @@ interface UseDialogA11yOptions {
   // Element focused on open; defaults to the dialog's first focusable
   // descendant when omitted.
   initialFocusRef?: RefObject<HTMLElement>;
+  // TG009 R1 corrective §2: gates initial-focus placement, the Escape
+  // listener, and the Tab-trap. Defaults to true (every pre-existing
+  // caller — AppModal/AppMenuDialog — is unaffected). EntryCurtain passes
+  // false while it is mounted-but-covered under LoadingScreen, so it does
+  // not own keyboard/focus behavior for a surface the user cannot yet see;
+  // once it flips to true the effects below run exactly as they would have
+  // on mount, so the dialog becomes fully modal at that point instead of
+  // never.
+  enabled?: boolean;
 }
 
 // TG006E corrective pass: the true-modal accessibility mechanics — focus
@@ -20,19 +29,22 @@ interface UseDialogA11yOptions {
 // closes, focus returns to the trigger on close — extracted out of AppModal
 // so AppMenuDialog can share the exact same primitive instead of a second,
 // parallel modal implementation (see AppModal.tsx and AppMenuModal.tsx).
-export function useDialogA11y({ onClose, triggerRef, initialFocusRef }: UseDialogA11yOptions) {
+export function useDialogA11y({ onClose, triggerRef, initialFocusRef, enabled = true }: UseDialogA11yOptions) {
   const dialogRef = useRef<HTMLDivElement | null>(null);
 
   useEffect(() => {
+    if (!enabled) return;
     const initial = initialFocusRef?.current ?? (dialogRef.current ? getFocusable(dialogRef.current)[0] : undefined);
     initial?.focus();
     return () => {
       triggerRef.current?.focus();
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, [enabled]);
 
   useEffect(() => {
+    if (!enabled) return;
+
     const onKeyDown = (e: KeyboardEvent) => {
       if (e.key === "Escape") {
         e.preventDefault();
@@ -68,7 +80,7 @@ export function useDialogA11y({ onClose, triggerRef, initialFocusRef }: UseDialo
 
     window.addEventListener("keydown", onKeyDown);
     return () => window.removeEventListener("keydown", onKeyDown);
-  }, [onClose]);
+  }, [onClose, enabled]);
 
   return dialogRef;
 }

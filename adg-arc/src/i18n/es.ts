@@ -20,11 +20,18 @@
 export const es = {
   "app.skipToContent": "Saltar al contenido principal",
 
+  "entryCurtain.kicker": "ADG — Ruta tipográfica y arquitectónica",
+  "entryCurtain.title": "Tipografía y arquitectura",
+  "entryCurtain.body":
+    "Una ruta por Barcelona a través de edificios, tipografías y las relaciones que los conectan.",
+  "entryCurtain.cta": "Explorar Barcelona",
+
   "menu.trigger.open": "Abrir menú de la aplicación",
   "menu.trigger.close": "Cerrar menú de la aplicación",
   "menu.close": "Cerrar menú",
   "menu.dialogLabel": "Menú de la aplicación",
   "menu.navLabel": "Destinos de la aplicación",
+  "menu.introAction": "Introducción",
 
   "nav.cases": "Casos",
   "nav.info": "Información",
