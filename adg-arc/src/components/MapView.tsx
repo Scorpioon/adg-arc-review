@@ -1,6 +1,21 @@
 import { forwardRef, useEffect, useImperativeHandle, useRef, useState } from "react";
-import maplibregl, { Map as MapLibreMap, GeoJSONSource } from "maplibre-gl";
+import * as maplibregl from "maplibre-gl";
+import type { Map as MapLibreMap, GeoJSONSource } from "maplibre-gl";
+// ADGARC 030-S2 (MapLibre v6 type-contract corrective): `maplibre-gl` itself
+// re-exports no expression/paint-property type (see its own export list) —
+// `ExpressionSpecification` is only available from `@maplibre/maplibre-gl-
+// style-spec`, the public style-spec type surface maplibre-gl@6.4.1 depends
+// on (`^26.2.1`, already installed transitively per package-lock.json).
+// Type-only import, erased at build time — no new runtime dependency.
+import type { ExpressionSpecification } from "@maplibre/maplibre-gl-style-spec";
 import "maplibre-gl/dist/maplibre-gl.css";
+import maplibreWorkerUrl from "maplibre-gl/dist/maplibre-gl-worker.mjs?worker&url";
+
+// ADGARC-SEC-001 (CVE-2026-85061 / GHSA-jrc7-96c5-q579): MapLibre GL JS 6.x
+// requires the worker to be supplied explicitly via Vite's `?worker&url`
+// pipeline before any `new maplibregl.Map(...)` call — must run once at
+// module scope, ahead of the mount effect below.
+maplibregl.setWorkerUrl(maplibreWorkerUrl);
 import type { CaseRecord } from "../data/cases";
 import type { PanelAnchor } from "./CaseSheet";
 import { usePrefersReducedMotion } from "../hooks/usePrefersReducedMotion";
@@ -154,7 +169,13 @@ function classifySemanticLodRoles(layer: {
 // opacity property name). Returns null for roles with no opacity
 // capability (see LodRoleCapabilities in config/mapLod.ts) — those are
 // never given a paint-property override here.
-function lodOpacityProperty(role: EditableLodRoleId, layerType: string): string | null {
+// ADGARC 030-S2: the exact subset of `AllPaintProperties` keys this function
+// can actually return — MapLibre v6's setPaintProperty/getPaintProperty are
+// generic on `keyof AllPaintProperties`, which rejects a widened `string`
+// (see the two call sites below).
+type LodOpacityProperty = "line-opacity" | "text-opacity" | "fill-opacity" | "fill-extrusion-opacity";
+
+function lodOpacityProperty(role: EditableLodRoleId, layerType: string): LodOpacityProperty | null {
   switch (role) {
     case "roads.major":
     case "roads.minor":
@@ -244,8 +265,20 @@ function applyLodLive(map: MapLibreMap, lod: EffectiveLodConfig, baselines: LodB
   applyMarkerLod(map, lod);
 }
 
-const SELECTED_STATE_EXPR = ["boolean", ["feature-state", "selected"], false];
-const HOVER_STATE_EXPR = ["boolean", ["feature-state", "hover"], false];
+const SELECTED_STATE_EXPR: ExpressionSpecification = ["boolean", ["feature-state", "selected"], false];
+const HOVER_STATE_EXPR: ExpressionSpecification = ["boolean", ["feature-state", "hover"], false];
+
+// ADGARC 030-S3: `Array.prototype.map()`'s built-in type signature returns a
+// variable-length `U[]` even when called on a fixed-length tuple (TypeScript
+// does not special-case tuple receivers), so re-asserting arity afterward
+// with `as [X, X, X]` is rejected (TS2352: "Target requires 3 element(s) but
+// source may have fewer") once `X` is a concrete type rather than `unknown`.
+// This helper preserves the 3-tuple structurally — by construction, never by
+// assertion — so its result is a genuine `[U, U, U]` the compiler can verify
+// on its own.
+function mapTuple3<T, U>(values: readonly [T, T, T], fn: (value: T, index: 0 | 1 | 2) => U): [U, U, U] {
+  return [fn(values[0], 0), fn(values[1], 1), fn(values[2], 2)];
+}
 
 // TG006F Scope B/E: case markers/halo own their radius+opacity expressions
 // outright (no upstream expression to preserve), so — unlike roads/
@@ -264,24 +297,24 @@ function buildMarkerLodExpressions(lod: EffectiveLodConfig) {
 
   const dotRadius = buildZoomStepExpression(
     lod.thresholds,
-    markerScale.map((m) => [
+    mapTuple3(markerScale, (m): ExpressionSpecification => [
       "case",
       SELECTED_STATE_EXPR,
       11 * m,
       HOVER_STATE_EXPR,
       9 * m,
       7 * m,
-    ]) as [unknown, unknown, unknown]
+    ])
   );
   const dotOpacity = buildZoomStepExpression(lod.thresholds, markerOpacity);
 
   const haloRadius = buildZoomStepExpression(
     lod.thresholds,
-    haloScale.map((m) => ["case", SELECTED_STATE_EXPR, 22 * m, 0]) as [unknown, unknown, unknown]
+    mapTuple3(haloScale, (m): ExpressionSpecification => ["case", SELECTED_STATE_EXPR, 22 * m, 0])
   );
   const haloOpacityExpr = buildZoomStepExpression(
     lod.thresholds,
-    haloOpacity.map((o) => ["case", SELECTED_STATE_EXPR, 0.22 * o, 0]) as [unknown, unknown, unknown]
+    mapTuple3(haloOpacity, (o): ExpressionSpecification => ["case", SELECTED_STATE_EXPR, 0.22 * o, 0])
   );
 
   return { dotRadius, dotOpacity, haloRadius, haloOpacityExpr };
@@ -332,7 +365,11 @@ function buildMarkerPaint(paint: EffectiveMapPaint, lod: EffectiveLodConfig): { 
 // separate from buildMarkerPaint so applyPaintLive never needs an
 // EffectiveLodConfig in scope — the two live-update effects ([paint,
 // mapReady] and [lod, mapReady]) stay fully independent and can never race.
-function buildMarkerColorPaint(paint: EffectiveMapPaint) {
+function buildMarkerColorPaint(paint: EffectiveMapPaint): {
+  haloColor: string;
+  dotColor: ExpressionSpecification;
+  dotStrokeColor: string;
+} {
   return {
     haloColor: paintToCss(paint["map.caseMarker.selected"]),
     dotColor: [

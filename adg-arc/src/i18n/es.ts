@@ -34,6 +34,7 @@ export const es = {
   "menu.introAction": "Introducción",
 
   "nav.cases": "Casos",
+  "nav.passport": "Pasaporte",
   "nav.info": "Información",
   "nav.about": "Acerca de",
   "nav.settings": "Ajustes",
@@ -54,6 +55,16 @@ export const es = {
     "Cada caso parte de un emparejamiento edificio/tipografía documentado en la fuente y de una argumentación escrita arquitectura-tipografía; la profundidad del tratamiento editorial varía actualmente caso por caso.",
   "about.credits.title": "Equipo / Créditos",
   "about.credits.note": "Confirmación del equipo pendiente.",
+  // TG010 S4 (ADGARC-FB-025): fuller source credits live here, in
+  // Acerca de. This is an *addition* to — never a replacement for — the
+  // required attribution MapLibre's own AttributionControl keeps rendering
+  // over the map itself (see MapView.tsx); no attribution markup is
+  // reconstructed by this app.
+  "about.credits.sourcesTitle": "Cartografía y datos",
+  "about.credits.sources":
+    "Mapa base servido por OpenFreeMap, con esquema de teselas OpenMapTiles y datos de los colaboradores de OpenStreetMap.",
+  "about.credits.sourcesNote":
+    "La atribución requerida sigue mostrándose de forma permanente sobre el propio mapa.",
 
   "settings.resetMap": "Volver a DhUB / Restablecer mapa",
   "settings.northUp": "Norte arriba",
@@ -83,6 +94,34 @@ export const es = {
   "caseSheet.movementTbdBlock": "Pendiente — no especificado en el material fuente.",
   "caseSheet.correlationEmpty": "La correlación editorial de este caso aún no se ha desarrollado.",
   "caseSheet.specimenEmpty": "Todavía no hay espécimen para este caso.",
+  // TG010 S4 (ADGARC-DEC-007 §1/§2): explicit, non-drag size controls for
+  // the compact/tablet-portrait adaptive sheet. Never the *only* way to
+  // dismiss — "Volver al mapa" stays present in the same header.
+  "caseSheet.sizingLabel": "Tamaño de la ficha",
+  "caseSheet.expand": "Ampliar la ficha",
+  "caseSheet.collapse": "Reducir la ficha",
+
+  // TG010 S4 (ADGARC-FB-024): Casos carousel.
+  "cases.carouselLabel": "Casos de la colección",
+  "cases.mediaPending": "Imagen pendiente de verificación",
+
+  "passport.progress": "%{count} de %{total} paradas",
+  "passport.stampObtained": "Sello conseguido",
+  "passport.stampPending": "Por visitar",
+  "passport.completed": "Ruta completada",
+  "passport.reset": "Reiniciar progreso",
+  "passport.resetConfirm": "¿Reiniciar el progreso del pasaporte? Esta acción no se puede deshacer.",
+  "passport.resetConfirmYes": "Sí, reiniciar",
+  "passport.resetConfirmCancel": "Cancelar",
+  "passport.stampFeedback": "Sello conseguido · %{count}/%{total}",
+  // TG010 S4 (ADGARC-FB-023 / DEC-007 §13-14): horizontal progress rail.
+  // `railOrdinalNote` is the product's own statement that the cell numbers
+  // are display identifiers, not a route order — TG010 stays an unordered
+  // physical journey.
+  "passport.railLabel": "Pasaporte",
+  "passport.railOrdinalNote":
+    "Los números identifican cada parada; no indican un orden de recorrido.",
+  "passport.railCellStatus": "%{name}: %{status}",
 
   "mapControls.groupLabel": "Navegación del mapa",
   "mapControls.panUp": "Desplazar arriba",

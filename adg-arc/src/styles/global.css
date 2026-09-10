@@ -1,5 +1,50 @@
 :root {
-  color-scheme: light dark;
+  /* TG010 S4 (ADGARC-FB-015 / DEC-007 §7) — THEME AUTHORITY.
+     This was `light dark`. Combined with the `canvas`/`canvastext` system
+     colors that every reading surface in this file resolves through, that
+     one keyword handed the entire product's baseline to the visitor's OS
+     `prefers-color-scheme`: a phone in night mode silently inverted ADG-ARC
+     into a dark product it was never designed as. The editorial baseline is
+     light — white/near-white reading surfaces, dark type, yellow/orange
+     identity accents — so this is now pinned. Dark and black surfaces
+     remain available as *deliberate components* (the entry curtain's
+     inverse pairing, marker ink), never as a global theme flip.
+     Consequence to keep in mind when editing below: `canvas` now always
+     resolves light, so the existing `canvas`/`canvastext` chrome rules are
+     stable rather than OS-dependent. */
+  color-scheme: light;
+  /* Explicit editorial surface/ink tokens for the core reading surfaces
+     (dossier, menu, modal). Stated as real values rather than borrowed
+     system colors so the baseline is legible in this file, not inferred
+     from a UA table. */
+  --surface: #ffffff;
+  --surface-raised: #fbfaf7;
+  --surface-sunken: #f3efe8;
+  --ink: #1d1d1b;
+  --ink-muted: rgba(29, 29, 27, 0.62);
+  --hairline: rgba(90, 42, 18, 0.16);
+  /* TG010 S4 (DEC-007 §C) — DELIBERATE LAYER HIERARCHY.
+     One declared stacking contract, low → high:
+       map (auto) < map chrome < coachmark < menu trigger < dossier
+       < menu/modal < transient status (curtain, boot).
+     Every positioned app layer in this file resolves through one of these
+     tokens, so the order is reviewable in a single place instead of being
+     reconstructed from a dozen scattered literals. The menu trigger sits
+     deliberately *below* the dossier (DEC-007 §4, ADGARC-FB-013): it is a
+     map-chrome affordance whose own surface is the modal at
+     --z-menu-modal, so it must never paint over an open case sheet. It
+     stays permanently mounted at every state — TG009 uses it as the entry
+     curtain's focus-return target — so this is a paint-order fix, never a
+     conditional unmount. */
+  --z-map-tether: 5;
+  --z-map-chrome: 6;
+  --z-coachmark: 7;
+  --z-menu-trigger: 8;
+  --z-dossier: 20;
+  --z-app-modal: 50;
+  --z-menu-modal: 55;
+  --z-curtain: 90;
+  --z-boot: 100;
   /* TG006D-016 map paint registry — CSS half. Mirrors MAP_PAINT in
      MapView.tsx (map.caseMarker.default / .hover / .selected); every
      map-overlay/map-chrome rule below resolves through these three
@@ -35,6 +80,11 @@
 
 body {
   font-family: var(--font-ui);
+  /* TG010 S4 (ADGARC-FB-015): the light editorial baseline stated once,
+     explicitly, at the document ground — so no surface can fall back to a
+     UA-chosen dark page behind it. */
+  background: var(--surface);
+  color: var(--ink);
 }
 
 * {
@@ -77,20 +127,31 @@ body,
   left: 0;
   right: 0;
   bottom: 0;
-  z-index: 10;
-  background: canvas;
-  color: canvastext;
+  z-index: var(--z-dossier);
+  background: var(--surface);
+  color: var(--ink);
   display: flex;
   flex-direction: column;
   font-family: var(--font-ui);
-  /* TG006I Scope B (ADGARC-FB-008): mobile is the primary "case-reading /
-     field-guide" surface, not a shrunk desktop dossier — the selected case
-     should dominate, with only a small sliver of map context left visible
-     above it (never a hard 100vh cover, so the map is never fully hidden).
-     Tablet (768-1023px) and desktop (>=1024px) below override this with
-     their own adaptive/floating geometry. */
-  max-height: calc(100vh - 16px);
-  border-radius: 16px 16px 0 0;
+  /* TG010 S4 (ADGARC-FB-012/FB-014, DEC-007 §1) — the compact surface is a
+     real adaptive bottom sheet, not a full-height desktop panel scaled
+     down. The three states live in the compact/tablet-portrait blocks
+     further down, keyed off `data-sheet-state`; the desktop and
+     tablet-landscape blocks never read that attribute, so their floating
+     dossier geometry is materially unchanged (DEC-007 §6).
+
+     The prior `max-height: calc(100vh - 16px)` is gone, and the reason
+     matters: on a phone `100vh` is the *large* viewport — it excludes the
+     browser's dynamic toolbars — so a bottom-anchored sheet sized by it
+     extended above the visible area and pushed its own header, with the
+     case title and "Volver al mapa", off screen. That is exactly FB-012.
+     Every height below is therefore `dvh`, with a `vh` line first as the
+     fallback for engines without dynamic viewport units. */
+  border-radius: 18px 18px 0 0;
+  box-shadow: 0 -6px 24px rgba(40, 24, 12, 0.16);
+  /* Never let the sheet's own content run under the home indicator. */
+  padding-bottom: env(safe-area-inset-bottom);
+  transition: height 0.26s ease;
 }
 
 /* TG006I Scope B: uniform "close = return to map" action at every
@@ -107,12 +168,59 @@ body,
 }
 
 .case-sheet__header {
+  /* `flex: none` is the FB-012 guarantee: the header is the sheet's one
+     non-shrinking, non-scrolling row, so the case title and the
+     return-to-map control are reachable in every state and at every
+     breakpoint — the body beneath it is what scrolls. */
+  flex: none;
   display: flex;
   align-items: center;
   justify-content: space-between;
   gap: 0.75rem;
   padding: 1.1rem 1.35rem;
-  border-bottom: 1px solid rgba(90, 42, 18, 0.15);
+  border-bottom: 1px solid var(--hairline);
+}
+
+.case-sheet__header-controls {
+  flex: none;
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+}
+
+/* TG010 S4 (DEC-007 §2): explicit non-drag size stepper. Hidden on
+   desktop and tablet-landscape further below, where the dossier is a
+   fixed floating panel with no size states to step through. */
+.case-sheet__sizing {
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+}
+
+.case-sheet__size-btn {
+  appearance: none;
+  flex: none;
+  width: 32px;
+  height: 32px;
+  padding: 0;
+  border: 1px solid rgba(90, 42, 18, 0.3);
+  border-radius: 50%;
+  background: transparent;
+  color: inherit;
+  line-height: 1;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.case-sheet__size-btn:hover:not(:disabled) {
+  background: rgba(90, 42, 18, 0.08);
+}
+
+.case-sheet__size-btn:disabled {
+  opacity: 0.35;
+  cursor: default;
 }
 
 .case-sheet__header h2 {
@@ -152,12 +260,13 @@ body,
 /* TG006D: minimal previous/next traversal strip — see case-sheet__traverse-*
    markup in CaseSheet.tsx. Wireframe-simple per handoff §C/§9. */
 .case-sheet__traverse {
+  flex: none;
   display: flex;
   align-items: center;
   justify-content: space-between;
   gap: 0.5rem;
   padding: 0.6rem 1.35rem;
-  border-bottom: 1px solid rgba(90, 42, 18, 0.14);
+  border-bottom: 1px solid var(--hairline);
   font-size: 0.8rem;
 }
 
@@ -165,8 +274,8 @@ body,
   appearance: none;
   border: 1px solid rgba(90, 42, 18, 0.25);
   border-radius: 6px;
-  background: canvas;
-  color: canvastext;
+  background: var(--surface);
+  color: var(--ink);
   padding: 0.3rem 0.6rem;
   font-size: 0.8rem;
   cursor: pointer;
@@ -274,9 +383,13 @@ body,
   opacity: 0.6;
 }
 
+/* TG010 S4 (ADGARC-FB-020 / DEC-007 §16): stronger editorial grouping and
+   spacing for the dossier's fact modules. Rhythm, rules and label weight
+   only — no authoritative case content is rewritten, reordered or added
+   anywhere in this pass. */
 .case-sheet__module {
-  padding: 1rem 0;
-  border-top: 1px solid rgba(90, 42, 18, 0.14);
+  padding: 1.35rem 0;
+  border-top: 1px solid var(--hairline);
 }
 
 .case-sheet__module:first-child,
@@ -285,12 +398,27 @@ body,
 }
 
 .case-sheet__module h3 {
-  margin: 0 0 0.35rem;
-  font-size: 0.72rem;
-  font-weight: 600;
-  letter-spacing: 0.08em;
+  margin: 0 0 0.6rem;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.7rem;
+  font-weight: 700;
+  letter-spacing: 0.11em;
   text-transform: uppercase;
-  opacity: 0.7;
+  color: var(--ink-muted);
+}
+
+/* A short accent tick before each section label — the cheapest legible
+   grouping cue that does not add a new colour to the palette (it reuses
+   the existing identity accent). */
+.case-sheet__module h3::before {
+  content: "";
+  flex: none;
+  width: 14px;
+  height: 3px;
+  border-radius: 999px;
+  background: var(--map-accent);
 }
 
 .case-sheet__module-empty {
@@ -315,6 +443,18 @@ body,
   opacity: 0.75;
 }
 
+/* TG010 (DEC-006): restrained physical-scan feedback line — text only, no
+   animation/sound/points. */
+.case-sheet__stamp-feedback {
+  flex: none;
+  margin: 0;
+  padding: 0.5rem 1.35rem;
+  font-size: 0.82rem;
+  font-weight: 600;
+  color: var(--focus-ring);
+  border-bottom: 1px solid var(--hairline);
+}
+
 /* TG006I Scope C (ADGARC-FB-009): "El diálogo" is the editorial
    architecture↔typography meeting point, not another metadata block — a
    restrained emphasis (tint + the existing rust/focus accent already used
@@ -329,8 +469,11 @@ body,
 }
 
 .case-sheet__module--dialogue h3 {
-  opacity: 1;
   color: var(--focus-ring);
+}
+
+.case-sheet__module--dialogue h3::before {
+  background: var(--focus-ring);
 }
 
 .case-sheet__facts {
@@ -452,16 +595,45 @@ body,
   outline-offset: 2px;
 }
 
-/* TG006I Scope B (ADGARC-FB-008): tablet gets its own intentional adaptive
-   sheet — a large bottom sheet in portrait, a side panel in landscape —
-   rather than inheriting either the mobile near-full-screen treatment or
-   the desktop floating/tethered panel (the tether itself is now gated to
-   >=1024px in MapView.tsx, matching this same boundary). Range matches
-   config/breakpoints.ts's TABLET_MIN/DESKTOP_MIN. */
-@media (min-width: 768px) and (max-width: 1023px) {
+/* TG006I Scope B (ADGARC-FB-008) + TG010 S4 (ADGARC-FB-014, DEC-007 §5):
+   tablet keeps its own intentional adaptive treatment — a *contained,
+   inset, levitated* sheet with four-side margins in portrait, a side
+   dossier in landscape — rather than inheriting either the compact
+   treatment or the desktop floating/tethered panel (the tether itself is
+   gated to >=1024px in MapView.tsx, matching this same boundary). Range
+   matches config/breakpoints.ts's TABLET_MIN/DESKTOP_MIN.
+
+   S4 change: the former shared `max-height: 72vh` bottom-edge sheet is
+   replaced by the inset portrait geometry below, so tablet portrait is no
+   longer a stretched compact layout. */
+@media (min-width: 768px) and (max-width: 1023px) and (orientation: portrait) {
   .case-sheet {
-    max-height: 72vh;
-    border-radius: 20px 20px 0 0;
+    left: 20px;
+    right: 20px;
+    bottom: max(20px, env(safe-area-inset-bottom));
+    border-radius: 20px;
+    border: 1px solid var(--hairline);
+    box-shadow: 0 12px 36px rgba(40, 24, 12, 0.2);
+    overflow: hidden;
+    /* The inset itself already clears the home indicator. */
+    padding-bottom: 0;
+  }
+
+  .case-sheet[data-sheet-state="peek"] {
+    height: 30vh;
+    height: 30dvh;
+  }
+
+  .case-sheet[data-sheet-state="reading"] {
+    height: 58vh;
+    height: 58dvh;
+  }
+
+  .case-sheet[data-sheet-state="expanded"] {
+    height: calc(100vh - 20px - 20px - env(safe-area-inset-top));
+    height: calc(
+      100dvh - 20px - max(20px, env(safe-area-inset-bottom)) - env(safe-area-inset-top)
+    );
   }
 
   .case-sheet__close-label {
@@ -478,9 +650,19 @@ body,
     width: clamp(320px, 46vw, 480px);
     max-height: none;
     border-radius: 16px;
-    border: 1px solid rgba(90, 42, 18, 0.16);
+    border: 1px solid var(--hairline);
     box-shadow: 0 8px 28px rgba(40, 24, 12, 0.16);
     overflow: hidden;
+    padding-bottom: 0;
+  }
+
+  .case-sheet__close-label {
+    display: none;
+  }
+
+  /* A fixed-geometry side dossier has no size states to step through. */
+  .case-sheet__sizing {
+    display: none;
   }
 }
 
@@ -493,14 +675,17 @@ body,
     /* preserves the prior ~one-third desktop intent without becoming
        absurdly wide on very large monitors */
     width: clamp(320px, 34vw, 440px);
-    /* Cancels the mobile bottom-sheet cap above — desktop height stays
-       driven by the top/bottom offsets, not the mobile viewport-fraction
-       cap. */
+    /* Desktop height stays driven by the top/bottom offsets. No
+       `data-sheet-state` height rule exists at this breakpoint at all —
+       the states are declared only inside the compact and tablet-portrait
+       blocks — so the desktop floating dossier is materially unchanged by
+       S4 (DEC-007 §6). */
     max-height: none;
     border-radius: 16px;
-    border: 1px solid rgba(90, 42, 18, 0.16);
+    border: 1px solid var(--hairline);
     box-shadow: 0 8px 28px rgba(40, 24, 12, 0.16);
     overflow: hidden;
+    padding-bottom: 0;
     transform: translateX(calc(100% + 48px));
     transition: transform 0.38s ease;
   }
@@ -508,22 +693,82 @@ body,
   .case-sheet--visible {
     transform: translateX(0);
   }
+
+  .case-sheet__sizing {
+    display: none;
+  }
 }
 
-/* TG006I Scope B: below tablet — the true mobile "case-reading / field-
-   guide" surface (ADGARC-FB-008). The close action gains its visible
-   "Volver al mapa" text label and widens into an explicit pill so the
-   return-to-map affordance is unambiguous, not just an icon. */
+/* TG006I Scope B: below tablet — the true compact "case-reading / field-
+   guide" surface (ADGARC-FB-008). The close action keeps its visible
+   "Volver al mapa" text label and pill shape so the return-to-map
+   affordance is unambiguous, not just an icon.
+
+   TG010 S4 (ADGARC-FB-012/FB-014, DEC-007 §1-3): this is the adaptive
+   bottom sheet proper. Three explicit states, all `dvh`-sized against the
+   *small* viewport so a phone's dynamic toolbars can never push the header
+   off screen, with a `vh` fallback line first for engines without dynamic
+   viewport units.
+
+   The header is also restacked into two rows here — a control row (size
+   stepper left, "Volver al mapa" right) above a full-width title row —
+   so on a 360px phone the title never competes for horizontal space with
+   three controls and never squeezes them off the edge. That crowding is
+   the mechanism behind FB-012's clipped/obscured primary controls. */
 @media (max-width: 767px) {
+  .case-sheet[data-sheet-state="peek"] {
+    height: 34vh;
+    height: 34dvh;
+  }
+
+  .case-sheet[data-sheet-state="reading"] {
+    height: 62vh;
+    height: 62dvh;
+  }
+
+  .case-sheet[data-sheet-state="expanded"] {
+    height: calc(100vh - 12px - env(safe-area-inset-top));
+    height: calc(100dvh - 12px - env(safe-area-inset-top));
+  }
+
+  .case-sheet__header {
+    flex-wrap: wrap;
+    gap: 0.5rem 0.75rem;
+    padding: 0.7rem 1rem 0.85rem;
+  }
+
+  .case-sheet__header-controls {
+    order: -1;
+    width: 100%;
+    justify-content: space-between;
+  }
+
+  .case-sheet__header h2 {
+    width: 100%;
+    font-size: 1.1rem;
+  }
+
   .case-sheet__close {
     width: auto;
     height: 40px;
-    padding: 0 0.85rem;
+    /* The icon and its "Volver al mapa" label previously sat flush against
+       each other — this pill is the primary return control, so it gets a
+       real gap and a readable size. */
+    gap: 0.4rem;
+    padding: 0 0.9rem;
     border-radius: 999px;
+    font-size: 0.9rem;
   }
 
   .case-sheet__close-label {
     display: inline;
+  }
+
+  .case-sheet__body,
+  .case-sheet__traverse,
+  .case-sheet__stamp-feedback {
+    padding-left: 1rem;
+    padding-right: 1rem;
   }
 }
 
@@ -536,9 +781,12 @@ body,
    that the two do not overlap. */
 .map-controls {
   position: absolute;
-  bottom: 40px;
-  left: 16px;
-  z-index: 6;
+  /* TG010 S4: the 40px clearance over MapLibre's own bottom-left
+     AttributionControl is preserved, and now also clears a phone's home
+     indicator instead of sitting under it. */
+  bottom: max(40px, calc(env(safe-area-inset-bottom) + 28px));
+  left: max(16px, env(safe-area-inset-left));
+  z-index: var(--z-map-chrome);
   display: flex;
   align-items: center;
   gap: 6px;
@@ -574,11 +822,21 @@ body,
 .map-controls__btn {
   appearance: none;
   padding: 0;
+  /* TG010 S4 (ADGARC-FB-017 / DEC-007 §11) — real bug, not just sizing
+     taste: every button's box used to come *entirely* from its grid parent
+     (.map-controls__pad / __zoom / __rotate). The mobile inventory renders
+     only the reset button, which has no grid parent (see MapControls.tsx's
+     `mode === "mobile"` branch), so on a phone it collapsed to its 16px
+     icon plus borders — roughly an 18px tap target. These intrinsic sizes
+     make every mode's button self-sufficient; the compact/coarse block
+     further down enlarges both the box and the glyph inside it. */
+  min-width: 32px;
+  min-height: 32px;
   /* map.mapControls.border role — map chrome sits directly on the map. */
   border: 1px solid color-mix(in srgb, var(--map-ink) 25%, transparent);
   border-radius: 6px;
-  background: canvas;
-  color: canvastext;
+  background: var(--surface);
+  color: var(--ink);
   box-shadow: 0 2px 8px rgba(40, 24, 12, 0.1);
   font-size: 0.85rem;
   line-height: 1;
@@ -595,7 +853,7 @@ body,
      never let the live map canvas show through the control — a
      transparent-mix background here *replaces* the button's own opaque
      rest-state fill rather than layering on top of it. */
-  background: color-mix(in srgb, canvas 92%, var(--map-ink) 8%);
+  background: color-mix(in srgb, var(--surface) 92%, var(--map-ink) 8%);
 }
 
 .map-controls__btn:disabled {
@@ -630,22 +888,32 @@ body,
 
 /* TG006E corrective pass §2: persistent top-left toggle for the centered
    application-menu modal — the corner intentionally reserved since TG006A.
-   Sits above ordinary map chrome, but the modal backdrop (opened via this
-   trigger) covers it entirely while open — it does not need to keep
-   competing for z-index with the backdrop itself. */
+   The modal backdrop (opened via this trigger) covers it entirely while
+   open, so it does not need to compete for z-index with the backdrop
+   itself. TG010 S4 corrects where it sits relative to the *dossier* — see
+   the --z-menu-trigger note below. */
 .app-menu-trigger {
   position: absolute;
-  top: 16px;
-  left: 16px;
-  z-index: 21;
+  top: max(16px, env(safe-area-inset-top));
+  left: max(16px, env(safe-area-inset-left));
+  /* TG010 S4 (ADGARC-FB-013 / DEC-007 §4): was 21 — above the dossier's
+     10 — which is exactly why the hamburger rendered over an open case
+     sheet. It now sits in the map-chrome tier, strictly below
+     --z-dossier. The button stays permanently mounted at every state
+     (TG009 uses it as the entry curtain's focus-return target), so this is
+     a paint-order correction, never a conditional unmount: on compact the
+     sheet occupies the lower viewport and the trigger remains visible and
+     tappable in the map sliver above it, and on tablet-landscape/desktop
+     the dossier is a right-side panel that never reaches this corner. */
+  z-index: var(--z-menu-trigger);
   appearance: none;
   width: 36px;
   height: 36px;
   padding: 0;
   border: 1px solid rgba(90, 42, 18, 0.25);
   border-radius: 6px;
-  background: canvas;
-  color: canvastext;
+  background: var(--surface);
+  color: var(--ink);
   box-shadow: 0 2px 8px rgba(40, 24, 12, 0.1);
   font-size: 1rem;
   line-height: 1;
@@ -659,7 +927,7 @@ body,
   /* TG006I corrective: same fix as .map-controls__btn:hover above — this
      trigger also sits directly on the live map with no opaque backing of
      its own, so its hover fill must stay opaque too. */
-  background: color-mix(in srgb, canvas 92%, rgb(90, 42, 18) 8%);
+  background: color-mix(in srgb, var(--surface) 92%, rgb(90, 42, 18) 8%);
 }
 
 /* TG006E corrective pass §2: centered floating application-menu modal —
@@ -672,7 +940,14 @@ body,
 .app-menu-backdrop {
   position: fixed;
   inset: 0;
-  z-index: 55;
+  /* TG010 S4: `inset: 0` on a fixed layer resolves against the *large*
+     viewport in several mobile engines, so an inner surface sized from it
+     can extend under the browser toolbars. Pinning the height to `100dvh`
+     (with a `vh` fallback line) keeps the inset box equal to what the
+     visitor can actually see and touch. */
+  height: 100vh;
+  height: 100dvh;
+  z-index: var(--z-menu-modal);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -688,33 +963,53 @@ body,
      application-menu frame is stable across every destination — switching
      panes never resizes/recenters the outer frame, and a short pane (e.g.
      Settings) never collapses it. Each pane's own overflow-y:auto is what
-     absorbs content taller than this. */
+     absorbs content taller than this. S4: `dvh` for the same
+     dynamic-toolbar reason as the backdrop above. */
   height: min(720px, calc(100vh - 96px));
+  height: min(720px, calc(100dvh - 96px));
   display: flex;
   flex-direction: column;
   overflow: hidden;
-  background: canvas;
-  color: canvastext;
+  background: var(--surface);
+  color: var(--ink);
   border-radius: 16px;
   border: 1px solid rgba(90, 42, 18, 0.18);
   box-shadow: 0 20px 60px rgba(20, 12, 6, 0.35);
 }
 
+/* TG010 S4 (ADGARC-FB-019 / DEC-007 §12): the menu read as flat because
+   every band in it — header, nav, pane — shared one undifferentiated white
+   surface. The header now carries the identity accent and a tinted ground,
+   which is what separates "application shell" from "pane content" without
+   adding a new colour or a second visual language. */
 .app-menu__header {
+  flex: none;
   display: flex;
   align-items: center;
   justify-content: space-between;
   gap: 0.75rem;
   padding: 1rem 1.1rem;
-  border-bottom: 1px solid rgba(90, 42, 18, 0.15);
+  background: var(--surface-raised);
+  border-bottom: 1px solid var(--hairline);
 }
 
 .app-menu__mark {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.55rem;
   font-size: 0.85rem;
-  font-weight: 600;
-  letter-spacing: 0.08em;
+  font-weight: 700;
+  letter-spacing: 0.12em;
   text-transform: uppercase;
-  opacity: 0.8;
+  color: var(--ink);
+}
+
+.app-menu__mark::before {
+  content: "";
+  width: 18px;
+  height: 4px;
+  border-radius: 999px;
+  background: var(--map-accent);
 }
 
 .app-menu__body {
@@ -731,11 +1026,13 @@ body,
   gap: 2px;
   padding: 0.6rem;
   overflow-y: auto;
-  border-right: 1px solid rgba(90, 42, 18, 0.15);
+  background: var(--surface-raised);
+  border-right: 1px solid var(--hairline);
 }
 
 .app-menu__nav-btn {
   appearance: none;
+  position: relative;
   width: 100%;
   border: none;
   border-radius: 6px;
@@ -751,9 +1048,22 @@ body,
   background: rgba(90, 42, 18, 0.08);
 }
 
+/* FB-019: the active destination gains a real accent marker, not just a
+   slightly darker tint — the selected item is now legible at a glance. */
 .app-menu__nav-btn[aria-current="true"] {
-  background: rgba(90, 42, 18, 0.12);
-  font-weight: 600;
+  background: rgba(90, 42, 18, 0.1);
+  font-weight: 700;
+}
+
+.app-menu__nav-btn[aria-current="true"]::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  top: 20%;
+  bottom: 20%;
+  width: 3px;
+  border-radius: 999px;
+  background: var(--map-accent);
 }
 
 .app-menu__pane {
@@ -765,17 +1075,87 @@ body,
   line-height: 1.55;
 }
 
-@media (max-width: 640px) {
+/* FB-019: a real pane heading, so the menu reads nav → title → content
+   instead of one undifferentiated column of body text. */
+.app-menu__pane-title {
+  margin: 0 0 0.9rem;
+  font-family: var(--font-editorial);
+  font-size: 1.35rem;
+  font-weight: 600;
+  line-height: 1.15;
+  letter-spacing: 0.01em;
+}
+
+/* TG010 S4 (DEC-007 §12) — the compact/tablet menu. The former 640px
+   switch produced a wrapping button block that read as an accidental
+   full-bleed sheet; the menu is now an explicitly contained surface with
+   margins on all four sides (the backdrop's padding provides them, and is
+   made safe-area aware here), a horizontally scrolling destination rail
+   instead of a wrapped stack, and its own internal scroll. The boundary
+   moves to 767px so it matches config/breakpoints.ts's TABLET_MIN like
+   every other adaptive rule in this file, rather than being a third,
+   unrelated breakpoint. */
+@media (max-width: 767px) {
+  .app-menu-backdrop {
+    padding: calc(env(safe-area-inset-top) + 16px) max(16px, env(safe-area-inset-right))
+      calc(env(safe-area-inset-bottom) + 16px) max(16px, env(safe-area-inset-left));
+    align-items: stretch;
+  }
+
+  .app-menu {
+    /* Fills the inset box the backdrop's padding already carved out — a
+       contained surface with four visible margins, never edge-to-edge. */
+    width: 100%;
+    height: 100%;
+    border-radius: 18px;
+  }
+
   .app-menu__body {
     flex-direction: column;
   }
 
   .app-menu__nav {
     width: auto;
+    flex: none;
     flex-direction: row;
-    flex-wrap: wrap;
+    flex-wrap: nowrap;
+    gap: 0.35rem;
+    overflow-x: auto;
+    overflow-y: hidden;
+    scrollbar-width: none;
     border-right: none;
-    border-bottom: 1px solid rgba(90, 42, 18, 0.15);
+    border-bottom: 1px solid var(--hairline);
+  }
+
+  .app-menu__nav::-webkit-scrollbar {
+    display: none;
+  }
+
+  .app-menu__nav-btn {
+    width: auto;
+    flex: none;
+    border-radius: 999px;
+    padding: 0.5rem 0.9rem;
+    white-space: nowrap;
+  }
+
+  /* The vertical accent bar is a column-nav device; in the rail it becomes
+     a solid accent chip instead. */
+  .app-menu__nav-btn[aria-current="true"] {
+    background: var(--map-accent);
+    color: var(--canonical-ink);
+  }
+
+  .app-menu__nav-btn[aria-current="true"]::before {
+    content: none;
+  }
+
+  .app-menu__pane {
+    padding: 0.9rem 1rem 1.25rem;
+  }
+
+  .app-menu__pane-title {
+    font-size: 1.2rem;
   }
 }
 
@@ -785,22 +1165,26 @@ body,
 .app-modal-backdrop {
   position: fixed;
   inset: 0;
-  z-index: 50;
+  height: 100vh;
+  height: 100dvh;
+  z-index: var(--z-app-modal);
   display: flex;
   align-items: center;
   justify-content: center;
-  padding: 24px;
+  padding: max(24px, env(safe-area-inset-top)) max(24px, env(safe-area-inset-right))
+    max(24px, env(safe-area-inset-bottom)) max(24px, env(safe-area-inset-left));
   background: rgba(40, 24, 12, 0.45);
 }
 
 .app-modal {
   width: min(560px, 100%);
   max-height: min(640px, calc(100vh - 48px));
+  max-height: min(640px, calc(100dvh - 48px));
   display: flex;
   flex-direction: column;
   overflow: hidden;
-  background: canvas;
-  color: canvastext;
+  background: var(--surface);
+  color: var(--ink);
   border-radius: 16px;
   border: 1px solid rgba(90, 42, 18, 0.18);
   box-shadow: 0 20px 60px rgba(20, 12, 6, 0.35);
@@ -869,7 +1253,239 @@ body,
   opacity: 0.7;
 }
 
-/* TG006D: Cases index — functional list, wireframe-simple per handoff §9. */
+/* TG010 S4 (ADGARC-FB-024 / DEC-007 §15): Casos as a horizontal
+   scroll-snap carousel of editorial cards — media above, concise text
+   below, contained rounded card. Built from the existing tokens and the
+   plain overflow/scroll-snap primitives the platform already provides; no
+   carousel library, no gesture framework, no new dependency.
+
+   Accessibility: each card is a real <button> (see AppMenuModal.tsx), so
+   Tab reaches every case in order, Enter/Space activate it, and the
+   browser's own focus handling scrolls the focused card into view — the
+   keyboard path needs no bespoke key handling. `scroll-padding-inline`
+   keeps a focused card off the container's clipped edge. */
+.cases-carousel {
+  margin: 0;
+  padding: 0.25rem 0 0.75rem;
+  list-style: none;
+  display: flex;
+  gap: 0.75rem;
+  overflow-x: auto;
+  overscroll-behavior-x: contain;
+  scroll-snap-type: x mandatory;
+  scroll-padding-inline: 0.25rem;
+  scrollbar-width: thin;
+  scrollbar-color: rgba(90, 42, 18, 0.35) transparent;
+}
+
+.cases-carousel__item {
+  flex: none;
+  scroll-snap-align: start;
+}
+
+.cases-carousel__card {
+  appearance: none;
+  display: flex;
+  flex-direction: column;
+  width: 15rem;
+  height: 100%;
+  padding: 0;
+  overflow: hidden;
+  border: 1px solid var(--hairline);
+  border-radius: 14px;
+  background: var(--surface);
+  color: inherit;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.cases-carousel__card:hover {
+  border-color: rgba(90, 42, 18, 0.32);
+  box-shadow: 0 6px 18px rgba(40, 24, 12, 0.12);
+}
+
+.cases-carousel__media {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  aspect-ratio: 16 / 10;
+  padding: 0.6rem;
+  background: var(--surface-sunken);
+  border-bottom: 1px solid var(--hairline);
+}
+
+.cases-carousel__img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+/* No case currently carries verified media (every `heroMedia` in
+   data/cases.ts is null), so this honest placeholder is the common path
+   today — never a fabricated stand-in image. */
+.cases-carousel__media-empty {
+  font-size: 0.74rem;
+  font-style: italic;
+  text-align: center;
+  color: var(--ink-muted);
+}
+
+.cases-carousel__body {
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+  padding: 0.7rem 0.85rem 0.9rem;
+}
+
+.cases-carousel__ordinal {
+  font-size: 0.7rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  font-variant-numeric: tabular-nums;
+  color: var(--ink-muted);
+}
+
+.cases-carousel__name {
+  font-family: var(--font-editorial);
+  font-size: 1rem;
+  font-weight: 600;
+  line-height: 1.2;
+}
+
+.cases-carousel__meta {
+  font-size: 0.76rem;
+  line-height: 1.35;
+  color: var(--ink-muted);
+}
+
+/* TG010 S4 (ADGARC-FB-023 / DEC-007 §13-14): Pasaporte progress rail —
+   one horizontal track of ordinal cells with a visited tick, rendered in
+   the Pasaporte pane and, in its compact variant, as the menu's persistent
+   journey summary (see PassportPane.tsx's PassportRail).
+
+   The cells are non-interactive by design: the ordinals are display
+   identifiers for each stop, never a route order, a required sequence or a
+   first/last-stop semantic. TG010 stays an unordered physical journey, and
+   the rail carries that statement in `.passport-rail__note`. */
+.passport-rail {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+}
+
+.passport-rail--summary {
+  flex: none;
+  padding: 0.65rem 1.1rem 0.7rem;
+  background: var(--surface-raised);
+  border-bottom: 1px solid var(--hairline);
+}
+
+.passport-rail--pane {
+  margin-bottom: 1rem;
+}
+
+.passport-rail__head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 0.75rem;
+  margin: 0;
+}
+
+.passport-rail__label {
+  font-size: 0.7rem;
+  font-weight: 700;
+  letter-spacing: 0.11em;
+  text-transform: uppercase;
+  color: var(--ink-muted);
+}
+
+.passport-rail__count {
+  font-size: 0.85rem;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+
+.passport-rail__track {
+  display: flex;
+  gap: 4px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  overflow-x: auto;
+  overscroll-behavior-x: contain;
+  scrollbar-width: none;
+}
+
+.passport-rail__track::-webkit-scrollbar {
+  display: none;
+}
+
+.passport-rail__cell {
+  flex: none;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 1px;
+  min-width: 2.35rem;
+  padding: 0.3rem 0.2rem 0.25rem;
+  border: 1px solid var(--hairline);
+  border-radius: 8px;
+  background: var(--surface);
+}
+
+/* Status is never carried by colour alone — the tick glyph differs
+   (✓ / ·), the cell weight differs, and PassportRail also renders the full
+   "<case>: <status>" sentence for assistive technology. */
+.passport-rail__cell[data-visited="true"] {
+  background: var(--map-accent);
+  border-color: transparent;
+  color: var(--canonical-ink);
+}
+
+.passport-rail__ordinal {
+  font-size: 0.72rem;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  line-height: 1;
+}
+
+.passport-rail__tick {
+  font-size: 0.72rem;
+  line-height: 1;
+}
+
+.passport-rail__cell[data-visited="false"] .passport-rail__tick {
+  color: var(--ink-muted);
+}
+
+.passport-rail__note {
+  margin: 0;
+  font-size: 0.7rem;
+  line-height: 1.35;
+  color: var(--ink-muted);
+}
+
+/* Shared screen-reader-only utility — used by the passport rail's per-cell
+   status sentence. */
+.visually-hidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  margin: -1px;
+  padding: 0;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  clip-path: inset(50%);
+  white-space: nowrap;
+  border: 0;
+}
+
+/* TG006D: Cases index — functional list, wireframe-simple per handoff §9.
+   Still the Pasaporte pane's per-stop navigation list; the Casos
+   destination itself moved to .cases-carousel above in TG010 S4. */
 .cases-index {
   margin: 0;
   padding: 0;
@@ -939,8 +1555,8 @@ body,
   appearance: none;
   border: 1px solid rgba(90, 42, 18, 0.25);
   border-radius: 8px;
-  background: canvas;
-  color: canvastext;
+  background: var(--surface);
+  color: var(--ink);
   padding: 0.5rem 0.85rem;
   font-size: 0.88rem;
   cursor: pointer;
@@ -948,6 +1564,36 @@ body,
 
 .settings-actions__btn:hover {
   background: rgba(90, 42, 18, 0.08);
+}
+
+/* TG010 (DEC-006): Pasaporte pane — reuses .cases-index / .settings-actions
+   rather than a parallel visual language; only the status text and the
+   reset-confirm block below are new. TG010 S4: the pane's "X de N paradas"
+   line is now the progress rail's own head (.passport-rail__count), so the
+   former standalone `.passport-pane__progress` rule was removed rather
+   than left behind as a dead selector. */
+.passport-pane__status {
+  font-size: 0.78rem;
+  opacity: 0.65;
+}
+
+.passport-pane__status--visited {
+  /* Not color-only: the text itself already differs
+     (Sello conseguido / Ruta completada vs. Por visitar). */
+  color: var(--focus-ring);
+  opacity: 1;
+  font-weight: 600;
+}
+
+.passport-pane__reset-confirm {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 0.5rem;
+}
+
+.passport-pane .cases-index {
+  margin-bottom: 0.75rem;
 }
 
 /* TG006I Scope E (ADGARC-FB-010): CAT / ES / ENG language selector. Only
@@ -978,8 +1624,8 @@ body,
   appearance: none;
   border: 1px solid rgba(90, 42, 18, 0.25);
   border-radius: 999px;
-  background: canvas;
-  color: canvastext;
+  background: var(--surface);
+  color: var(--ink);
   padding: 0.35rem 0.8rem;
   font-size: 0.8rem;
   font-weight: 600;
@@ -1261,7 +1907,7 @@ body,
 .loading-screen {
   position: fixed;
   inset: 0;
-  z-index: 100;
+  z-index: var(--z-boot);
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -1319,24 +1965,35 @@ body,
 
 /* TG009: editorial entry curtain (ADGARC_DEC_005) — the first editorial
    surface after LoadingScreen's operational boot gate, not a replacement for
-   it. z-index sits just below .loading-screen's 100 (and above every other
-   layer — the app-menu-backdrop at 55 included), so it can mount as soon as
-   App decides it should show without ever visibly racing the loading
-   screen: while loading is still covering it, it simply sits underneath
-   already in place, then is what's left once loading fades. Reuses `canvas`
-   / `canvastext` and the existing --font-ui/--font-editorial roles rather
-   than introducing a new visual system (no bespoke curtain palette). */
+   it. --z-curtain sits just below --z-boot (and above every other layer,
+   --z-menu-modal included), so it can mount as soon as App decides it
+   should show without ever visibly racing the loading screen: while
+   loading is still covering it, it simply sits underneath already in
+   place, then is what's left once loading fades.
+   TG010 S4: the curtain's own palette is now the canonical yellow/black
+   pairing (ADGARC-FB-021) instead of the neutral `canvas`/`canvastext` it
+   previously borrowed — still no bespoke curtain colours, just the two
+   canonical identity tokens already declared in :root, and the existing
+   --font-ui/--font-editorial roles unchanged. */
 .entry-curtain {
   position: fixed;
   inset: 0;
-  z-index: 90;
+  height: 100vh;
+  height: 100dvh;
+  z-index: var(--z-curtain);
   display: flex;
   align-items: center;
   justify-content: center;
   overflow-y: auto;
   padding: clamp(28px, 8vw, 96px) clamp(20px, 6vw, 64px) max(28px, env(safe-area-inset-bottom));
-  background: canvas;
-  color: canvastext;
+  /* TG010 S4 (ADGARC-FB-021 / DEC-007 §8): "Introducción" is the product's
+     one deliberate identity surface — canonical yellow ground, black type.
+     It was inheriting the neutral `canvas`/`canvastext` pairing, which is
+     also what let the OS dark preference invert it (see the theme
+     authority note in :root). This is a *component* colour decision, not a
+     theme: everything else stays on the light editorial baseline. */
+  background: var(--canonical-yellow);
+  color: var(--canonical-ink);
   text-align: center;
   transition: transform 0.72s ease, opacity 0.72s ease;
 }
@@ -1395,28 +2052,35 @@ body,
   opacity: 0.85;
 }
 
+/* TG010 S4 (ADGARC-FB-022 / DEC-007 §9): "Explorar Barcelona" — white
+   fill, black stroke, black type, against the yellow curtain. */
 .entry-curtain__cta {
   appearance: none;
   min-height: 44px;
-  border: 1px solid rgba(90, 42, 18, 0.35);
+  border: 2px solid var(--canonical-ink);
   border-radius: 999px;
   padding: 0.8rem 2rem;
-  background: canvas;
-  color: canvastext;
+  background: #ffffff;
+  color: var(--canonical-ink);
   font-family: var(--font-ui);
   font-size: 0.95rem;
-  font-weight: 600;
+  font-weight: 700;
   cursor: pointer;
 }
 
-.entry-curtain__cta:hover {
-  background: rgba(90, 42, 18, 0.08);
+.entry-curtain__cta:hover:not(:disabled) {
+  background: color-mix(in srgb, #ffffff 92%, var(--canonical-ink) 8%);
+}
+
+.entry-curtain__cta:disabled {
+  opacity: 0.55;
+  cursor: default;
 }
 
 .map-tether {
   position: absolute;
   inset: 0;
-  z-index: 5;
+  z-index: var(--z-map-tether);
   pointer-events: none;
   overflow: visible;
 }
@@ -1440,12 +2104,12 @@ body,
    pin+popup. Desktop-pointer only; never shown for touch. */
 .map-hover-label {
   position: absolute;
-  z-index: 6;
+  z-index: var(--z-map-chrome);
   transform: translate(14px, -50%);
   padding: 0.2rem 0.5rem;
   border-radius: 6px;
-  background: canvas;
-  color: canvastext;
+  background: var(--surface);
+  color: var(--ink);
   /* map.hoverLabel.border role — 25% of the ink token. */
   border: 1px solid color-mix(in srgb, var(--map-ink) 25%, transparent);
   box-shadow: 0 2px 8px rgba(40, 24, 12, 0.14);
@@ -1457,24 +2121,40 @@ body,
 /* TG006I Scope A: non-modal one-time gesture coachmark (ADGARC-FB-003
    extension). App only mounts this while no case is selected (see
    App.tsx), so it structurally can never cover the case-sheet's reading
-   surface at any breakpoint. z-index sits above ordinary map chrome but
-   well below the application-menu backdrop (55). Positioned as a bottom
-   banner so it never competes with the top-left menu trigger or the
-   bottom-left map-controls dock. */
+   surface at any breakpoint — and --z-coachmark now also keeps it below
+   --z-dossier in the declared layer contract, so that guarantee no longer
+   rests on the render gating alone. It stays well below --z-menu-modal. */
 .gesture-coachmark {
   position: absolute;
   left: 50%;
-  bottom: max(16px, env(safe-area-inset-bottom));
+  /* TG010 S4 (ADGARC-FB-016 / DEC-007 §10, objective E) — attribution
+     deconfliction. The coachmark used to sit at the very bottom edge,
+     spanning almost the full width, directly over MapLibre's own
+     bottom-left AttributionControl (and over the map-controls dock above
+     it). It is raised clear of that entire bottom-left chrome column
+     instead: `.map-controls` occupies roughly 40-84px from the bottom on a
+     coarse-pointer device, and the attribution row sits below that, so 96px
+     clears both.
+
+     The required OpenFreeMap / OpenMapTiles / OpenStreetMap attribution is
+     untouched — it is still MapLibre's own AttributionControl, in its
+     original bottom-left position, rendered by MapLibre from its own
+     sources (MapView.tsx). Nothing here re-creates or re-parses that
+     markup, and nothing removes it. Fuller credits were *added* alongside
+     it in Acerca de (ADGARC-FB-025), not substituted for it. */
+  bottom: calc(env(safe-area-inset-bottom) + 96px);
   transform: translateX(-50%);
-  z-index: 7;
+  z-index: var(--z-coachmark);
   display: flex;
   align-items: center;
   gap: 0.6rem;
-  max-width: calc(100vw - 32px);
+  /* Also capped so it can never reach back over the bottom-left column on
+     a wide phone/tablet. */
+  max-width: min(calc(100vw - 32px), 26rem);
   padding: 0.55rem 0.7rem 0.55rem 0.9rem;
   border-radius: 999px;
-  background: canvas;
-  color: canvastext;
+  background: var(--surface);
+  color: var(--ink);
   border: 1px solid rgba(90, 42, 18, 0.18);
   box-shadow: 0 8px 24px rgba(40, 24, 12, 0.2);
 }
@@ -1482,9 +2162,9 @@ body,
 .gesture-coachmark__text {
   margin: 0;
   font-size: 0.82rem;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
+  /* Was nowrap+ellipsis, which silently truncated the hint on narrow
+     phones — the copy now wraps to a second line instead. */
+  line-height: 1.3;
 }
 
 .gesture-coachmark__dismiss {
@@ -1512,14 +2192,23 @@ body,
 .map-controls__btn:active:not(:disabled),
 .app-menu-trigger:active,
 .case-sheet__close:active,
+.case-sheet__size-btn:active:not(:disabled),
 .case-sheet__traverse-btn:active:not(:disabled),
 .app-menu__nav-btn:active,
 .app-modal__close:active,
 .cases-index__row:active,
+.cases-carousel__card:active,
 .settings-actions__btn:active,
-.entry-curtain__cta:active,
 .lang-switch__btn:active:not(:disabled) {
   background: rgba(90, 42, 18, 0.16);
+}
+
+/* The Explore CTA is a white-fill/black-stroke component on the yellow
+   curtain (FB-022), so it takes its own pressed step rather than the
+   shared translucent-rust tint above, which would have washed the white
+   fill out against the yellow ground. */
+.entry-curtain__cta:active:not(:disabled) {
+  background: color-mix(in srgb, #ffffff 86%, var(--canonical-ink) 14%);
 }
 
 /* TG006G Scope F: touch targets trend toward ~44px on narrow/touch
@@ -1527,11 +2216,36 @@ body,
    (Scope A's desktop menu-frame work is unaffected — this only touches
    button/control hit areas). */
 @media (max-width: 480px), (pointer: coarse) {
-  .case-sheet__close,
   .app-modal__close,
   .app-menu-trigger {
     width: 44px;
     height: 44px;
+  }
+
+  /* TG010 S4 (ADGARC-FB-012): `.case-sheet__close` is deliberately no
+     longer forced to a 44x44 *square* here. On a phone it is the
+     "Volver al mapa" pill — icon plus visible label — and a fixed square
+     width clipped that label, which is part of what made the primary
+     return control read as obscured. It takes a touch-comfortable
+     `min-height` and keeps its content-driven width instead. */
+  .case-sheet__close {
+    min-height: 44px;
+  }
+
+  /* TG010 S4 (ADGARC-FB-017 / DEC-007 §11): the compact map controls and
+     the sheet's size stepper are real, comfortably tappable targets — and
+     the glyph inside grows with the box, so the home icon is optically
+     legible rather than a 16px mark adrift in a 44px target. */
+  .map-controls__btn,
+  .case-sheet__size-btn {
+    min-width: 44px;
+    min-height: 44px;
+  }
+
+  .map-controls__btn svg,
+  .case-sheet__size-btn svg {
+    width: 22px;
+    height: 22px;
   }
 
   .map-controls__pad {
@@ -1551,6 +2265,7 @@ body,
   .dev-tools__actions .settings-actions__btn,
   .lang-switch__btn,
   .gesture-coachmark__dismiss,
+  .cases-carousel__card,
   .entry-curtain__cta {
     min-height: 44px;
   }

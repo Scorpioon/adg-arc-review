@@ -10,6 +10,8 @@ import { useCaseParam } from "./hooks/useCaseParam";
 import { usePrefersReducedMotion } from "./hooks/usePrefersReducedMotion";
 import { useReadiness } from "./hooks/useReadiness";
 import { useEntryCurtain } from "./hooks/useEntryCurtain";
+import { usePassport } from "./hooks/usePassport";
+import { usePhysicalEntrySignal } from "./hooks/usePhysicalEntrySignal";
 import { useMapPaintOverrides } from "./hooks/useMapPaintOverrides";
 import { useMapLodOverrides } from "./hooks/useMapLodOverrides";
 import { useViewportClass } from "./hooks/useViewportClass";
@@ -70,6 +72,29 @@ export default function App() {
   // render (the hook only reads `hasValidCase` at mount), matching the
   // contract's "no valid selected case is resolved on entry."
   const entryCurtain = useEntryCurtain({ hasValidCase: !!activeCase });
+
+  // TG010 (DEC-006): passport-progress authority + transient physical-entry
+  // signal consumption. `stampFeedback` carries the slug it belongs to so it
+  // can be cleared once the user navigates away from the just-stamped case,
+  // without becoming a second case-selection authority.
+  const passport = usePassport();
+  const [stampFeedback, setStampFeedback] = useState<{
+    slug: string;
+    count: number;
+    total: number;
+  } | null>(null);
+  usePhysicalEntrySignal({
+    activeCase,
+    onValidPhysicalEntry: (slug) => {
+      const result = passport.stamp(slug);
+      if (result.stamped) setStampFeedback({ slug, count: result.count, total: result.total });
+    },
+  });
+  useEffect(() => {
+    if (stampFeedback && activeCase?.slug !== stampFeedback.slug) {
+      setStampFeedback(null);
+    }
+  }, [activeCase, stampFeedback]);
   // TG009 R1 corrective §1: the case selected immediately before the menu's
   // closed->open transition — captured by every path that performs that
   // transition (handleToggleMenu and the DevTools hotkey below), so manual
@@ -221,6 +246,7 @@ export default function App() {
           onNorthUp={() => mapViewRef.current?.setNorthUp()}
           onEditorialOrientation={() => mapViewRef.current?.setEditorialOrientation()}
           onOpenIntro={handleOpenIntro}
+          passport={passport}
           devTools={{
             roles: paintOverrides.roles,
             effective: paintOverrides.effective,
@@ -274,6 +300,11 @@ export default function App() {
           onAnchorChange={setPanelAnchor}
           cases={cases}
           onSelectCase={setCaseSlug}
+          stampFeedback={
+            stampFeedback && activeCase?.slug === stampFeedback.slug
+              ? { count: stampFeedback.count, total: stampFeedback.total }
+              : null
+          }
         />
       </main>
       {loadingVisible && (

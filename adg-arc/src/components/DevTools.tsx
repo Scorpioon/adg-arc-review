@@ -607,11 +607,11 @@ export default function DevTools({
         {selectedEntry && (
           <p className="dev-tools__section-note" style={{ marginTop: "0.6rem" }}>
             {t("devtools.physicalEntry.selectedUrlLabel")}{" "}
-            <span className="dev-tools__physical-url">{selectedEntry.url}</span>{" "}
+            <span className="dev-tools__physical-url">{selectedEntry.physicalEntryUrl}</span>{" "}
             <button
               type="button"
               className="settings-actions__btn"
-              onClick={() => handleCopyEntryUrl(selectedEntry.slug, selectedEntry.url)}
+              onClick={() => handleCopyEntryUrl(selectedEntry.slug, selectedEntry.physicalEntryUrl)}
             >
               {copiedEntrySlug === selectedEntry.slug
                 ? t("devtools.physicalEntry.copied")
@@ -624,11 +624,11 @@ export default function DevTools({
           {physicalEntry.manifest.entries.map((entry) => (
             <li className="dev-tools__physical-row" key={entry.slug}>
               <span className="dev-tools__physical-name">{entry.title}</span>
-              <span className="dev-tools__physical-url">{entry.url}</span>
+              <span className="dev-tools__physical-url">{entry.physicalEntryUrl}</span>
               <button
                 type="button"
                 className="settings-actions__btn"
-                onClick={() => handleCopyEntryUrl(entry.slug, entry.url)}
+                onClick={() => handleCopyEntryUrl(entry.slug, entry.physicalEntryUrl)}
               >
                 {copiedEntrySlug === entry.slug
                   ? t("devtools.physicalEntry.copied")

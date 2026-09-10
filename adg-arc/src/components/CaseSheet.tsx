@@ -3,12 +3,24 @@ import type { CaseRecord } from "../data/cases";
 import { usePrefersReducedMotion } from "../hooks/usePrefersReducedMotion";
 import { useT } from "../i18n/context";
 import DhubSpecimen from "./DhubSpecimen";
-import { CloseIcon } from "./icons";
+import { CloseIcon, PanDownIcon, PanUpIcon } from "./icons";
 
 export interface PanelAnchor {
   x: number;
   y: number;
 }
+
+// TG010 S4 (ADGARC-DEC-007 §1, ADGARC-FB-014): the compact/tablet-portrait
+// adaptive bottom-sheet states, ordered smallest → largest so the sizing
+// controls below can step through them by index. This is presentation
+// state only — it never participates in case selection, which stays
+// App-owned (see `onSelectCase`/`onClose`).
+const SHEET_STATES = ["peek", "reading", "expanded"] as const;
+type SheetState = (typeof SHEET_STATES)[number];
+
+// Opening state: enough of the dossier to read without any interaction,
+// with a deliberate sliver of map context still visible above it.
+const DEFAULT_SHEET_STATE: SheetState = "reading";
 
 interface CaseSheetProps {
   activeCase: CaseRecord | undefined;
@@ -20,6 +32,11 @@ interface CaseSheetProps {
   // selected-case state.
   cases: CaseRecord[];
   onSelectCase: (slug: string) => void;
+  // TG010 (DEC-006): set only while the just-stamped physical case is the
+  // one currently open — App clears it once `activeCase` changes away. A
+  // single `role="status"` text line is the entire feedback mechanism; no
+  // confetti/points/sound/timers.
+  stampFeedback: { count: number; total: number } | null;
 }
 
 const ENTER_DELAY_MS = 120;
@@ -39,12 +56,24 @@ export default function CaseSheet({
   onAnchorChange,
   cases,
   onSelectCase,
+  stampFeedback,
 }: CaseSheetProps) {
   const [entered, setEntered] = useState(false);
+  // TG010 S4: adaptive-sheet size state. Desktop and tablet-landscape
+  // ignore it entirely — global.css only reads `data-sheet-state` inside
+  // the compact and tablet-portrait media queries, so the desktop floating
+  // dossier's geometry is materially unchanged (DEC-007 §6).
+  const [sheetState, setSheetState] = useState<SheetState>(DEFAULT_SHEET_STATE);
   const reducedMotion = usePrefersReducedMotion();
   const t = useT();
   const panelRef = useRef<HTMLElement | null>(null);
   const headerRef = useRef<HTMLElement | null>(null);
+
+  // Every newly opened case starts at the same reading state — a size the
+  // user chose for one case is not silently carried into the next.
+  useEffect(() => {
+    setSheetState(DEFAULT_SHEET_STATE);
+  }, [activeCase?.slug]);
 
   useEffect(() => {
     if (!activeCase) {
@@ -103,26 +132,72 @@ export default function CaseSheet({
   const nextCase =
     currentIndex >= 0 && currentIndex < cases.length - 1 ? cases[currentIndex + 1] : null;
 
+  // DEC-007 §2: drag is deliberately not implemented at all this pass, so
+  // these explicit buttons are the whole expand/collapse mechanism — there
+  // is no gesture-only path a real thumb can fail to discover, and no new
+  // gesture dependency. Dismiss stays the separate "Volver al mapa" control
+  // beside them, never folded into this stepper.
+  const stateIndex = SHEET_STATES.indexOf(sheetState);
+  const canExpand = stateIndex < SHEET_STATES.length - 1;
+  const canCollapse = stateIndex > 0;
+
   return (
     <section
       ref={panelRef}
       className={`case-sheet${entered ? " case-sheet--visible" : ""}`}
+      data-sheet-state={sheetState}
       role="dialog"
       aria-modal="false"
       aria-label={identity.name}
     >
       <header ref={headerRef} className="case-sheet__header">
         <h2>{identity.name}</h2>
-        <button
-          type="button"
-          className="case-sheet__close"
-          onClick={onClose}
-          aria-label={t("caseSheet.returnToMap")}
-        >
-          <CloseIcon />
-          <span className="case-sheet__close-label">{t("caseSheet.returnToMap")}</span>
-        </button>
+        {/* FB-012: the title above and both controls in this group stay in
+            the sheet's own non-scrolling header at every state, so neither
+            can be scrolled or clipped out of reach on a real phone. */}
+        <div className="case-sheet__header-controls">
+          <div
+            className="case-sheet__sizing"
+            role="group"
+            aria-label={t("caseSheet.sizingLabel")}
+          >
+            <button
+              type="button"
+              className="case-sheet__size-btn"
+              onClick={() => setSheetState(SHEET_STATES[stateIndex + 1])}
+              disabled={!canExpand}
+              aria-label={t("caseSheet.expand")}
+              title={t("caseSheet.expand")}
+            >
+              <PanUpIcon />
+            </button>
+            <button
+              type="button"
+              className="case-sheet__size-btn"
+              onClick={() => setSheetState(SHEET_STATES[stateIndex - 1])}
+              disabled={!canCollapse}
+              aria-label={t("caseSheet.collapse")}
+              title={t("caseSheet.collapse")}
+            >
+              <PanDownIcon />
+            </button>
+          </div>
+          <button
+            type="button"
+            className="case-sheet__close"
+            onClick={onClose}
+            aria-label={t("caseSheet.returnToMap")}
+          >
+            <CloseIcon />
+            <span className="case-sheet__close-label">{t("caseSheet.returnToMap")}</span>
+          </button>
+        </div>
       </header>
+      {stampFeedback && (
+        <p className="case-sheet__stamp-feedback" role="status">
+          {t("passport.stampFeedback", { count: stampFeedback.count, total: stampFeedback.total })}
+        </p>
+      )}
       {currentIndex >= 0 && (
         <nav className="case-sheet__traverse" aria-label={t("caseSheet.navLabel")}>
           <button
