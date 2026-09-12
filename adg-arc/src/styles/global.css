@@ -71,11 +71,26 @@
   --font-ui: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue",
     Arial, sans-serif;
   --font-editorial: "Yrsa", Georgia, "Times New Roman", serif;
-  /* TG006G Scope E — single focus-visible accent, reused by the global rule
-     below; was previously duplicated as a literal on .case-sheet__close
-     only. Same value as the existing rust/accent literal already used for
-     .dhub-specimen__plane. */
-  --focus-ring: #c65a24;
+  /* TG010 S5A (ADGARC-FB-028 / DEC-008 §6.1) — the rust focus halo is
+     retired. The TG006G-era `--focus-ring: #c65a24` was doing two unrelated
+     jobs at once: it drove the global :focus-visible outline *and* it was
+     borrowed as an editorial highlight/accent in the dossier and the
+     passport pane. Repointing that single token at the approved focus
+     treatment would therefore have silently recoloured four editorial rules
+     that have nothing to do with focus, so the two concerns are split here
+     instead. Focus is now a two-ring pairing: a black inner ring that reads
+     on white and canonical-yellow grounds, and a white outer ring that
+     reads on dark/black grounds and against the live map. Each ring stays
+     legible exactly where the other disappears, which is what lets one
+     global rule serve every surface in the product. */
+  --focus-ring-inner: var(--canonical-ink);
+  --focus-ring-outer: #ffffff;
+  /* TG010 S5A (DEC-008 §6.2) — highlight/accent semantics move to the
+     canonical yellow family. This is the highlight *surface/mark* accent,
+     not a text ink: #ffed00 on a white reading surface is roughly 1.1:1, so
+     emphasis carried by type resolves through --ink plus the weight it
+     already had rather than being recoloured into illegibility. */
+  --accent-highlight: var(--canonical-yellow);
 }
 
 body {
@@ -451,29 +466,34 @@ body,
   padding: 0.5rem 1.35rem;
   font-size: 0.82rem;
   font-weight: 600;
-  color: var(--focus-ring);
+  /* TG010 S5A (DEC-008 §6.2): was the retired rust accent. The emphasis here
+     is carried by the 600 weight and by the line's own wording ("Sello
+     conseguido · X/N"), never by hue alone, so dropping to canonical ink
+     retires the rust without swapping in a yellow that would be unreadable
+     as type on this white surface. */
+  color: var(--ink);
   border-bottom: 1px solid var(--hairline);
 }
 
 /* TG006I Scope C (ADGARC-FB-009): "El diálogo" is the editorial
    architecture↔typography meeting point, not another metadata block — a
-   restrained emphasis (tint + the existing rust/focus accent already used
-   elsewhere in this file, not a new color) separates it visually from the
-   surrounding fact-sheet modules. */
+   restrained emphasis (tint + accent mark, not a new color) separates it
+   visually from the surrounding fact-sheet modules.
+
+   TG010 S5A (ADGARC-FB-028 / DEC-008 §6.2): that emphasis was the retired
+   rust family — a 0.06 rust wash plus a rust heading and rust mark. The
+   wash now mixes the canonical yellow highlight against the reading
+   surface, and the two rust overrides are simply gone: the heading falls
+   back to the module's normal ink, and the mark falls back to
+   `.case-sheet__module h3::before`, which already paints canonical yellow.
+   Deleting the overrides rather than repointing them is what keeps this a
+   semantic correction instead of a second parallel accent. */
 .case-sheet__module--dialogue {
   margin-top: 0.25rem;
   padding: 1rem 0.9rem;
   border-top: none;
   border-radius: 10px;
-  background: rgba(198, 90, 36, 0.06);
-}
-
-.case-sheet__module--dialogue h3 {
-  color: var(--focus-ring);
-}
-
-.case-sheet__module--dialogue h3::before {
-  background: var(--focus-ring);
+  background: color-mix(in srgb, var(--accent-highlight) 12%, var(--surface));
 }
 
 .case-sheet__facts {
@@ -588,11 +608,23 @@ body,
 }
 
 :focus-visible {
-  /* TG006G Scope E — one focus-visible accent everywhere (was a bare
-     `currentColor`-derived outline, plus one component-local duplicate of
-     this exact value on .case-sheet__close, now removed). */
-  outline: 2px solid var(--focus-ring);
-  outline-offset: 2px;
+  /* TG006G Scope E — one focus-visible treatment everywhere (was a bare
+     `currentColor`-derived outline, plus one component-local duplicate on
+     .case-sheet__close, removed then).
+
+     TG010 S5A (ADGARC-FB-028 / DEC-008 §6.1): the single rust ring is
+     replaced by the approved black-inner + white-outer pairing. The outline
+     is painted above the box-shadow, so with a zero offset the black
+     outline occupies 0→2px outward and the 4px white spread shows only in
+     the 2→4px band beyond it — inner black, outer white, from one rule and
+     without a wrapper element. The offset went 2px → 0 deliberately: at 2px
+     the gap exposed whatever sits behind the control (on map chrome, the
+     live map), which is the opposite of a ring that has to read on any
+     ground. Focus visibility is strengthened here, never removed — no rule
+     in this file sets `outline: none`. */
+  outline: 2px solid var(--focus-ring-inner);
+  outline-offset: 0;
+  box-shadow: 0 0 0 4px var(--focus-ring-outer);
 }
 
 /* TG006I Scope B (ADGARC-FB-008) + TG010 S4 (ADGARC-FB-014, DEC-007 §5):
@@ -928,6 +960,16 @@ body,
      trigger also sits directly on the live map with no opaque backing of
      its own, so its hover fill must stay opaque too. */
   background: color-mix(in srgb, var(--surface) 92%, rgb(90, 42, 18) 8%);
+}
+
+/* TG010 S5A (ADGARC-FB-028): these two are the only focusable controls in
+   the file that own a resting box-shadow, and the global :focus-visible
+   rule above sets box-shadow to draw the white outer ring — which would
+   otherwise drop their lift while focused. Restating both layers here keeps
+   the ring and the shadow, in that paint order. */
+.map-controls__btn:focus-visible,
+.app-menu-trigger:focus-visible {
+  box-shadow: 0 0 0 4px var(--focus-ring-outer), 0 2px 8px rgba(40, 24, 12, 0.1);
 }
 
 /* TG006E corrective pass §2: centered floating application-menu modal —
@@ -1579,8 +1621,13 @@ body,
 
 .passport-pane__status--visited {
   /* Not color-only: the text itself already differs
-     (Sello conseguido / Ruta completada vs. Por visitar). */
-  color: var(--focus-ring);
+     (Sello conseguido / Ruta completada vs. Por visitar).
+
+     TG010 S5A (DEC-008 §6.2): was the retired rust accent. Because the
+     distinction was never carried by hue, retiring it costs nothing — full
+     opacity and the 600 weight still separate a stamped stop from an
+     unvisited one against the muted .passport-pane__status base. */
+  color: var(--ink);
   opacity: 1;
   font-weight: 600;
 }
@@ -2188,9 +2235,17 @@ body,
    controls already had a rest state and a :hover background but no
    distinct pressed state — one alpha step darker than each control's own
    :hover, so the step reads consistently across the app without ever
-   reducing text/icon legibility (only the background tint changes). */
-.map-controls__btn:active:not(:disabled),
-.app-menu-trigger:active,
+   reducing text/icon legibility (only the background tint changes).
+
+   TG010 S5A (ADGARC-FB-027): .map-controls__btn and .app-menu-trigger have
+   been lifted out of this list — see the rule directly below. Every control
+   still listed here sits on an opaque panel (the dossier, the menu shell, a
+   modal), so a translucent pressed tint composites against that panel and
+   is correct. The two map-mounted controls do not: this fill *replaces*
+   their opaque rest background rather than layering over it, so pressing
+   them revealed the live map through the control. That is the same class of
+   defect TG006I fixed for :hover on these exact two selectors; :active was
+   missed then. */
 .case-sheet__close:active,
 .case-sheet__size-btn:active:not(:disabled),
 .case-sheet__traverse-btn:active:not(:disabled),
@@ -2201,6 +2256,20 @@ body,
 .settings-actions__btn:active,
 .lang-switch__btn:active:not(:disabled) {
   background: rgba(90, 42, 18, 0.16);
+}
+
+/* TG010 S5A (ADGARC-FB-027): opaque pressed state for the map-mounted
+   chrome. Both controls sit directly on the live map canvas with no opaque
+   backing of their own, so every interaction state has to be a *fill*, not
+   a tint: rest and :hover already are, and this restores the same guarantee
+   for the pressed state. Mixed against the opaque --surface base, one alpha
+   step past the 92%/8% hover mix, so the press still reads as one step
+   darker than hover and release returns cleanly to the hover or rest fill
+   with nothing to unwind. Same color-mix pattern and same --map-ink token
+   the hover rules above already use — no new decorative color. */
+.map-controls__btn:active:not(:disabled),
+.app-menu-trigger:active {
+  background: color-mix(in srgb, var(--surface) 84%, var(--map-ink) 16%);
 }
 
 /* The Explore CTA is a white-fill/black-stroke component on the yellow
