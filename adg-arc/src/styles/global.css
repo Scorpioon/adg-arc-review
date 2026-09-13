@@ -78,13 +78,15 @@
      passport pane. Repointing that single token at the approved focus
      treatment would therefore have silently recoloured four editorial rules
      that have nothing to do with focus, so the two concerns are split here
-     instead. Focus is now a two-ring pairing: a black inner ring that reads
-     on white and canonical-yellow grounds, and a white outer ring that
-     reads on dark/black grounds and against the live map. Each ring stays
-     legible exactly where the other disappears, which is what lets one
-     global rule serve every surface in the product. */
-  --focus-ring-inner: var(--canonical-ink);
-  --focus-ring-outer: #ffffff;
+     instead.
+
+     TG010 S5A R2 (ADGARC-FB-038 / DEC-009): live visual review rejected the
+     S5A black-inner + white-outer pairing as too heavy a halo. There is only
+     one ring now, so a dedicated token buys nothing a plain reference to
+     --canonical-ink doesn't already give — the former --focus-ring-inner/
+     --focus-ring-outer pair is removed rather than left as a dead
+     indirection. See the :focus-visible rule below for the single-ring
+     treatment. */
   /* TG010 S5A (DEC-008 §6.2) — highlight/accent semantics move to the
      canonical yellow family. This is the highlight *surface/mark* accent,
      not a text ink: #ffed00 on a white reading surface is roughly 1.1:1, so
@@ -612,19 +614,18 @@ body,
      `currentColor`-derived outline, plus one component-local duplicate on
      .case-sheet__close, removed then).
 
-     TG010 S5A (ADGARC-FB-028 / DEC-008 §6.1): the single rust ring is
-     replaced by the approved black-inner + white-outer pairing. The outline
-     is painted above the box-shadow, so with a zero offset the black
-     outline occupies 0→2px outward and the 4px white spread shows only in
-     the 2→4px band beyond it — inner black, outer white, from one rule and
-     without a wrapper element. The offset went 2px → 0 deliberately: at 2px
-     the gap exposed whatever sits behind the control (on map chrome, the
-     live map), which is the opposite of a ring that has to read on any
-     ground. Focus visibility is strengthened here, never removed — no rule
-     in this file sets `outline: none`. */
-  outline: 2px solid var(--focus-ring-inner);
-  outline-offset: 0;
-  box-shadow: 0 0 0 4px var(--focus-ring-outer);
+     TG010 S5A (ADGARC-FB-028 / DEC-008 §6.1) introduced a black-inner +
+     white-outer pairing; live visual review then rejected that pairing as
+     visually overweighted (ADGARC-FB-038), corrected here under
+     ADGARC-DEC-009. The rule is back to one ring only: a solid canonical-ink
+     outline, offset 2px off the control edge, and no box-shadow of its own —
+     so a component that has an ordinary resting box-shadow (e.g.
+     .map-controls__btn, .app-menu-trigger) keeps exactly that shadow while
+     focused, with nothing here adding a second halo on top of it. Focus
+     visibility is strengthened here, never removed — no rule in this file
+     sets `outline: none`. */
+  outline: 2px solid var(--canonical-ink);
+  outline-offset: 2px;
 }
 
 /* TG006I Scope B (ADGARC-FB-008) + TG010 S4 (ADGARC-FB-014, DEC-007 §5):
@@ -962,15 +963,12 @@ body,
   background: color-mix(in srgb, var(--surface) 92%, rgb(90, 42, 18) 8%);
 }
 
-/* TG010 S5A (ADGARC-FB-028): these two are the only focusable controls in
-   the file that own a resting box-shadow, and the global :focus-visible
-   rule above sets box-shadow to draw the white outer ring — which would
-   otherwise drop their lift while focused. Restating both layers here keeps
-   the ring and the shadow, in that paint order. */
-.map-controls__btn:focus-visible,
-.app-menu-trigger:focus-visible {
-  box-shadow: 0 0 0 4px var(--focus-ring-outer), 0 2px 8px rgba(40, 24, 12, 0.1);
-}
+/* TG010 S5A R2 (ADGARC-FB-038 / DEC-009): the global :focus-visible rule no
+   longer touches box-shadow at all, so .map-controls__btn and
+   .app-menu-trigger simply keep their own ordinary resting shadow
+   (.map-controls__btn / .app-menu-trigger box-shadow rules above) while
+   focused — this restatement existed only to pair that shadow with the now-
+   retired white outer ring and is removed rather than left as dead CSS. */
 
 /* TG006E corrective pass §2: centered floating application-menu modal —
    replaces the TG006E-initial AppSidebar left-edge overlay. Dims *and*
