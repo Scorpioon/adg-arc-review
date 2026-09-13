@@ -1293,116 +1293,11 @@ body,
   opacity: 0.7;
 }
 
-/* TG010 S4 (ADGARC-FB-024 / DEC-007 §15): Casos as a horizontal
-   scroll-snap carousel of editorial cards — media above, concise text
-   below, contained rounded card. Built from the existing tokens and the
-   plain overflow/scroll-snap primitives the platform already provides; no
-   carousel library, no gesture framework, no new dependency.
-
-   Accessibility: each card is a real <button> (see AppMenuModal.tsx), so
-   Tab reaches every case in order, Enter/Space activate it, and the
-   browser's own focus handling scrolls the focused card into view — the
-   keyboard path needs no bespoke key handling. `scroll-padding-inline`
-   keeps a focused card off the container's clipped edge. */
-.cases-carousel {
-  margin: 0;
-  padding: 0.25rem 0 0.75rem;
-  list-style: none;
-  display: flex;
-  gap: 0.75rem;
-  overflow-x: auto;
-  overscroll-behavior-x: contain;
-  scroll-snap-type: x mandatory;
-  scroll-padding-inline: 0.25rem;
-  scrollbar-width: thin;
-  scrollbar-color: rgba(90, 42, 18, 0.35) transparent;
-}
-
-.cases-carousel__item {
-  flex: none;
-  scroll-snap-align: start;
-}
-
-.cases-carousel__card {
-  appearance: none;
-  display: flex;
-  flex-direction: column;
-  width: 15rem;
-  height: 100%;
-  padding: 0;
-  overflow: hidden;
-  border: 1px solid var(--hairline);
-  border-radius: 14px;
-  background: var(--surface);
-  color: inherit;
-  font: inherit;
-  text-align: left;
-  cursor: pointer;
-}
-
-.cases-carousel__card:hover {
-  border-color: rgba(90, 42, 18, 0.32);
-  box-shadow: 0 6px 18px rgba(40, 24, 12, 0.12);
-}
-
-.cases-carousel__media {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  aspect-ratio: 16 / 10;
-  padding: 0.6rem;
-  background: var(--surface-sunken);
-  border-bottom: 1px solid var(--hairline);
-}
-
-.cases-carousel__img {
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-}
-
-/* No case currently carries verified media (every `heroMedia` in
-   data/cases.ts is null), so this honest placeholder is the common path
-   today — never a fabricated stand-in image. */
-.cases-carousel__media-empty {
-  font-size: 0.74rem;
-  font-style: italic;
-  text-align: center;
-  color: var(--ink-muted);
-}
-
-.cases-carousel__body {
-  display: flex;
-  flex-direction: column;
-  gap: 0.15rem;
-  padding: 0.7rem 0.85rem 0.9rem;
-}
-
-.cases-carousel__ordinal {
-  font-size: 0.7rem;
-  font-weight: 700;
-  letter-spacing: 0.08em;
-  font-variant-numeric: tabular-nums;
-  color: var(--ink-muted);
-}
-
-.cases-carousel__name {
-  font-family: var(--font-editorial);
-  font-size: 1rem;
-  font-weight: 600;
-  line-height: 1.2;
-}
-
-.cases-carousel__meta {
-  font-size: 0.76rem;
-  line-height: 1.35;
-  color: var(--ink-muted);
-}
-
 /* TG010 S4 (ADGARC-FB-023 / DEC-007 §13-14): Pasaporte progress rail —
    one horizontal track of ordinal cells with a visited tick, rendered in
-   the Pasaporte pane and, in its compact variant, as the menu's persistent
-   journey summary (see PassportPane.tsx's PassportRail).
+   the Pasaporte pane and, since S5B, in its overlay variant as the map's
+   top-center chrome (see PassportMapOverlay.tsx / PassportPane.tsx's
+   PassportRail).
 
    The cells are non-interactive by design: the ordinals are display
    identifiers for each stop, never a route order, a required sequence or a
@@ -1414,11 +1309,33 @@ body,
   gap: 0.4rem;
 }
 
-.passport-rail--summary {
-  flex: none;
-  padding: 0.65rem 1.1rem 0.7rem;
-  background: var(--surface-raised);
-  border-bottom: 1px solid var(--hairline);
+/* TG010 S5B (ADGARC-FB-029 / DEC-008 §3.2): top-center map overlay chrome —
+   the same floating-card treatment as the other map-mounted controls
+   (.map-controls__btn / .app-menu-trigger: opaque surface, hairline border,
+   soft shadow), positioned/self-contained here since it no longer lives
+   inside the menu header's own surface. Same --z-map-chrome tier as those
+   controls, so it already sits below the dossier/menu-modal/curtain/boot
+   layers per the declared stacking contract — no new z-index token needed.
+   The ordinal-note line is suppressed in this compact variant only (kept in
+   the Pasaporte pane's own "pane" variant, where there is room to read it)
+   so the overlay stays compact enough not to become a second header. */
+.passport-rail--overlay {
+  position: absolute;
+  top: max(12px, env(safe-area-inset-top));
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: var(--z-map-chrome);
+  width: max-content;
+  max-width: min(calc(100vw - 32px), 26rem);
+  padding: 0.5rem 0.85rem 0.55rem;
+  background: var(--surface);
+  border: 1px solid rgba(90, 42, 18, 0.18);
+  border-radius: 12px;
+  box-shadow: 0 8px 24px rgba(40, 24, 12, 0.16);
+}
+
+.passport-rail--overlay .passport-rail__note {
+  display: none;
 }
 
 .passport-rail--pane {
@@ -1523,64 +1440,109 @@ body,
   border: 0;
 }
 
-/* TG006D: Cases index — functional list, wireframe-simple per handoff §9.
-   Still the Pasaporte pane's per-stop navigation list; the Casos
-   destination itself moved to .cases-carousel above in TG010 S4. */
-.cases-index {
-  margin: 0;
-  padding: 0;
+/* TG010 S5B (ADGARC-FB-030 / DEC-008 §4): the Pasaporte destination's own
+   horizontal 9:16 editorial card carousel — replaces the former plain
+   .cases-index row list now that Casos no longer exists as a separate
+   destination. Built from the same overflow/scroll-snap primitives as the
+   removed .cases-carousel (no carousel library, no gesture dependency);
+   only the card's own visual class differs, per DEC-008 §5.2's content-card
+   contract: white fill, thin black stroke, square corners — explicitly
+   exempt from the window/panel yellow title-bar treatment.
+
+   The 9:16 ratio is on the full card (media + info together), not just the
+   media region — `aspect-ratio` on the button itself, `flex-direction:
+   column` inside it. A fixed card width (not a viewport-relative one) keeps
+   the same visual weight at every breakpoint and naturally leaves a sliver
+   of the next card visible on mobile. */
+.passport-carousel {
+  margin: 0 0 1rem;
+  padding: 0.25rem 0 0.75rem;
   list-style: none;
   display: flex;
-  flex-direction: column;
-  gap: 2px;
+  gap: 0.75rem;
+  overflow-x: auto;
+  overscroll-behavior-x: contain;
+  scroll-snap-type: x mandatory;
+  scroll-padding-inline: 0.25rem;
+  scrollbar-width: thin;
+  scrollbar-color: rgba(90, 42, 18, 0.35) transparent;
 }
 
-.cases-index__row {
+.passport-carousel__item {
+  flex: none;
+  scroll-snap-align: start;
+}
+
+.passport-carousel__card {
   appearance: none;
-  width: 100%;
   display: flex;
-  align-items: baseline;
-  gap: 0.75rem;
-  border: none;
-  border-radius: 8px;
-  padding: 0.55rem 0.6rem;
-  background: transparent;
+  flex-direction: column;
+  width: 11.5rem;
+  aspect-ratio: 9 / 16;
+  padding: 0;
+  overflow: hidden;
+  border: 1px solid var(--canonical-ink);
+  border-radius: 0;
+  background: #ffffff;
   color: inherit;
-  text-align: left;
   font: inherit;
+  text-align: left;
   cursor: pointer;
 }
 
-.cases-index__row:hover {
-  background: rgba(90, 42, 18, 0.08);
+.passport-carousel__card:hover {
+  box-shadow: 0 6px 18px rgba(40, 24, 12, 0.12);
 }
 
-.cases-index__ordinal {
+.passport-carousel__media {
+  flex: 1 1 auto;
+  min-height: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--surface-sunken);
+  border-bottom: 1px solid var(--hairline);
+  overflow: hidden;
+}
+
+.passport-carousel__img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+/* No case currently carries verified media (every `heroMedia` in
+   data/cases.ts is null), so this honest placeholder is the common path
+   today — never a fabricated stand-in image. */
+.passport-carousel__media-empty {
+  padding: 0.5rem;
+  font-size: 0.72rem;
+  font-style: italic;
+  text-align: center;
+  color: var(--ink-muted);
+}
+
+.passport-carousel__body {
   flex: none;
-  width: 1.6rem;
-  font-size: 0.78rem;
-  font-variant-numeric: tabular-nums;
-  opacity: 0.55;
-}
-
-.cases-index__identity {
   display: flex;
   flex-direction: column;
-  gap: 0.1rem;
-  min-width: 0;
+  gap: 0.15rem;
+  padding: 0.55rem 0.6rem 0.65rem;
 }
 
-.cases-index__name {
-  /* TG006G Scope C — case title in list form; the meta line beneath it
-     (year/architect/typeface) stays --font-ui as metadata. */
+.passport-carousel__ordinal {
+  font-size: 0.68rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  font-variant-numeric: tabular-nums;
+  color: var(--ink-muted);
+}
+
+.passport-carousel__name {
   font-family: var(--font-editorial);
   font-size: 0.92rem;
   font-weight: 600;
-}
-
-.cases-index__meta {
-  font-size: 0.78rem;
-  opacity: 0.65;
+  line-height: 1.2;
 }
 
 /* TG006D: Settings — real one-off map actions only, no preference store. */
@@ -1606,12 +1568,13 @@ body,
   background: rgba(90, 42, 18, 0.08);
 }
 
-/* TG010 (DEC-006): Pasaporte pane — reuses .cases-index / .settings-actions
-   rather than a parallel visual language; only the status text and the
-   reset-confirm block below are new. TG010 S4: the pane's "X de N paradas"
-   line is now the progress rail's own head (.passport-rail__count), so the
-   former standalone `.passport-pane__progress` rule was removed rather
-   than left behind as a dead selector. */
+/* TG010 (DEC-006): Pasaporte pane status text — non-color-only stamped/
+   pending state, shared by .passport-carousel's per-card status line above.
+   TG010 S4: the pane's "X de N paradas" line is now the progress rail's own
+   head (.passport-rail__count), so the former standalone
+   `.passport-pane__progress` rule was removed rather than left behind as a
+   dead selector. TG010 S5B: the former .cases-index row list this comment
+   used to describe is gone — see .passport-carousel above. */
 .passport-pane__status {
   font-size: 0.78rem;
   opacity: 0.65;
@@ -1635,10 +1598,6 @@ body,
   flex-direction: column;
   align-items: flex-start;
   gap: 0.5rem;
-}
-
-.passport-pane .cases-index {
-  margin-bottom: 0.75rem;
 }
 
 /* TG006I Scope E (ADGARC-FB-010): CAT / ES / ENG language selector. Only
@@ -2249,8 +2208,7 @@ body,
 .case-sheet__traverse-btn:active:not(:disabled),
 .app-menu__nav-btn:active,
 .app-modal__close:active,
-.cases-index__row:active,
-.cases-carousel__card:active,
+.passport-carousel__card:active,
 .settings-actions__btn:active,
 .lang-switch__btn:active:not(:disabled) {
   background: rgba(90, 42, 18, 0.16);
@@ -2332,7 +2290,6 @@ body,
   .dev-tools__actions .settings-actions__btn,
   .lang-switch__btn,
   .gesture-coachmark__dismiss,
-  .cases-carousel__card,
   .entry-curtain__cta {
     min-height: 44px;
   }

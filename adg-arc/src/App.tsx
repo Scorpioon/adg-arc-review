@@ -2,6 +2,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import MapView, { type CameraState, type MapViewHandle } from "./components/MapView";
 import CaseSheet, { type PanelAnchor } from "./components/CaseSheet";
 import AppMenuModal, { type MenuDestination } from "./components/AppMenuModal";
+import PassportMapOverlay from "./components/PassportMapOverlay";
 import LoadingScreen from "./components/LoadingScreen";
 import GestureCoachmark from "./components/GestureCoachmark";
 import EntryCurtain from "./components/EntryCurtain";
@@ -288,6 +289,13 @@ export default function App() {
           onCameraChange={devToolsPaneVisible ? handleCameraChange : undefined}
           onUserInteraction={dismissCoachmark}
         />
+        {/* TG010 S5B (ADGARC-FB-029 / DEC-008 §3.2): passport progress
+            overlay — top-center map chrome, canonical across every
+            breakpoint. Always mounted (like map-controls/the menu trigger),
+            not conditioned on case selection: it sits at --z-map-chrome, so
+            it is already covered by the menu backdrop/entry curtain/loading
+            screen the same way those other chrome layers are. */}
+        <PassportMapOverlay passport={passport} cases={cases} />
         {/* TG006I Scope A: gesture coachmark — touch-first device classes
             only, and only while no case is open, so a direct ?case=
             arrival's reading surface is never covered (ADGARC-FB-008). */}

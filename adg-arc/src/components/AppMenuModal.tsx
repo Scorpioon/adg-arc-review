@@ -6,13 +6,12 @@ import type { PassportState } from "../hooks/usePassport";
 import { useLocale } from "../i18n/context";
 import type { TranslationKey } from "../i18n/es";
 import DevTools, { type DevToolsProps } from "./DevTools";
-import PassportPane, { PassportRail } from "./PassportPane";
+import PassportPane from "./PassportPane";
 import { CloseIcon, MenuIcon } from "./icons";
 
-export type MenuDestination = "cases" | "info" | "about" | "settings" | "devtools" | "passport";
+export type MenuDestination = "info" | "about" | "settings" | "devtools" | "passport";
 
 const NAV_ITEMS: Array<{ id: MenuDestination; labelKey: TranslationKey }> = [
-  { id: "cases", labelKey: "nav.cases" },
   { id: "passport", labelKey: "nav.passport" },
   { id: "info", labelKey: "nav.info" },
   { id: "about", labelKey: "nav.about" },
@@ -178,13 +177,6 @@ function AppMenuDialog({
           </button>
         </header>
 
-        {/* TG010 S4 (ADGARC-FB-023 / DEC-007 §13): the compact journey
-            summary — the same PassportRail the Pasaporte pane renders, so
-            progress is legible from the menu itself without opening that
-            destination. Sits outside the scrolling body so it stays a
-            persistent summary rather than one more pane's content. */}
-        <PassportRail passport={passport} cases={cases} variant="summary" />
-
         <div className="app-menu__body">
           <nav className="app-menu__nav" aria-label={t("menu.navLabel")}>
             {visibleNavItems.map((item) => (
@@ -209,54 +201,6 @@ function AppMenuDialog({
           <div className="app-menu__pane" aria-live="polite">
             {activeNavItem && (
               <h2 className="app-menu__pane-title">{t(activeNavItem.labelKey)}</h2>
-            )}
-
-            {/* TG010 S4 (ADGARC-FB-024 / DEC-007 §15): horizontal scroll-snap
-                editorial cards — media above, concise text below — replacing
-                the plain row list. Every card stays a real <button> going
-                through the same App-owned `onSelectCase`, so Tab/Enter work
-                and each focused card is scrolled into view by the browser's
-                own focus handling; no custom key handling or carousel
-                dependency is introduced. Media is `heroMedia` when a case
-                actually has verified media and an explicit "pending
-                verification" placeholder otherwise — as of TG010 every case
-                is the latter (see data/cases.ts). Nothing is fabricated. */}
-            {active === "cases" && (
-              <ul className="cases-carousel" aria-label={t("cases.carouselLabel")}>
-                {cases.map((c, i) => (
-                  <li key={c.slug} className="cases-carousel__item">
-                    <button
-                      type="button"
-                      className="cases-carousel__card"
-                      onClick={() => onSelectCase(c.slug)}
-                    >
-                      <span className="cases-carousel__media">
-                        {c.heroMedia ? (
-                          <img
-                            className="cases-carousel__img"
-                            src={c.heroMedia.src}
-                            alt={c.heroMedia.alt}
-                          />
-                        ) : (
-                          <span className="cases-carousel__media-empty">
-                            {t("cases.mediaPending")}
-                          </span>
-                        )}
-                      </span>
-                      <span className="cases-carousel__body">
-                        <span className="cases-carousel__ordinal">
-                          {String(i + 1).padStart(2, "0")}
-                        </span>
-                        <span className="cases-carousel__name">{c.identity.name}</span>
-                        <span className="cases-carousel__meta">
-                          {c.identity.year} · {c.identity.architect}
-                        </span>
-                        <span className="cases-carousel__meta">{c.typography.primaryFamily}</span>
-                      </span>
-                    </button>
-                  </li>
-                ))}
-              </ul>
             )}
 
             {active === "info" && (

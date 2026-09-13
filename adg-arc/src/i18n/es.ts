@@ -122,6 +122,9 @@ export const es = {
   "passport.railOrdinalNote":
     "Los números identifican cada parada; no indican un orden de recorrido.",
   "passport.railCellStatus": "%{name}: %{status}",
+  // TG010 S5B (ADGARC-FB-030 / DEC-008 §4): the Pasaporte destination's own
+  // horizontal 9:16 stop-card carousel, replacing the former plain row list.
+  "passport.carouselLabel": "Paradas del pasaporte",
 
   "mapControls.groupLabel": "Navegación del mapa",
   "mapControls.panUp": "Desplazar arriba",
