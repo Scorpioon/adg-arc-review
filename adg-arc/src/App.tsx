@@ -97,34 +97,29 @@ export default function App() {
     }
   }, [activeCase, stampFeedback]);
   // TG009 R1 corrective §1: the case selected immediately before the menu's
-  // closed->open transition — captured by every path that performs that
-  // transition (handleToggleMenu and the DevTools hotkey below), so manual
-  // Introducción re-entry can restore exactly that state. Ordinary menu use
-  // (any other nav item, or closing the menu) never reads this ref — it
-  // stays a write-only shadow of "what was selected before the menu opened,"
-  // never a second case-selection authority.
+  // closed->open transition. TG010 Final Experience P1-R1
+  // (ADGARC-DEC-010/Companion C3): the manual "Introducción" menu re-entry
+  // shortcut that used to read this ref is retired (no root-menu row for it
+  // in the canonical mockup) — the ref is now a write-only shadow of "what
+  // was selected before the menu opened" with no current reader, kept only
+  // because removing it is outside this corrective's authorized scope (see
+  // the paired report's out-of-scope findings).
   const preMenuCaseSlugRef = useRef<string | null>(null);
-  const handleOpenIntro = () => {
-    // Reverses the clear that handleToggleMenu/the hotkey applied when this
-    // menu session opened, through the same App-owned setCaseSlug the map
-    // and Cases pane use — no second state authority, no camera touch. The
-    // curtain (z-index 90) fully covers the CaseSheet (z-index 10) this
-    // restores, so there is no visible flash before it opens over that
-    // state.
-    setCaseSlug(preMenuCaseSlugRef.current);
-    setMenuOpen(false);
-    entryCurtain.reopen();
-  };
 
   // TG006E corrective pass §3 — overlay exclusivity rule: opening the
   // application menu always clears the canonical case selection first, so
   // an open CaseSheet closes through the same App-owned setter the map and
   // Cases pane use — never a second, duplicate "close the sheet" path.
   // Closing/toggling the menu closed does not touch case selection.
+  // TG010 Final Experience P1-R1 (Companion C2): an ordinary open must
+  // explicitly request the canonical root menu, never infer it — so this is
+  // also where `menuActive` resets to `null`, the same way the DevTools "D"
+  // hotkey below explicitly requests `"devtools"`.
   const handleToggleMenu = () => {
     if (!menuOpen) {
       preMenuCaseSlugRef.current = caseSlug;
       setCaseSlug(null);
+      setMenuActive(null);
     }
     setMenuOpen((open) => !open);
   };
@@ -213,9 +208,11 @@ export default function App() {
       // Same overlay-exclusivity rule as handleToggleMenu: only clear the
       // case selection when actually transitioning the menu from closed to
       // open, never when merely switching the already-open menu's pane.
-      // Also mirrors handleToggleMenu's TG009 R1 capture of the pre-menu
-      // case, so Introducción reached via this hotkey path can still
-      // restore it.
+      // TG010 Final Experience P1-R1 (Companion C2): this explicitly sets
+      // `menuActive("devtools")` unconditionally below, every time this path
+      // runs — including reopening right after Dev Settings was the last
+      // active pane — so DevTools reachability never depends on inferring
+      // intent from whatever `menuActive` happened to already be.
       if (!menuOpen) {
         preMenuCaseSlugRef.current = caseSlug;
         setCaseSlug(null);
@@ -246,7 +243,6 @@ export default function App() {
           onResetMap={() => mapViewRef.current?.reset()}
           onNorthUp={() => mapViewRef.current?.setNorthUp()}
           onEditorialOrientation={() => mapViewRef.current?.setEditorialOrientation()}
-          onOpenIntro={handleOpenIntro}
           passport={passport}
           devTools={{
             roles: paintOverrides.roles,

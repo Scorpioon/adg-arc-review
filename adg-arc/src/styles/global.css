@@ -329,38 +329,33 @@ body,
    Chromium/WebKit. Does not touch the main document scrollbar. */
 .case-sheet__body,
 .app-modal__body,
-.app-menu__nav,
-.app-menu__pane {
+.editorial-shell__body {
   scrollbar-width: thin;
   scrollbar-color: rgba(90, 42, 18, 0.35) transparent;
 }
 
 .case-sheet__body::-webkit-scrollbar,
 .app-modal__body::-webkit-scrollbar,
-.app-menu__nav::-webkit-scrollbar,
-.app-menu__pane::-webkit-scrollbar {
+.editorial-shell__body::-webkit-scrollbar {
   width: 8px;
 }
 
 .case-sheet__body::-webkit-scrollbar-track,
 .app-modal__body::-webkit-scrollbar-track,
-.app-menu__nav::-webkit-scrollbar-track,
-.app-menu__pane::-webkit-scrollbar-track {
+.editorial-shell__body::-webkit-scrollbar-track {
   background: transparent;
 }
 
 .case-sheet__body::-webkit-scrollbar-thumb,
 .app-modal__body::-webkit-scrollbar-thumb,
-.app-menu__nav::-webkit-scrollbar-thumb,
-.app-menu__pane::-webkit-scrollbar-thumb {
+.editorial-shell__body::-webkit-scrollbar-thumb {
   background: rgba(90, 42, 18, 0.3);
   border-radius: 999px;
 }
 
 .case-sheet__body::-webkit-scrollbar-thumb:hover,
 .app-modal__body::-webkit-scrollbar-thumb:hover,
-.app-menu__nav::-webkit-scrollbar-thumb:hover,
-.app-menu__pane::-webkit-scrollbar-thumb:hover {
+.editorial-shell__body::-webkit-scrollbar-thumb:hover {
   background: rgba(90, 42, 18, 0.45);
 }
 
@@ -1012,129 +1007,207 @@ body,
   overflow: hidden;
   background: var(--surface);
   color: var(--ink);
-  border-radius: 16px;
-  border: 1px solid rgba(90, 42, 18, 0.18);
+  /* TG010 Final Experience P1 (ADGARC-DEC-010 §3-4): square shell geometry,
+     white fill, thin black stroke — replaces the former rounded frame with
+     a brown-tinted border. */
+  border-radius: 0;
+  border: 1px solid var(--canonical-ink);
   box-shadow: 0 20px 60px rgba(20, 12, 6, 0.35);
 }
 
-/* TG010 S4 (ADGARC-FB-019 / DEC-007 §12): the menu read as flat because
-   every band in it — header, nav, pane — shared one undifferentiated white
-   surface. The header now carries the identity accent and a tinted ground,
-   which is what separates "application shell" from "pane content" without
-   adding a new colour or a second visual language. */
-.app-menu__header {
+/* TG010 Final Experience P1 (ADGARC-DEC-010 §3-4): the shared editorial-
+   shell chrome (see EditorialShell.tsx) — a canonical yellow topbar
+   carrying the title and the [X] close control, reused as-is by every
+   consumer of the shell. Replaces the former ADG·ARC wordmark header. */
+.editorial-shell__topbar {
   flex: none;
   display: flex;
   align-items: center;
   justify-content: space-between;
   gap: 0.75rem;
-  padding: 1rem 1.1rem;
-  background: var(--surface-raised);
-  border-bottom: 1px solid var(--hairline);
+  padding: 0.85rem 1.1rem;
+  background: var(--canonical-yellow);
+  color: var(--canonical-ink);
 }
 
-.app-menu__mark {
-  display: inline-flex;
-  align-items: center;
-  gap: 0.55rem;
-  font-size: 0.85rem;
+.editorial-shell__title {
+  font-size: 0.95rem;
   font-weight: 700;
-  letter-spacing: 0.12em;
-  text-transform: uppercase;
-  color: var(--ink);
+  letter-spacing: 0.01em;
 }
 
-.app-menu__mark::before {
-  content: "";
-  width: 18px;
-  height: 4px;
-  border-radius: 999px;
-  background: var(--map-accent);
+.editorial-shell__close {
+  appearance: none;
+  flex: none;
+  border: none;
+  background: transparent;
+  color: var(--canonical-ink);
+  font: inherit;
+  font-weight: 700;
+  cursor: pointer;
+  padding: 0.35rem 0.4rem;
 }
 
-.app-menu__body {
+.editorial-shell__body {
   flex: 1;
   min-height: 0;
-  display: flex;
-}
-
-.app-menu__nav {
-  flex: none;
-  width: 200px;
-  display: flex;
-  flex-direction: column;
-  gap: 2px;
-  padding: 0.6rem;
-  overflow-y: auto;
-  background: var(--surface-raised);
-  border-right: 1px solid var(--hairline);
-}
-
-.app-menu__nav-btn {
-  appearance: none;
-  position: relative;
-  width: 100%;
-  border: none;
-  border-radius: 6px;
-  padding: 0.55rem 0.65rem;
-  background: transparent;
-  color: inherit;
-  font-size: 0.9rem;
-  text-align: left;
-  cursor: pointer;
-}
-
-.app-menu__nav-btn:hover {
-  background: rgba(90, 42, 18, 0.08);
-}
-
-/* FB-019: the active destination gains a real accent marker, not just a
-   slightly darker tint — the selected item is now legible at a glance. */
-.app-menu__nav-btn[aria-current="true"] {
-  background: rgba(90, 42, 18, 0.1);
-  font-weight: 700;
-}
-
-.app-menu__nav-btn[aria-current="true"]::before {
-  content: "";
-  position: absolute;
-  left: 0;
-  top: 20%;
-  bottom: 20%;
-  width: 3px;
-  border-radius: 999px;
-  background: var(--map-accent);
-}
-
-.app-menu__pane {
-  flex: 1;
-  min-width: 0;
   overflow-y: auto;
   padding: 1rem 1.35rem 1.5rem;
   font-size: 0.92rem;
   line-height: 1.55;
 }
 
-/* FB-019: a real pane heading, so the menu reads nav → title → content
-   instead of one undifferentiated column of body text. */
-.app-menu__pane-title {
-  margin: 0 0 0.9rem;
-  font-family: var(--font-editorial);
-  font-size: 1.35rem;
-  font-weight: 600;
-  line-height: 1.15;
-  letter-spacing: 0.01em;
+/* TG010 Final Experience P1 (ADGARC-DEC-010 §3-4): the root menu's own
+   numbered destination list — a single column, no persistent nav rail. Each
+   row is a plain full-width button; the hairline above every row is the
+   only row-to-row divider, matching the canonical mockup (inset within the
+   shell body's own padding, not edge-to-edge). */
+.app-menu__rootlist {
+  display: flex;
+  flex-direction: column;
 }
 
-/* TG010 S4 (DEC-007 §12) — the compact/tablet menu. The former 640px
-   switch produced a wrapping button block that read as an accidental
-   full-bleed sheet; the menu is now an explicitly contained surface with
-   margins on all four sides (the backdrop's padding provides them, and is
-   made safe-area aware here), a horizontally scrolling destination rail
-   instead of a wrapped stack, and its own internal scroll. The boundary
-   moves to 767px so it matches config/breakpoints.ts's TABLET_MIN like
-   every other adaptive rule in this file, rather than being a third,
-   unrelated breakpoint. */
+.app-menu__row {
+  appearance: none;
+  /* TG011 Pass A (ADGARC-FB-039 / DEC-010 §11.4): literal `ordinal, 8px,
+     label`. Replaces the former two-column grid, whose wide optical gap was
+     read off the mockup image — the written 2026-09-14 spacing rule is
+     normative over that image and is not to be re-inferred from it. */
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  width: 100%;
+  border: none;
+  border-top: 1px solid var(--hairline);
+  background: transparent;
+  color: inherit;
+  text-align: left;
+  cursor: pointer;
+  padding: 1.1rem 0;
+}
+
+.app-menu__row:hover {
+  background: rgba(90, 42, 18, 0.06);
+}
+
+.app-menu__row-index,
+.app-menu__row-label {
+  font-size: 1.3rem;
+  font-weight: 700;
+}
+
+/* TG011 Pass A (ADGARC-FB-042 / ADGARC-FB-039, DEC-010 §11.4): the internal
+   destination header — literally `back arrow, 8px, ordinal, 8px, label` —
+   carrying the only back affordance in the menu. It deliberately reuses the
+   root row's hairline, vertical rhythm and type scale (mockup 02), so a
+   destination reads as the row it was opened from rather than as a
+   different kind of surface. The root menu itself carries no back arrow;
+   the shared [X] in the yellow topbar still closes the whole menu. */
+.app-menu__destination-header {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  border-top: 1px solid var(--hairline);
+  padding: 1.1rem 0;
+}
+
+.app-menu__back {
+  appearance: none;
+  position: relative;
+  border: none;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  font-size: 1.3rem;
+  font-weight: 700;
+  line-height: 1;
+  cursor: pointer;
+  padding: 0;
+}
+
+.app-menu__back:hover {
+  background: rgba(90, 42, 18, 0.06);
+}
+
+.app-menu__back:active {
+  background: rgba(90, 42, 18, 0.16);
+}
+
+/* The coarse-pointer touch floor (TG006G Scope F) is met here with a
+   centered pseudo-element hit area rather than the padding / min-width the
+   other controls use: either of those would have pushed the arrow glyph off
+   the literal 8px spacing FB-039 fixes. Hit area only — nothing paints. */
+@media (max-width: 480px), (pointer: coarse) {
+  .app-menu__back::after {
+    content: "";
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 44px;
+    height: 44px;
+    transform: translate(-50%, -50%);
+  }
+}
+
+/* TG010 Final Experience P1 (ADGARC-DEC-010 §3-4): the root menu's own
+   yellow footer band + three rounded partner-credit pills — edge to edge
+   like the topbar, unlike the row list above.
+
+   TG011 Pass A (ADGARC-FB-040): it is no longer the last child of the
+   scrollable .editorial-shell__body, pulled edge-to-edge by negative
+   margins that cancelled that body's padding. It is passed to
+   EditorialShell's `footer` slot and rendered as a flex:none sibling of
+   the body, so it sits flush with the panel bottom instead of stopping
+   wherever the row list ended and leaving dead white space beneath it.
+   The shell's own load-bearing fixed height is deliberately unchanged —
+   the body still absorbs the remaining space and its own overflow.
+
+   Main-menu-specific, not part of the generic shell chrome. */
+.app-menu__footer {
+  flex: none;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: center;
+  gap: 0.6rem;
+  padding: 0.85rem 1.1rem;
+  background: var(--canonical-yellow);
+}
+
+.app-menu__partner-pill {
+  border: 1px solid var(--canonical-ink);
+  border-radius: 999px;
+  padding: 0.4rem 0.9rem;
+  background: var(--surface);
+  color: var(--canonical-ink);
+  font-size: 0.78rem;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+/* TG011 Pass B (ADGARC-FB-045 / DEC-010 §11.5): the Dev Settings safe
+   unavailable state — what row 05's body renders when the DEVTOOLS_ENABLED
+   build-time gate is false. A small square editorial block in the final
+   system's own grammar (white surface, single thin hairline, no radius),
+   deliberately *not* a faux settings panel of disabled controls: there is
+   no control here to disable, so none is drawn. It sits below the shared
+   `← 05 Dev Settings` header and repeats nothing from it. */
+.dev-settings-unavailable {
+  margin: 1.1rem 0 0;
+  border: 1px solid var(--hairline);
+  padding: 1.1rem;
+  background: var(--surface);
+  color: var(--ink-muted);
+  font-size: 0.92rem;
+  line-height: 1.55;
+}
+
+/* TG010 S4 (DEC-007 §12) — the compact/tablet menu stays an explicitly
+   contained surface with margins on all four sides (the backdrop's padding
+   provides them, safe-area aware). TG010 Final Experience P1: it is no
+   longer a second nav-rail layout — the single-column root list/footer
+   above already reflow correctly at this width, so only the panel's own
+   geometry and the shell body's padding need a breakpoint-specific rule. */
 @media (max-width: 767px) {
   .app-menu-backdrop {
     padding: calc(env(safe-area-inset-top) + 16px) max(16px, env(safe-area-inset-right))
@@ -1147,55 +1220,11 @@ body,
        contained surface with four visible margins, never edge-to-edge. */
     width: 100%;
     height: 100%;
-    border-radius: 18px;
+    border-radius: 0;
   }
 
-  .app-menu__body {
-    flex-direction: column;
-  }
-
-  .app-menu__nav {
-    width: auto;
-    flex: none;
-    flex-direction: row;
-    flex-wrap: nowrap;
-    gap: 0.35rem;
-    overflow-x: auto;
-    overflow-y: hidden;
-    scrollbar-width: none;
-    border-right: none;
-    border-bottom: 1px solid var(--hairline);
-  }
-
-  .app-menu__nav::-webkit-scrollbar {
-    display: none;
-  }
-
-  .app-menu__nav-btn {
-    width: auto;
-    flex: none;
-    border-radius: 999px;
-    padding: 0.5rem 0.9rem;
-    white-space: nowrap;
-  }
-
-  /* The vertical accent bar is a column-nav device; in the rail it becomes
-     a solid accent chip instead. */
-  .app-menu__nav-btn[aria-current="true"] {
-    background: var(--map-accent);
-    color: var(--canonical-ink);
-  }
-
-  .app-menu__nav-btn[aria-current="true"]::before {
-    content: none;
-  }
-
-  .app-menu__pane {
+  .editorial-shell__body {
     padding: 0.9rem 1rem 1.25rem;
-  }
-
-  .app-menu__pane-title {
-    font-size: 1.2rem;
   }
 }
 
@@ -1440,6 +1469,179 @@ body,
   border: 0;
 }
 
+/* TG011 Pass C (ADGARC-FB-044): the Passport pane's layout corrective. The
+   pane was a plain block inside the shell body's own vertical scroller, so
+   the rail + status + 9:16 card block + reset control simply added up past
+   the fixed shell height and produced the second, accidental scrollbar the
+   OPERATOR circled — one surface scrolling on two axes.
+
+   The correction is composition, not geometry: the shell body becomes a
+   column flex container *for this destination only*, the pane fills it, and
+   the card carousel is the one element that absorbs the remaining height.
+   Nothing global moves — .editorial-shell__body keeps its padding, its
+   overflow-y:auto and its scrollbar treatment everywhere else, the fixed
+   .app-menu frame is untouched, and CaseSheet is not involved (ADGARC-FB-007
+   stays open on its own surfaces).
+
+   Scoped with :has() rather than a modifier class because EditorialShell owns
+   this element and sits outside this pass's write surface. It degrades
+   safely: an engine without :has() support simply keeps the previous block
+   layout and the previous body scroll — the uncorrected composition, never a
+   broken one. */
+.editorial-shell__body:has(> .passport-pane) {
+  display: flex;
+  flex-direction: column;
+}
+
+.editorial-shell__body:has(> .passport-pane) > .app-menu__destination-header {
+  flex: none;
+}
+
+.passport-pane {
+  flex: 1 1 auto;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+/* Every part of the pane but the carousel keeps its natural height; the
+   carousel is the single flexible row. Its min-height is a floor, not a
+   target — on a viewport too short even for that (a phone held in landscape,
+   say) the shell body's own scrollbar comes back rather than the cards being
+   clipped or scrolled out of reach. */
+.passport-pane > * {
+  flex: none;
+}
+
+.passport-pane > .passport-carousel {
+  flex: 1 1 auto;
+  min-height: 8rem;
+}
+
+/* TG011 Pass C (ADGARC-FB-043 / DEC-010 §11.3): the Pasaporte pane's literal
+   1-20 circle rail. The S4 .passport-rail cell rail above is deliberately
+   left exactly as it is — it still serves the map overlay, whose own
+   redesign (ADGARC-FB-046) is separately allocated and not touched here. */
+.passport-stop-rail {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+  margin-bottom: 0.9rem;
+}
+
+.passport-stop-rail__count {
+  margin: 0;
+  text-align: right;
+  font-size: 0.85rem;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+
+/* The negative inline margins pay back the padding: the padding exists only
+   so the first and last circle's 2px/2px focus ring is not clipped by this
+   scroller, and the margins keep circle 1 optically aligned with the
+   destination header above it. */
+.passport-stop-rail__track {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  margin: 0 -5px;
+  padding: 5px;
+  overflow-x: auto;
+  overscroll-behavior-x: contain;
+  scrollbar-width: none;
+}
+
+.passport-stop-rail__track::-webkit-scrollbar {
+  display: none;
+}
+
+/* FB-043's catalog boundary after position 10 — physical+digital stops to
+   its left, digital-only positions to its right. Presentation only: it says
+   nothing about the stamping denominator, which stays derived from the real
+   physical set in usePassport. */
+.passport-stop-rail__divider {
+  flex: none;
+  width: 1px;
+  height: 1.5rem;
+  margin: 0 4px;
+  background: var(--canonical-ink);
+  opacity: 0.45;
+}
+
+.passport-stop-circle {
+  appearance: none;
+  flex: none;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  width: 2rem;
+  height: 2rem;
+  padding: 0;
+  /* Border width is the *selection* channel and nothing else, so it is
+     declared at 0 here and only the current stop raises it (DEC-010 §11.3:
+     fill carries visit state, stroke carries selection, neither derived from
+     the other). `box-sizing: border-box` is global, so raising it to 3px
+     moves no neighbouring circle. */
+  border: 0 solid var(--canonical-ink);
+  border-radius: 50%;
+  /* Unvisited = grey. No token covers a neutral status fill — the palette's
+     greys are reading surfaces (--surface-sunken) or ink alphas — and adding
+     one to :root would give the whole app a new global concept for what is a
+     two-value rail state, so both fills stay local to this block. */
+  background: #9d9d9d;
+  color: var(--canonical-ink);
+  font: inherit;
+  line-height: 1;
+  cursor: pointer;
+}
+
+/* Visited = yellow: the same canonical yellow the rest of the final system
+   uses, never a second accent. */
+.passport-stop-circle[data-visited="true"] {
+  background: var(--canonical-yellow);
+}
+
+/* Current = a 3px resting stroke, independent of the fill: current+unvisited
+   is grey + stroke, current+visited is yellow + stroke. Deliberately NOT a
+   focus style — the global :focus-visible ring (one 2px canonical-ink
+   outline at 2px offset, ADGARC-DEC-009 / ADGARC-FB-038) remains the only
+   focus treatment, and stays visually separate by sitting outside the circle
+   edge while this sits inside it. */
+.passport-stop-circle[data-current="true"] {
+  border-width: 3px;
+}
+
+/* Reserved digital-only positions (FB-043 source discipline / DEC-010 §D4):
+   visibly present, visibly inert, carrying no invented identity. */
+.passport-stop-circle[data-reserved="true"] {
+  background: #c9c9c9;
+  color: var(--ink-muted);
+  cursor: default;
+}
+
+.passport-stop-circle__ordinal {
+  font-size: 0.72rem;
+  font-weight: 500;
+  font-variant-numeric: tabular-nums;
+  line-height: 1;
+}
+
+/* FB-043: 1-10 bold, 11-20 not. */
+.passport-stop-circle[data-bold="true"] .passport-stop-circle__ordinal {
+  font-weight: 700;
+}
+
+/* The non-colour visit signal — the rail's existing ✓ / · vocabulary, kept
+   small enough beneath the ordinal that it never obscures it. The circle's
+   accessible name states the same status in words. */
+.passport-stop-circle__mark {
+  font-size: 0.5rem;
+  line-height: 1;
+  margin-top: 1px;
+}
+
 /* TG010 S5B (ADGARC-FB-030 / DEC-008 §4): the Pasaporte destination's own
    horizontal 9:16 editorial card carousel — replaces the former plain
    .cases-index row list now that Casos no longer exists as a separate
@@ -1451,9 +1653,15 @@ body,
 
    The 9:16 ratio is on the full card (media + info together), not just the
    media region — `aspect-ratio` on the button itself, `flex-direction:
-   column` inside it. A fixed card width (not a viewport-relative one) keeps
-   the same visual weight at every breakpoint and naturally leaves a sliver
-   of the next card visible on mobile. */
+   column` inside it.
+
+   TG011 Pass C (ADGARC-FB-044): the card's size is now driven by the height
+   the pane's flex composition gives this track rather than by a fixed width.
+   The ratio is untouched; see .passport-carousel__card below. The track
+   itself — the horizontal overflow, the scroll snap and its visible native
+   scrollbar — is unchanged and stays intentional: the OPERATOR's review
+   marked this horizontal scroll as accepted, and only the *vertical* pane
+   scrollbar was the defect. */
 .passport-carousel {
   margin: 0 0 1rem;
   padding: 0.25rem 0 0.75rem;
@@ -1477,7 +1685,15 @@ body,
   appearance: none;
   display: flex;
   flex-direction: column;
-  width: 11.5rem;
+  /* TG011 Pass C (ADGARC-FB-044): the card now takes its height from whatever
+     the pane's flex composition leaves the carousel, and `aspect-ratio`
+     derives the width from that. The ratio is unchanged and stays 9:16 —
+     DEC-010 §11.1 and FB-044 accept the 9:16 card and forbid reverting it;
+     only the *driving* dimension changed. The former fixed `width: 11.5rem`
+     made the card block's height a constant the fixed shell had to absorb,
+     which is precisely what overflowed it. */
+  height: 100%;
+  width: auto;
   aspect-ratio: 9 / 16;
   padding: 0;
   overflow: hidden;
@@ -2206,7 +2422,7 @@ body,
 .case-sheet__close:active,
 .case-sheet__size-btn:active:not(:disabled),
 .case-sheet__traverse-btn:active:not(:disabled),
-.app-menu__nav-btn:active,
+.app-menu__row:active,
 .app-modal__close:active,
 .passport-carousel__card:active,
 .settings-actions__btn:active,
@@ -2285,13 +2501,33 @@ body,
   }
 
   .case-sheet__traverse-btn,
-  .app-menu__nav-btn,
+  .app-menu__row,
   .settings-actions__btn,
   .dev-tools__actions .settings-actions__btn,
   .lang-switch__btn,
   .gesture-coachmark__dismiss,
   .entry-curtain__cta {
     min-height: 44px;
+  }
+
+  .editorial-shell__close {
+    min-width: 44px;
+    min-height: 44px;
+  }
+
+  /* TG011 Pass C (ADGARC-FB-043): the stop circle grows to the touch floor
+     rather than gaining an invisible oversized hit area the way
+     .app-menu__back does — at a 4px rail gap, a 44px pseudo-element on a
+     32px circle would overlap its neighbours' targets, which is worse than
+     no floor at all. The rail already scrolls horizontally, so the wider
+     track costs nothing. */
+  .passport-stop-circle {
+    width: 44px;
+    height: 44px;
+  }
+
+  .passport-stop-rail__divider {
+    height: 2rem;
   }
 }
 

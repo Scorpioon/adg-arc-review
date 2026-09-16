@@ -29,16 +29,33 @@ export const es = {
   "menu.trigger.open": "Abrir menú de la aplicación",
   "menu.trigger.close": "Cerrar menú de la aplicación",
   "menu.close": "Cerrar menú",
+  // TG011 Pass A (ADGARC-FB-042): the internal destinations' back control.
+  // Names its real destination — the menu root — rather than "atrás", which
+  // would imply the browser history this deliberately is not.
+  "menu.back": "Volver al menú principal",
   "menu.dialogLabel": "Menú de la aplicación",
   "menu.navLabel": "Destinos de la aplicación",
   "menu.introAction": "Introducción",
+  // TG010 Final Experience P1 (ADGARC-DEC-010 §3-4): the menu shell's
+  // canonical yellow-topbar title, transcribed verbatim from
+  // ADGARC_FINAL_MOCKUP_01_main_menu.png — not translated/paraphrased.
+  // TG011 Pass A (ADGARC-FB-042): still named `rootTitle`, but it is now
+  // shown at every menu depth, as mockup 02 renders it — the key is kept as
+  // is rather than renamed across the TranslationKey union for a label whose
+  // text never changed.
+  "menu.rootTitle": "Arquitectura i tipografia en diàleg",
 
   "nav.cases": "Casos",
-  "nav.passport": "Pasaporte",
+  // TG010 Final Experience P1 (ADGARC-DEC-010 §3-4): these two row labels
+  // are transcribed verbatim from mockup 01 rather than kept as their prior
+  // Spanish translations — the canonical mockup wins per DEC-010 §2 even
+  // though it mixes languages across the five rows (see the paired
+  // execution report for the flagged inconsistency this inherits).
+  "nav.passport": "Passaport",
   "nav.info": "Información",
   "nav.about": "Acerca de",
   "nav.settings": "Ajustes",
-  "nav.devtools": "Herramientas de desarrollo",
+  "nav.devtools": "Dev Settings",
 
   "info.p1":
     "ADG-ARC explora relaciones entre arquitectura y tipografía en Barcelona, emparejando cada edificio con una tipografía elegida por su resonancia con él.",
@@ -122,6 +139,16 @@ export const es = {
   "passport.railOrdinalNote":
     "Los números identifican cada parada; no indican un orden de recorrido.",
   "passport.railCellStatus": "%{name}: %{status}",
+  // TG011 Pass C (ADGARC-FB-043 / DEC-010 §11.3): the Pasaporte pane's 1-20
+  // circle rail. `stopStatus` is the accessible name of an active circle —
+  // colour is never the only carrier of visit state, so the ordinal and the
+  // status are always available in words. `stopReserved` names a digital-only
+  // position whose source identity does not exist yet (DEC-010 §D4): it
+  // states the position is reserved and pending source, and deliberately
+  // invents no name, no content and no case identity for it.
+  "passport.railGroupLabel": "Índice de paradas, 1 a 20",
+  "passport.stopStatus": "Parada %{ordinal}, %{name}: %{status}",
+  "passport.stopReserved": "Parada %{ordinal}: reservada, pendiente de fuente",
   // TG010 S5B (ADGARC-FB-030 / DEC-008 §4): the Pasaporte destination's own
   // horizontal 9:16 stop-card carousel, replacing the former plain row list.
   "passport.carouselLabel": "Paradas del pasaporte",
@@ -151,6 +178,14 @@ export const es = {
 
   "mapView.errorTimeout": "El mapa no terminó de cargar a tiempo. Recarga la página.",
   "mapView.errorLoad": "No se pudo cargar el mapa. Recarga la página.",
+
+  // TG011 Pass B (ADGARC-FB-045 / DEC-010 §11.5): the whole visible copy of
+  // the safe unavailable state shown at row 05 when the DEVTOOLS_ENABLED
+  // build-time gate is false. Deliberately one neutral sentence and nothing
+  // more — the destination header already states "Dev Settings", and §11.5
+  // permits only the unavailability fact itself: no product version, no
+  // build/environment detail, no gated Developer Tools content.
+  "devtools.unavailable": "Los ajustes de desarrollo no están disponibles en esta versión.",
 
   "devtools.mapPalette.title": "Paleta del mapa",
   "devtools.mapPalette.note": "Estilo del suelo, el agua, los edificios y las vías.",
