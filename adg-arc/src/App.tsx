@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import MapView, { type CameraState, type MapViewHandle } from "./components/MapView";
-import CaseSheet, { type PanelAnchor } from "./components/CaseSheet";
+import InfocardDossier, { type InfocardDossierAnchor } from "./components/InfocardDossier";
 import AppMenuModal, { type MenuDestination } from "./components/AppMenuModal";
 import PassportMapOverlay from "./components/PassportMapOverlay";
 import LoadingScreen from "./components/LoadingScreen";
@@ -36,7 +36,7 @@ export default function App() {
   const t = useT();
   const deviceClass = useViewportClass();
   const { dismissed: coachmarkDismissed, dismiss: dismissCoachmark } = useGestureCoachmark();
-  const [panelAnchor, setPanelAnchor] = useState<PanelAnchor | null>(null);
+  const [panelAnchor, setPanelAnchor] = useState<InfocardDossierAnchor | null>(null);
 
   const readiness = useReadiness();
   useEffect(() => {
@@ -298,15 +298,13 @@ export default function App() {
         {deviceClass !== "desktop" && !activeCase && !coachmarkDismissed && (
           <GestureCoachmark onDismiss={dismissCoachmark} />
         )}
-        <CaseSheet
+        <InfocardDossier
           activeCase={activeCase}
           onClose={() => setCaseSlug(null)}
           onAnchorChange={setPanelAnchor}
-          cases={cases}
-          onSelectCase={setCaseSlug}
           stampFeedback={
             stampFeedback && activeCase?.slug === stampFeedback.slug
-              ? { count: stampFeedback.count, total: stampFeedback.total }
+              ? t("passport.stampFeedback", { count: stampFeedback.count, total: stampFeedback.total })
               : null
           }
         />

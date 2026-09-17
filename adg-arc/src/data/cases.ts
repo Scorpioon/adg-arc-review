@@ -108,6 +108,44 @@ export interface CaseHeroMedia {
   rightsStatus: string;
 }
 
+// TG012 editorial display-copy layer. `infocard` is additive only — it must
+// never duplicate a fact that already has a canonical home elsewhere on
+// CaseRecord (identity, architecture, typography, coordinates, etc.). See
+// ADGARC_TG012 Prompt 039 §2 Amendment A.
+export type InfocardQuoteKind = "literal_quote" | "paraphrase" | "synthesis";
+
+// Local to cases.ts — deliberately narrower than `SourceId`, which was built
+// for factual/coordinate provenance, not this final editorial copy set. See
+// ADGARC_TG012 Prompt 039 §2 Amendment B.
+export interface InfocardEditorialProvenance {
+  // Exact mapping v0.3 location, e.g. "§4 > 1C L'edifici" or "§21.1 > 3 Casa de la Marina".
+  mappingRef: string;
+  // Mapping's own source-locator language, preserved rather than re-identified.
+  sourceLocator: string;
+}
+
+export interface InfocardEditorialCopy {
+  displayText: string;
+  provenance: InfocardEditorialProvenance;
+}
+
+export interface InfocardHighlightedPhrase extends InfocardEditorialCopy {
+  kind: InfocardQuoteKind;
+  attribution: string;
+  bibliographicContext?: string | null;
+}
+
+export interface InfocardContent {
+  // Nullable at the type level: future/other cases may legitimately have no
+  // approved highlighted phrase, even though v0.3 §21.1 resolves all ten
+  // current cases.
+  highlightedPhrase: InfocardHighlightedPhrase | null;
+  buildingProse: InfocardEditorialCopy;
+  architectureCopy: InfocardEditorialCopy;
+  typographyCopy: InfocardEditorialCopy;
+  dialogueCopy: InfocardEditorialCopy;
+}
+
 export interface CaseRecord {
   slug: string;
   identity: CaseIdentity;
@@ -133,6 +171,7 @@ export interface CaseRecord {
   // which TG007 populates for all 10 cases. See TG007 handoff.
   editorial: boolean;
   specimenMode: SpecimenMode;
+  infocard: InfocardContent;
 }
 
 export const cases: CaseRecord[] = [
@@ -177,6 +216,51 @@ export const cases: CaseRecord[] = [
     heroMedia: null,
     editorial: false,
     specimenMode: null,
+    infocard: {
+      highlightedPhrase: {
+        kind: "paraphrase",
+        displayText:
+          "L'art ornamental no ha de ser un afegit, sinó la línia viva que dona estructura i ànima a l'edifici.",
+        attribution: "Paràfrasi inspirada en el pensament de Victor Horta",
+        bibliographicContext: null,
+        provenance: {
+          mappingRef: "§21.1 > 1 Cases dels Cargols",
+          sourceLocator: "main + (2).md > Cita",
+        },
+      },
+      buildingProse: {
+        displayText:
+          "Edifici d'habitatges construït en un xamfrà de la trama urbana de l'Eixample de Barcelona a la fi del segle XIX.",
+        provenance: {
+          mappingRef: "§4 > 1C L'edifici",
+          sourceLocator: "main .md > Descripció WEB ¶1",
+        },
+      },
+      architectureCopy: {
+        displayText:
+          "Les Cases dels Cargols destaquen per una façana modernista de composició simètrica, adaptada al xamfrà de l'Eixample. Formes orgàniques, elements vegetals i més de 400 cargols esculpits construeixen una ornamentació singular. El motiu del cargol dona identitat i ritme al conjunt.",
+        provenance: {
+          mappingRef: "§4 > 2 Arquitectura",
+          sourceLocator: "main .md > FORMA",
+        },
+      },
+      typographyCopy: {
+        displayText:
+          "Glucosa és una tipografia sans serif de construcció moderna, amb acabats suaus, orgànics i arrodonits que evoquen formes manuscrites o cal·ligràfiques.",
+        provenance: {
+          mappingRef: "§4 > 3 Tipografia",
+          sourceLocator: "main .md > GLUCOSA > CARÀCTER",
+        },
+      },
+      dialogueCopy: {
+        displayText:
+          "L'edifici funciona gairebé com una lletra decorada: columnes, pilastres i divisions entre balcons actuen com astes, mentre els volums corbats aporten el gest dels terminals. Finestres, balcons i buits creen un ritme de ple i contraforma. Com una tipografia display, la façana construeix identitat a través de l'ornament i l'expressivitat.",
+        provenance: {
+          mappingRef: "§4 > 4 Diàleg",
+          sourceLocator: "main .md > GLUCOSA > DIÀLEG ¶1-4",
+        },
+      },
+    },
   },
   {
     slug: "casa-rodriguez-arias",
@@ -218,6 +302,50 @@ export const cases: CaseRecord[] = [
     heroMedia: null,
     editorial: false,
     specimenMode: null,
+    infocard: {
+      highlightedPhrase: {
+        kind: "literal_quote",
+        displayText: "La geometria és el llenguatge de l'home.",
+        attribution: "Le Corbusier",
+        bibliographicContext: "1923, Vers une architecture",
+        provenance: {
+          mappingRef: "§21.1 > 2 Casa Rodríguez Arias",
+          sourceLocator: "main vs (2).md > Cita — option B",
+        },
+      },
+      buildingProse: {
+        displayText:
+          "Edifici d'habitatges entre mitgeres, projectat en el context del racionalisme internacional dels anys vint i trenta impulsat a Catalunya pel GATPAC.",
+        provenance: {
+          mappingRef: "§5 > 1C L'edifici",
+          sourceLocator: "main .md > Descripció WEB ¶1",
+        },
+      },
+      architectureCopy: {
+        displayText:
+          "La Casa Rodríguez Arias és un exemple d'arquitectura racionalista basada en la geometria, la modularitat i la simplicitat. La façana combina murs, finestres i balcons sense ornamentació, ordenats mitjançant mides estandarditzades. La variació en l'amplada dels balcons introdueix una subtil asimetria dins d'una composició essencialment regular.",
+        provenance: {
+          mappingRef: "§5 > 2 Arquitectura",
+          sourceLocator: "main .md > FORMA",
+        },
+      },
+      typographyCopy: {
+        displayText:
+          "Arboria, de Josema Urós, és una tipografia geomètrica que incorpora subtils influències grotesques per aportar naturalitat i equilibri.",
+        provenance: {
+          mappingRef: "§5 > 3 Tipografia",
+          sourceLocator: "main .md > ARBORIA > CARÀCTER",
+        },
+      },
+      dialogueCopy: {
+        displayText:
+          "Arboria i la Casa Rodríguez Arias comparteixen una lògica geomètrica i modular. Els traços rectes i els gruixos regulars de la tipografia troben un paral·lel en la retícula de finestres i balcons de la façana. En tots dos casos, la identitat neix de l'ordre, la repetició, la proporció i la claredat formal.",
+        provenance: {
+          mappingRef: "§5 > 4 Diàleg",
+          sourceLocator: "main .md > ARBORIA > DIÀLEG",
+        },
+      },
+    },
   },
   {
     slug: "casa-de-la-marina",
@@ -264,6 +392,51 @@ export const cases: CaseRecord[] = [
     heroMedia: null,
     editorial: false,
     specimenMode: null,
+    infocard: {
+      highlightedPhrase: {
+        kind: "paraphrase",
+        displayText:
+          "L'arquitectura ha d'incorporar l'ús dels materials tradicionals locals.",
+        attribution: "Paràfrasi, Ideari Grup R",
+        bibliographicContext: null,
+        provenance: {
+          mappingRef: "§21.1 > 3 Casa de la Marina",
+          sourceLocator: "main + (2).md > Cita",
+        },
+      },
+      buildingProse: {
+        displayText:
+          "Edifici d'habitatges situat en una cantonada del barri de la Barceloneta, inscrit en el racionalisme català dels anys cinquanta.",
+        provenance: {
+          mappingRef: "§6 > 1C L'edifici",
+          sourceLocator: "main .md > Descripció WEB ¶1",
+        },
+      },
+      architectureCopy: {
+        displayText:
+          "La Casa de la Marina expressa el racionalisme català dels anys cinquanta a través d'una façana marcada pel ritme vertical de lames i franges de ceràmica vidriada. A l'interior, murs oblics de càrrega generen una estructura que optimitza l'espai i permet grans obertures als habitatges de cantonada.",
+        provenance: {
+          mappingRef: "§6 > 2 Arquitectura",
+          sourceLocator: "main .md > FORMA",
+        },
+      },
+      typographyCopy: {
+        displayText:
+          "AT Aero, de Pedro Arilla, combina precisió geomètrica amb corbes suaus que aporten dinamisme i lleugeresa.",
+        provenance: {
+          mappingRef: "§6 > 3 Tipografia",
+          sourceLocator: "main .md > AT AERO > CARÀCTER",
+        },
+      },
+      dialogueCopy: {
+        displayText:
+          "AT Aero i la Casa de la Marina comparteixen ordre, repetició i precisió. Els traços nets de la tipografia dialoguen amb les franges verticals de la façana, mentre el contrast entre pesos troba un paral·lel en l'alternança entre gelosies lleugeres i volums més massissos. La identitat de totes dues depèn del ritme i l'estructura més que de l'ornament.",
+        provenance: {
+          mappingRef: "§6 > 4 Diàleg",
+          sourceLocator: "main .md > AT AERO > DIÀLEG",
+        },
+      },
+    },
   },
   {
     slug: "cocheras-de-sarria",
@@ -275,9 +448,9 @@ export const cases: CaseRecord[] = [
       address: "Passeig Manuel Girona",
     },
     experienceType: "physical_digital",
-    // Architectural categorization is explicitly TBD for TG005 — not
-    // blocked, not inferred. See handoff §3.4.
-    architecture: { movement: null, movementStatus: "tbd" },
+    // TG012 §21.2: accepted final editorial movement label, superseding the
+    // TG005 `tbd` placeholder. See handoff §3.4 for the prior TBD status.
+    architecture: { movement: "Racionalisme Català", movementStatus: "verified" },
     typography: {
       primaryFamily: "Aribau Grotesk",
       designer: "Eduardo Manso",
@@ -308,6 +481,51 @@ export const cases: CaseRecord[] = [
     heroMedia: null,
     editorial: false,
     specimenMode: null,
+    infocard: {
+      highlightedPhrase: {
+        kind: "synthesis",
+        displayText:
+          "L'urbanisme de qualitat neix d'una arquitectura de qualitat.",
+        attribution: "Síntesi de l'ideari de J. A. Coderch",
+        bibliographicContext: null,
+        provenance: {
+          mappingRef: "§21.1 > 4 Cotxeres de Sarrià",
+          sourceLocator: "main vs (2).md > Cita — option B (synthesis)",
+        },
+      },
+      buildingProse: {
+        displayText:
+          "Conjunt d'habitatges plurifamiliars construït sobre els terrenys de les antigues cotxeres d'autobusos de Sarrià, organitzat com una macroilla amb carrers per a vianants i espais enjardinats.",
+        provenance: {
+          mappingRef: "§7 > 1C L'edifici",
+          sourceLocator: "main .md > Descripció WEB ¶1",
+        },
+      },
+      architectureCopy: {
+        displayText:
+          "Els edificis dentats articulen les façanes i dibuixen carrers per a vianants amb espais enjardinats. La repetició dels volums, els retranquejos i el maó vist generen ritme i reforcen el caràcter paisatgístic i unitari del conjunt.",
+        provenance: {
+          mappingRef: "§7 > 2 Arquitectura",
+          sourceLocator: "main .md > FORMA + (1).md > 4",
+        },
+      },
+      typographyCopy: {
+        displayText:
+          "Aribau Grotesk, d'Eduardo Manso, combina solidesa i obertura a través d'una construcció geomètrica de gran claredat.",
+        provenance: {
+          mappingRef: "§7 > 3 Tipografia",
+          sourceLocator: "main .md > ARIBAU GROTESK > CARÀCTER",
+        },
+      },
+      dialogueCopy: {
+        displayText:
+          "Aribau Grotesk i les Cotxeres de Sarrià comparteixen un equilibri entre solidesa i obertura. Els traços rectes i els pesos contrastats de la tipografia troben un paral·lel en els volums de maó, els balcons i els retranquejos. En tots dos casos, massa i buit, repetició i ritme construeixen la identitat.",
+        provenance: {
+          mappingRef: "§7 > 4 Diàleg",
+          sourceLocator: "main .md > DIÀLEG",
+        },
+      },
+    },
   },
   {
     slug: "hotel-arts",
@@ -354,6 +572,51 @@ export const cases: CaseRecord[] = [
     heroMedia: null,
     editorial: false,
     specimenMode: null,
+    infocard: {
+      highlightedPhrase: {
+        kind: "literal_quote",
+        displayText:
+          "He avançat cap a una arquitectura llegible, en la que qualsevol pugui comprendre totes les peçes de l'edifici.",
+        attribution: "Richard Rogers",
+        bibliographicContext: "1987, El País",
+        provenance: {
+          mappingRef: "§21.1 > 5 Hotel Arts",
+          sourceLocator: "main vs (2).md > Cita — option B",
+        },
+      },
+      buildingProse: {
+        displayText:
+          "Hotel construït durant la transformació de Barcelona vinculada als Jocs Olímpics de 1992. La seva altura i presència el converteixen en una fita urbana del front marítim.",
+        provenance: {
+          mappingRef: "§8 > 1C L'edifici",
+          sourceLocator: "main .md > Descripció WEB ¶1-2",
+        },
+      },
+      architectureCopy: {
+        displayText:
+          "L'Hotel Arts és un exemple d'arquitectura High Tech. L'estructura metàl·lica exterior fa visible el protagonisme de la tecnologia i, en alliberar la façana de pilars, permet més flexibilitat en la distribució interior i en les obertures cap a l'exterior.",
+        provenance: {
+          mappingRef: "§8 > 2 Arquitectura",
+          sourceLocator: "main .md > FORMA + (1).md > 5",
+        },
+      },
+      typographyCopy: {
+        displayText:
+          "Mecano, d'Andreu Balius, construeix les seves formes a partir d'una geometria precisa inspirada en el món mecànic i tecnològic.",
+        provenance: {
+          mappingRef: "§8 > 3 Tipografia",
+          sourceLocator: "main .md > MECANO > CARÀCTER",
+        },
+      },
+      dialogueCopy: {
+        displayText:
+          "Mecano i l'Hotel Arts comparteixen un llenguatge mecànic, modular i tecnològic. Els traços rectes i les diagonals de la tipografia dialoguen amb la retícula i les creus de l'estructura metàl·lica exterior. En tots dos casos, la forma expressa enginyeria, precisió i modernitat a través de la pròpia estructura.",
+        provenance: {
+          mappingRef: "§8 > 4 Diàleg",
+          sourceLocator: "main .md > MECANO > DIÀLEG",
+        },
+      },
+    },
   },
   {
     slug: "illa-diagonal",
@@ -398,6 +661,50 @@ export const cases: CaseRecord[] = [
     heroMedia: null,
     editorial: false,
     specimenMode: null,
+    infocard: {
+      highlightedPhrase: {
+        kind: "literal_quote",
+        displayText: "Un gratacel abatut.",
+        attribution: "Manuel de Solà-Morales · Joan Roig",
+        bibliographicContext: null,
+        provenance: {
+          mappingRef: "§21.1 > 6 L'Illa Diagonal",
+          sourceLocator: "main vs (2).md > Cita — both names retained",
+        },
+      },
+      buildingProse: {
+        displayText:
+          "Edifici de més de 300 metres de longitud destinat a galeries comercials, hotel, oficines i aparcament, concebut com una de les grans operacions urbanes de la Barcelona del 1992.",
+        provenance: {
+          mappingRef: "§9 > 1C L'edifici",
+          sourceLocator: "main .md > Descripció WEB ¶1-2",
+        },
+      },
+      architectureCopy: {
+        displayText:
+          "Concebuda com un \"gratacel abatut\", L'Illa Diagonal combina diferents alçades i reculades per evitar la monotonia d'un volum tan llarg. La façana alterna sòlid i buit amb un ritme regular de finestres modulades, mentre la planta baixa comercial prolonga l'espai públic cap a l'interior.",
+        provenance: {
+          mappingRef: "§9 > 2 Arquitectura",
+          sourceLocator: "main .md > FORMA + (1).md > 6",
+        },
+      },
+      typographyCopy: {
+        displayText:
+          "Shentox, d'Eduardo Manso, desenvolupa un llenguatge geomètric contundent a partir de formes simples i molt precises.",
+        provenance: {
+          mappingRef: "§9 > 3 Tipografia",
+          sourceLocator: "main .md > SHENTOX > CARÀCTER",
+        },
+      },
+      dialogueCopy: {
+        displayText:
+          "Shentox i L'Illa Diagonal comparteixen una estructura geomètrica, contundent i sistemàtica. La repetició de finestres funciona com una retícula, mentre el contrast entre volums compactes i buits troba un paral·lel en els diferents pesos de la tipografia. Ordre, proporció i precisió eviten la monotonia en totes dues.",
+        provenance: {
+          mappingRef: "§9 > 4 Diàleg",
+          sourceLocator: "main .md > SHENTOX > DIÀLEG",
+        },
+      },
+    },
   },
   {
     slug: "dhub",
@@ -409,14 +716,13 @@ export const cases: CaseRecord[] = [
       address: "Plaça de les Glòries Catalanes, 38, 08018 Barcelona",
     },
     experienceType: "physical_digital",
-    // The spreadsheet leaves `Corrent arquitectònic` empty for DhUB and the
-    // methodology's period grouping is chronologically inconsistent with
-    // 2014, so no movement is presented as settled source truth — see
-    // handoff §12. Traits are the formal observations the source pairing
-    // rationale itself makes, not an invented history.
+    // TG012 §21.2: accepted final editorial movement label, superseding the
+    // TBD placeholder discussed at handoff §12. Traits are the formal
+    // observations the source pairing rationale itself makes, not an
+    // invented history.
     architecture: {
-      movement: null,
-      movementStatus: "tbd",
+      movement: "Arquitectura Contemporània Neoindustrial",
+      movementStatus: "verified",
       traits: [
         "geometric volumes",
         "sharp, pronounced angles",
@@ -460,6 +766,50 @@ export const cases: CaseRecord[] = [
     heroMedia: null,
     editorial: true,
     specimenMode: "dhub",
+    infocard: {
+      highlightedPhrase: {
+        kind: "literal_quote",
+        displayText: "L'espai públic és la ciutat.",
+        attribution: "Oriol Bohigas",
+        bibliographicContext: null,
+        provenance: {
+          mappingRef: "§21.1 > 7 DHub Barcelona",
+          sourceLocator: "main vs (2).md > Cita — option B",
+        },
+      },
+      buildingProse: {
+        displayText:
+          "Equipament urbà dedicat al disseny, l'art i la cultura, concebut com un dels principals centres d'activitat d'aquest àmbit a Barcelona.",
+        provenance: {
+          mappingRef: "§10 > 1C L'edifici",
+          sourceLocator: "main .md > Descripció WEB ¶1 first sentence",
+        },
+      },
+      architectureCopy: {
+        displayText:
+          "El DHub Barcelona destaca per una arquitectura avantguardista de caràcter industrial, definida per formes anguloses i una façana revestida de zinc. El projecte combina un gran volum en volada amb un cos semisoterrat, connectats per un ampli vestíbul concebut com un \"atri urbà\" que integra l'edifici amb la ciutat.",
+        provenance: {
+          mappingRef: "§10 > 2 Arquitectura",
+          sourceLocator: "main .md > FORMA",
+        },
+      },
+      typographyCopy: {
+        displayText:
+          "Horizontype Monospaced, de Jordi Embodas, explora els límits d'una estructura monoespaiada mitjançant formes inesperades i contrastos subtils.",
+        provenance: {
+          mappingRef: "§10 > 3 Tipografia",
+          sourceLocator: "main .md > HORIZONTYPE > CARÀCTER",
+        },
+      },
+      dialogueCopy: {
+        displayText:
+          "Horizontype Monospaced i el DHub comparteixen una geometria marcada per angles, diagonals i contrastos. Les astes i les diagonals de les lletres dialoguen amb els plans inclinats, les escales i els grans voladissos de l'edifici. La tensió entre massa, buit, estabilitat i irregularitat construeix el caràcter de tots dos.",
+        provenance: {
+          mappingRef: "§10 > 4 Diàleg",
+          sourceLocator: "main .md > DIÀLEG",
+        },
+      },
+    },
   },
   {
     slug: "la-borda",
@@ -505,18 +855,69 @@ export const cases: CaseRecord[] = [
     heroMedia: null,
     editorial: false,
     specimenMode: null,
+    infocard: {
+      highlightedPhrase: {
+        kind: "literal_quote",
+        displayText: "L'arquitectura no és un fi; és una eina.",
+        attribution: "La Col",
+        bibliographicContext: "2019",
+        provenance: {
+          mappingRef: "§21.1 > 8 La Borda",
+          sourceLocator: "main + (2).md > Cita",
+        },
+      },
+      buildingProse: {
+        displayText:
+          "Projecte d'habitatge cooperatiu amb espais comunitaris compartits, concebut per facilitar l'accés a un habitatge digne i assequible i allunyar-se del model especulatiu convencional.",
+        provenance: {
+          mappingRef: "§11 > 1C L'edifici",
+          sourceLocator: "main .md > Descripció WEB ¶1-2",
+        },
+      },
+      architectureCopy: {
+        displayText:
+          "Construïda principalment amb fusta, La Borda integra 28 habitatges al voltant d'espais compartits com la cuina, la bugaderia, els horts i el pati central. El disseny bioclimàtic aprofita l'energia solar i la ventilació creuada, vinculant sostenibilitat i vida col·lectiva.",
+        provenance: {
+          mappingRef: "§11 > 2 Arquitectura",
+          sourceLocator: "main .md > FORMA + (1).md > 8",
+        },
+      },
+      typographyCopy: {
+        displayText:
+          "Geogrotesque Stencil, d'Eduardo Manso, construeix les seves formes mitjançant un sistema modular que combina solidesa i permeabilitat.",
+        provenance: {
+          mappingRef: "§11 > 3 Tipografia",
+          sourceLocator: "main .md > CARÀCTER",
+        },
+      },
+      dialogueCopy: {
+        displayText:
+          "Geogrotesque Stencil i La Borda comparteixen una lògica modular en què el buit forma part de l'estructura. Les interrupcions stencil recorden les gelosies, passeres i obertures de l'edifici, mentre la repetició de mòduls genera ordre i ritme. Solidesa i permeabilitat conviuen sense perdre coherència.",
+        provenance: {
+          mappingRef: "§11 > 4 Diàleg",
+          sourceLocator: "main .md > DIÀLEG",
+        },
+      },
+    },
   },
   {
     slug: "biblioteca-ggm",
     identity: {
       name: "Biblioteca Gabriel García Márquez",
       sourceName: "Biblioteca Grabiel Garcia Marquez",
-      year: 2023,
+      // TG012 §21.2: accepted final editorial year, superseding the prior
+      // recovered-source value.
+      year: 2022,
       architect: "Elena Orte, Guillermo Sevillano",
       address: "C/ del Treball, 219",
     },
     experienceType: "physical_digital",
-    architecture: { movement: null, movementStatus: "tbd" },
+    // TG012 §21.2: accepted final editorial movement label, superseding the
+    // TG005 `tbd` placeholder.
+    architecture: {
+      movement: "Nueva Bauhaus Europea",
+      movementStatus: "verified",
+    },
     typography: {
       primaryFamily: "Sisters",
       designer: "Laura Meseguer",
@@ -547,6 +948,53 @@ export const cases: CaseRecord[] = [
     heroMedia: null,
     editorial: false,
     specimenMode: null,
+    infocard: {
+      highlightedPhrase: {
+        kind: "literal_quote",
+        displayText:
+          "Un volumen escultórico inspirado en bloques de libros apilados.",
+        attribution: "Elena Orte i Guillermo Sevillano",
+        bibliographicContext: null,
+        provenance: {
+          mappingRef: "§21.1 > 9 Biblioteca Gabriel García Márquez",
+          sourceLocator: "main + (2).md > Cita",
+        },
+      },
+      buildingProse: {
+        displayText:
+          "Biblioteca especialitzada en literatura llatinoamericana, dedicada a Gabriel García Márquez. El programa incorpora espais de lectura, àrea infantil, sala sensorial, espais polivalents i Ràdio Maconda.",
+        provenance: {
+          mappingRef: "§12 > 1C L'edifici",
+          sourceLocator: "main .md > Descripció WEB ¶1",
+        },
+      },
+      architectureCopy: {
+        displayText:
+          "La Biblioteca Gabriel García Márquez adapta el xamfrà barceloní a través d'un volum escultòric elevat sobre una plaça porticada. Un gran pati triangular articula els espais, aporta llum natural i afavoreix la ventilació. L'estructura de fusta redueix l'impacte ambiental i combina sostenibilitat, calidesa i funcionalitat.",
+        provenance: {
+          mappingRef: "§12 > 2 Arquitectura",
+          sourceLocator: "main .md > FORMA + (1).md > 9",
+        },
+      },
+      typographyCopy: {
+        displayText:
+          "Sisters, de Laura Meseguer, és una família tipogràfica formada per variants que comparteixen una mateixa estructura i evolucionen amb naturalitat.",
+        provenance: {
+          mappingRef: "§12 > 3 Tipografia",
+          sourceLocator: "main .md > SISTERS > CARÀCTER",
+        },
+      },
+      // O-039B: OPERATOR explicitly authorizes keeping the "interrupcions"
+      // stencil-style characterization as-is; §22.1 no longer blocks this copy.
+      dialogueCopy: {
+        displayText:
+          "Sisters i la biblioteca comparteixen una estructura regular capaç d'admetre variació. Les interrupcions de la tipografia dialoguen amb les lames verticals i els grans finestrals, mentre la repetició modular de franges i obertures construeix ordre. La identitat neix del sistema, la llum i la relació entre ple i buit.",
+        provenance: {
+          mappingRef: "§12 > 4 Diàleg",
+          sourceLocator: "main .md > DIÀLEG",
+        },
+      },
+    },
   },
   {
     slug: "green-use-22",
@@ -558,7 +1006,12 @@ export const cases: CaseRecord[] = [
       address: "carrer Veneçuela 100,106 c/de l'Agricultura 92",
     },
     experienceType: "physical_digital",
-    architecture: { movement: null, movementStatus: "tbd" },
+    // TG012 §21.2: accepted final editorial movement label, superseding the
+    // TG005 `tbd` placeholder.
+    architecture: {
+      movement: "Nueva Bauhaus Europea",
+      movementStatus: "verified",
+    },
     typography: {
       primaryFamily: "Quadrata",
       designer: "Gerard Sierra",
@@ -594,6 +1047,50 @@ export const cases: CaseRecord[] = [
     heroMedia: null,
     editorial: false,
     specimenMode: null,
+    infocard: {
+      highlightedPhrase: {
+        kind: "literal_quote",
+        displayText: "Habitar és compartir.",
+        attribution: "Peris+Toral Arquitectes",
+        bibliographicContext: null,
+        provenance: {
+          mappingRef: "§21.1 > 10 GreenH@use",
+          sourceLocator: "main vs (2).md > Cita — option A",
+        },
+      },
+      buildingProse: {
+        displayText:
+          "Edifici d'habitatge social integrat en un xamfrà de l'Eixample de Cerdà. Combina habitatges per a persones grans, lloguer social i allotjaments temporals per respondre a necessitats diverses.",
+        provenance: {
+          mappingRef: "§13 > 1C L'edifici",
+          sourceLocator: "main .md > Descripció WEB ¶1-2",
+        },
+      },
+      architectureCopy: {
+        displayText:
+          "Els habitatges s'organitzen al voltant de patis interiors que afavoreixen la llum i la ventilació natural. Passarel·les comunitàries, gelosies de fusta i una coberta vidriada configuren un sistema bioclimàtic que combina confort, privacitat i eficiència energètica.",
+        provenance: {
+          mappingRef: "§13 > 2 Arquitectura",
+          sourceLocator: "main .md > FORMA + (1).md > 10",
+        },
+      },
+      typographyCopy: {
+        displayText:
+          "GS Quadrata, de Gerard Sierra, desenvolupa un alfabet modular on cada caràcter respon a una mateixa retícula geomètrica.",
+        provenance: {
+          mappingRef: "§13 > 3 Tipografia",
+          sourceLocator: "main .md > GS QUADRATA > CARÀCTER",
+        },
+      },
+      dialogueCopy: {
+        displayText:
+          "GS Quadrata i GreenH@use comparteixen una construcció modular basada en retícula, repetició i adaptació. Les astes i els traços de la tipografia dialoguen amb pilars, forjats i lames verticals, mentre les interrupcions de les lletres troben un paral·lel en els espais oberts entre els elements estructurals. Ordre i flexibilitat conviuen sense perdre identitat.",
+        provenance: {
+          mappingRef: "§13 > 4 Diàleg",
+          sourceLocator: "main .md > DIÀLEG",
+        },
+      },
+    },
   },
 ];
 
