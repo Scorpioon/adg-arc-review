@@ -6,7 +6,8 @@ export type InfocardPageId =
   | "building-facts"
   | "building-highlight"
   | "building-prose"
-  | "architecture"
+  | "architecture-movement"
+  | "architecture-prose"
   | "typography"
   | "dialogue"
   | "specimen";
@@ -35,7 +36,11 @@ function buildPageDescriptors(activeCase: CaseRecord | undefined): InfocardPageD
 
   descriptors.push(
     { id: "building-prose", chapter: 1 },
-    { id: "architecture", chapter: 2 },
+    // Pass F1C: Arquitectura is one chapter dot but two internal steps — a
+    // movement-only composition, then a running-text composition — never
+    // merged onto a single page (prompt 047 §F).
+    { id: "architecture-movement", chapter: 2 },
+    { id: "architecture-prose", chapter: 2 },
     { id: "typography", chapter: 3 },
     { id: "dialogue", chapter: 4 },
     { id: "specimen", chapter: 5 }

@@ -96,6 +96,18 @@ export default function App() {
       setStampFeedback(null);
     }
   }, [activeCase, stampFeedback]);
+  // TG012 Pass F1: the InfocardDossier passport-stamp step's sole stamp
+  // trigger. Reuses the same canonical `passport.stamp` call and
+  // `stampFeedback` setter as `usePhysicalEntrySignal` above — a second
+  // call site, not a second completion-state mechanism.
+  const handleStampCurrentCase = useCallback(() => {
+    if (!activeCase) return null;
+    const result = passport.stamp(activeCase.slug);
+    if (result.stamped) {
+      setStampFeedback({ slug: activeCase.slug, count: result.count, total: result.total });
+    }
+    return result;
+  }, [activeCase, passport]);
   // TG009 R1 corrective §1: the case selected immediately before the menu's
   // closed->open transition. TG010 Final Experience P1-R1
   // (ADGARC-DEC-010/Companion C3): the manual "Introducción" menu re-entry
@@ -307,6 +319,7 @@ export default function App() {
               ? t("passport.stampFeedback", { count: stampFeedback.count, total: stampFeedback.total })
               : null
           }
+          onStampCurrentCase={handleStampCurrentCase}
         />
       </main>
       {loadingVisible && (

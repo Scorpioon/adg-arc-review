@@ -95,11 +95,26 @@ export const es = {
   "caseSheet.next": "Siguiente",
   "caseSheet.heroLabel": "Imagen del caso",
   "caseSheet.heroEmpty": "Imagen pendiente de verificación.",
-  "caseSheet.section.building": "El edificio",
+  // TG012 Pass F1C: label normalization — no article on any footer/chapter
+  // label except "L'edifici" (prompt 047 §C). These six section labels are
+  // deliberately Catalan, matching the dossier's own Catalan title/content
+  // register (`menu.rootTitle` above), not the Spanish article forms this
+  // catalog otherwise uses for surrounding chrome copy.
+  "caseSheet.section.building": "L'edifici",
+  // TG012 Pass F1B: distinct footer-pill label for the facts page — was
+  // sharing `caseSheet.section.building` with building-prose, so both pages
+  // read the same word in the footer. Proven key gap (prompt 046 §5).
+  "caseSheet.section.facts": "Fitxa",
   "caseSheet.section.architecture": "Arquitectura",
-  "caseSheet.section.typography": "La tipografía",
-  "caseSheet.section.dialogue": "El diálogo",
+  "caseSheet.section.typography": "Tipografia",
+  "caseSheet.section.dialogue": "Diàleg",
   "caseSheet.section.specimen": "Espécimen",
+  // TG012 Pass F1: footer-pill label for the highlighted-phrase sub-page —
+  // no prior key existed for this visual category.
+  "caseSheet.section.quote": "Cita",
+  // TG012 Pass F1: single-stop finish-screen heading — distinct from
+  // `passport.completed` below, which names the all-stops-visited state.
+  "caseSheet.finishHeading": "Visita registrada",
   "caseSheet.fact.year": "Año",
   "caseSheet.fact.architect": "Arquitecto/a",
   "caseSheet.fact.address": "Dirección",
@@ -136,6 +151,9 @@ export const es = {
   // are display identifiers, not a route order — TG010 stays an unordered
   // physical journey.
   "passport.railLabel": "Pasaporte",
+  // TG012 Pass F1: instruction copy for the Infocard dossier's passport-stamp
+  // step — also doubles as the stamp target's accessible label.
+  "passport.stampInstruction": "Toca el sello para registrar tu visita.",
   "passport.railOrdinalNote":
     "Los números identifican cada parada; no indican un orden de recorrido.",
   "passport.railCellStatus": "%{name}: %{status}",

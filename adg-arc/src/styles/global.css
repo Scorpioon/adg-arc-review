@@ -2565,43 +2565,99 @@ body,
   flex-direction: column;
 }
 
+/* Pass F1C (prompt 047 §A): the "black horizontal artifact" F1B removed was
+   a full-strength `--canonical-ink` bar; the flow-corrective references show
+   a distinct, correct hairline treatment instead — a subtle `--hairline`
+   rule above the row, plus the stronger `--canonical-ink` rule below it
+   (row → yellow content) that was always the real target boundary. */
 .infocard-dossier__row {
   flex: none;
   display: flex;
   align-items: baseline;
   justify-content: space-between;
   gap: 0.75rem;
-  padding: 0.85rem 1.35rem;
-  background: var(--surface-sunken);
-  border-bottom: 1px solid var(--hairline);
+  padding: 1.1rem 1.35rem;
+  background: var(--surface);
+  border-top: 1px solid var(--hairline);
+  border-bottom: 1px solid var(--canonical-ink);
 }
 
 .infocard-dossier__row-left {
   display: flex;
   align-items: baseline;
-  gap: 0.6rem;
+  gap: 0.65rem;
   min-width: 0;
 }
 
+/* Pass F1B §4A: circled chapter-number marker (was plain bold text sized
+   the same as the building name).
+   Pass F1C: the row-scoped leading hairline this circle used to fake via its
+   own `::before` is now the row's own real `border-top` above, so the
+   duplicate stub is removed. */
 .infocard-dossier__ordinal {
   flex: none;
-  font-size: 1.1rem;
+  width: 1.9rem;
+  height: 1.9rem;
+  border-radius: 50%;
+  border: 1px solid var(--canonical-ink);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.95rem;
   font-weight: 700;
+  line-height: 1;
+}
+
+/* Pass F1B §4A: the row's third (right) slot — structurally present per the
+   target's three-slot layout, deliberately never a text label (that role
+   moved to the footer pill in Pass F1). A bare vertical hairline reads as an
+   intentional structural region rather than dead space or a reintroduced
+   section label. */
+.infocard-dossier__row-right {
+  flex: none;
+  align-self: stretch;
+  width: 1px;
+  min-height: 1.5rem;
+  background: var(--hairline);
 }
 
 .infocard-dossier__case-name {
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-  font-size: 1.1rem;
+  /* Pass F1 (Prompt 045 §4): full building name wraps naturally — no
+     truncation. The section label that used to compete for this row's
+     width moved to the footer pill below (§5). */
+  font-size: clamp(1.35rem, 3.2vw, 1.75rem);
   font-weight: 700;
 }
 
-.infocard-dossier__section-label {
+/* Pass F1 §5: the bottom nav's visual-label pill — a non-interactive
+   `<span>`, never a navigation control. Same treatment the top-row section
+   label used to carry, just relocated.
+   Pass F1B (prompt 046 §4B): given real pill/chip chrome — it was rendering
+   as plain text on every page (not only the facts page the operator's note
+   named), so this fix is general rather than facts-specific.
+   Pass F1C (prompt 047 §B): smaller/more compact — the target pill reads
+   noticeably tighter than a 40px-min-height chip. */
+.infocard-dossier__nav-pill {
   flex: none;
-  font-size: 0.92rem;
-  font-weight: 600;
-  color: var(--ink-muted);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 32px;
+  padding: 0.3rem 0.85rem;
+  border: 1px solid var(--canonical-ink);
+  border-radius: 999px;
+  background: var(--surface);
+  font-size: clamp(0.8rem, 2vw, 0.95rem);
+  font-weight: 700;
+  color: var(--canonical-ink);
+}
+
+/* Pass F1C §B: tighter cluster between the back arrow, chapter dots, and
+   forward arrow. */
+.infocard-dossier__nav-controls {
+  display: flex;
+  align-items: center;
+  gap: 0.45rem;
 }
 
 .infocard-dossier__stamp-feedback {
@@ -2614,8 +2670,8 @@ body,
   font-weight: 600;
 }
 
-/* The dossier's one scrollable content region — cover lands on white,
-   every content page lands on canonical yellow (DEC-010 §3-4). */
+/* The dossier's one scrollable content region — every page, cover included,
+   lands on canonical yellow per the Figma source (Pass E visual parity). */
 .infocard-dossier__content {
   flex: 1 1 auto;
   min-height: 0;
@@ -2627,14 +2683,16 @@ body,
   outline: none;
 }
 
+/* Pass E: the cover body follows the Figma yellow-page composition — a
+   hero-media slot filling the available height, with the CTA sitting close
+   beneath it, rather than a centered title/typeface treatment. */
 .infocard-dossier__content--cover {
-  background: var(--surface);
+  background: var(--canonical-yellow);
+  color: var(--canonical-ink);
   display: flex;
   flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  gap: 1.5rem;
-  text-align: center;
+  align-items: stretch;
+  gap: 1.25rem;
 }
 
 .infocard-dossier__content--page {
@@ -2642,8 +2700,26 @@ body,
   color: var(--canonical-ink);
 }
 
+/* Pass F1C (prompt 047 §D/§G): the highlighted-phrase and Tipografia pages
+   were riding too high — `.infocard-page--highlight`/`--typography` already
+   declare `flex: 1; justify-content: center;` (below), but that only takes
+   effect once their direct parent is itself a flex container. Scoped via
+   `:has()` (the same technique `PassportPane`'s own EditorialShell-body
+   override already established) so only these two page types gain true
+   vertical centering — Facts/Specimen's own dormant `flex: 1` rules are
+   deliberately left inert, since their top-anchored composition is already
+   correct. */
+.infocard-dossier__content:has(.infocard-page--highlight),
+.infocard-dossier__content:has(.infocard-page--typography),
+.infocard-dossier__content:has(.infocard-page--architecture-movement) {
+  display: flex;
+  flex-direction: column;
+}
+
 .infocard-dossier__explore {
   appearance: none;
+  align-self: center;
+  flex: none;
   min-height: 44px;
   border: 1px solid var(--canonical-ink);
   border-radius: 999px;
@@ -2659,27 +2735,32 @@ body,
   background: var(--canonical-yellow);
 }
 
+/* Pass F1B (prompt 046 §4B): border-top removed — the target's footer band
+   sits flush against the content above it (same yellow, no seam); that
+   border-top was the "unwanted black bar/separator artifact" the operator
+   flagged.
+   Pass F1C (prompt 047 §B): padding/gap tightened again — the target footer
+   band overall reads more compact than F1B's widened-margin corrective. */
 .infocard-dossier__nav {
   flex: none;
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 0.75rem;
-  padding: 0.75rem 1.1rem max(0.75rem, env(safe-area-inset-bottom));
+  gap: 0.6rem;
+  padding: 0.55rem 1rem max(0.55rem, env(safe-area-inset-bottom));
   background: var(--canonical-yellow);
-  border-top: 1px solid var(--canonical-ink);
 }
 
 .infocard-dossier__nav-arrow {
   appearance: none;
   flex: none;
-  width: 44px;
-  height: 44px;
+  width: 40px;
+  height: 40px;
   border-radius: 50%;
   border: 1px solid var(--canonical-ink);
   background: var(--surface);
   color: var(--canonical-ink);
-  font-size: 1.1rem;
+  font-size: 1rem;
   line-height: 1;
   cursor: pointer;
   display: inline-flex;
@@ -2692,10 +2773,13 @@ body,
   cursor: default;
 }
 
+/* Pass F1C §B: dots closer together, all the same size (unchanged — every
+   pip already shared one rule, so this was never a size mismatch, only a
+   spacing one). */
 .infocard-dossier__chapters {
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: 6px;
 }
 
 .infocard-dossier__chapter-pip {
@@ -2707,6 +2791,7 @@ body,
   background: var(--surface);
   color: var(--canonical-ink);
   font: inherit;
+  font-size: 0.85rem;
   font-weight: 600;
   line-height: 1;
   cursor: pointer;
@@ -2724,6 +2809,90 @@ body,
   font-weight: 700;
 }
 
+/* Pass F1 §6 — passport-stamp step: post-chapter, outside the numbered
+   pagination, reusing the same `.infocard-dossier__content--page`/`__nav`
+   shell as ordinary content pages. */
+.infocard-dossier__content--stamp {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 1.5rem;
+  text-align: center;
+}
+
+.infocard-dossier__stamp-target {
+  appearance: none;
+  flex: none;
+  width: clamp(140px, 34vw, 200px);
+  height: clamp(140px, 34vw, 200px);
+  border: 2px solid var(--canonical-ink);
+  background: var(--surface);
+  color: var(--canonical-ink);
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.infocard-dossier__stamp-tick {
+  font-size: clamp(3rem, 10vw, 4.5rem);
+  /* Semi-transparent until stamped, per DEC decision §2. */
+  opacity: 0.35;
+}
+
+.infocard-dossier__stamp-instruction {
+  margin: 0;
+  font-size: 0.95rem;
+  font-weight: 600;
+}
+
+/* Pass F1 §7 — finish step: no nav rail, single full-width return action. */
+.infocard-dossier__content--finish {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 1.25rem;
+  text-align: center;
+}
+
+.infocard-dossier__finish-check {
+  flex: none;
+  width: 72px;
+  height: 72px;
+  border-radius: 50%;
+  border: 2px solid var(--canonical-ink);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 2rem;
+}
+
+.infocard-dossier__finish-heading {
+  margin: 0;
+  font-size: clamp(1.35rem, 3.2vw, 1.75rem);
+  font-weight: 700;
+}
+
+.infocard-dossier__finish-return {
+  appearance: none;
+  align-self: stretch;
+  min-height: 48px;
+  border: 1px solid var(--canonical-ink);
+  border-radius: 999px;
+  background: var(--surface);
+  color: var(--canonical-ink);
+  font: inherit;
+  font-weight: 700;
+  padding: 0.75rem 1.5rem;
+  cursor: pointer;
+}
+
+.infocard-dossier__finish-return:hover {
+  background: var(--canonical-yellow);
+}
+
 /* Editorial page primitives (InfocardPages.tsx, TG012 Pass B) — first
    styling pass. Every rule below targets `.infocard-page__*` classes that
    component already renders, unstyled until now. */
@@ -2734,20 +2903,36 @@ body,
 }
 
 .infocard-page--cover {
+  flex: 1 1 auto;
+  width: 100%;
+  gap: 0;
+}
+
+/* Honest hero-media slot: fills the available cover height whether or not
+   `heroMedia` is populated. Never a fabricated image nor the Figma
+   screenshot itself — an empty slot keeps the target composition without
+   inventing a product asset (Pass E §6, hero asset BLOCKED for every
+   current case). */
+.infocard-page__hero {
+  flex: 1 1 auto;
+  min-height: 220px;
+  border: 1px solid var(--canonical-ink);
+  background: rgba(255, 255, 255, 0.3);
+  overflow: hidden;
+  display: flex;
   align-items: center;
-  gap: 0.5rem;
+  justify-content: center;
 }
 
-.infocard-page__case-name {
-  margin: 0;
-  font-size: clamp(1.6rem, 5vw, 2.4rem);
-  font-weight: 700;
+.infocard-page__hero[data-empty="true"] {
+  border-style: dashed;
 }
 
-.infocard-page__typeface-name {
-  margin: 0;
-  font-size: 1.05rem;
-  color: var(--ink-muted);
+.infocard-page__hero-image {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
 }
 
 .infocard-page--facts {
@@ -2759,27 +2944,29 @@ body,
   margin: 0;
   display: flex;
   flex-direction: column;
-  gap: 1rem;
+  gap: 0;
 }
 
 .infocard-page__fact {
   display: flex;
-  flex-direction: column;
-  gap: 0.15rem;
-  padding-bottom: 0.6rem;
-  border-bottom: 1px solid rgba(29, 29, 27, 0.25);
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 1.25rem;
+  padding: 0.9rem 0;
+  border-bottom: 1px solid rgba(0, 0, 0, 0.3);
 }
 
 .infocard-page__fact dt {
-  font-size: 0.8rem;
+  flex: none;
+  margin: 0;
+  font-size: clamp(0.95rem, 2.2vw, 1.1rem);
   font-weight: 600;
-  text-transform: uppercase;
-  letter-spacing: 0.03em;
 }
 
 .infocard-page__fact dd {
   margin: 0;
-  font-size: 1.1rem;
+  text-align: right;
+  font-size: clamp(1.2rem, 3.6vw, 1.6rem);
   font-weight: 700;
 }
 
@@ -2790,10 +2977,21 @@ body,
   text-align: center;
 }
 
-.infocard-page__quote,
+/* Pass F1B (prompt 046 §4D): literal quotes now carry their own corrected
+   size/leading/italic; paraphrase/synthesis (`__phrase`) keeps the prior
+   treatment on purpose — it must never visually masquerade as a literal
+   quotation (InfocardHighlightedPhrasePage comment, DEC-010 §D3). */
+.infocard-page__quote {
+  margin: 0;
+  font-size: clamp(1.4rem, 4.6vw, 2.1rem);
+  font-weight: 700;
+  font-style: italic;
+  line-height: 1.3;
+}
+
 .infocard-page__phrase {
   margin: 0;
-  font-size: clamp(1.1rem, 3.4vw, 1.5rem);
+  font-size: clamp(1.3rem, 4.2vw, 1.9rem);
   font-weight: 700;
   line-height: 1.35;
 }
@@ -2802,8 +3000,12 @@ body,
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 0.2rem;
-  font-size: 0.9rem;
+  gap: 0.25rem;
+  font-size: 1rem;
+}
+
+.infocard-page__attribution cite {
+  font-style: italic;
 }
 
 .infocard-page__bibliographic-context {
@@ -2812,7 +3014,7 @@ body,
 
 .infocard-page__heading {
   margin: 0;
-  font-size: 1.4rem;
+  font-size: clamp(1.5rem, 4vw, 1.9rem);
   font-weight: 700;
 }
 
@@ -2821,24 +3023,95 @@ body,
 }
 
 .infocard-page__meta-line {
+  display: flex;
+  flex-direction: column;
+  gap: 0.2rem;
   margin: 0;
-  font-size: 0.95rem;
 }
 
 .infocard-page__meta-label {
+  font-size: 0.85rem;
   font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+}
+
+.infocard-page__meta-value {
+  font-size: clamp(1.1rem, 3vw, 1.35rem);
 }
 
 .infocard-page__meta-typeface {
   margin: 0;
-  font-size: clamp(1.6rem, 5vw, 2.2rem);
+  font-size: clamp(1.8rem, 6vw, 2.6rem);
   font-weight: 700;
 }
 
+/* Pass F1B (prompt 046 §4E): running-text ratio — ~32px font / ~38px
+   line-height at the target's reference width (2rem / 1.1875 unitless, so
+   the ratio holds as the clamp scales). Body copy only, never the oversized
+   typeface-name display treatment (`__meta-typeface` below). */
 .infocard-page__body {
   margin: 0;
-  font-size: 1rem;
-  line-height: 1.6;
+  font-size: clamp(1.35rem, 6vw, 2rem);
+  line-height: 1.1875;
+}
+
+/* Pass F1C (prompt 047 §F): useInfocardPagination.ts now exposes two
+   Arquitectura page ids (`architecture-movement`, `architecture-prose`) —
+   the movement block and the running text are separate steps under the
+   same chapter dot, never merged on one page. `.infocard-page--architecture`
+   stays a shared base class on both steps for the properties below that
+   apply to either. */
+.infocard-page--architecture .infocard-page__meta {
+  margin: 0;
+  padding-top: 1.1rem;
+  border-top: 1px solid rgba(29, 29, 27, 0.3);
+}
+
+/* The movement-only step: a label/value row (matching the Facts page's own
+   row grammar), vertically centered in the available page height via the
+   `:has()` rule above. */
+.infocard-page--architecture-movement {
+  flex: 1;
+  justify-content: center;
+}
+
+.infocard-page--architecture .infocard-page__meta-line {
+  flex-direction: row;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 1.25rem;
+}
+
+/* Reference composition shows a regular-weight, sentence-case label — not
+   the uppercase/letter-spaced treatment `.infocard-page__meta-label` uses
+   elsewhere — paired with the already-bold (`<strong>`) value. */
+.infocard-page--architecture .infocard-page__meta-label {
+  text-transform: none;
+  letter-spacing: normal;
+  font-weight: 400;
+  font-size: clamp(1.1rem, 3vw, 1.35rem);
+}
+
+.infocard-page--architecture .infocard-page__meta-value {
+  font-size: clamp(1.4rem, 4.5vw, 1.9rem);
+  text-align: right;
+}
+
+/* Pass F1C (prompt 047 §G): reverted F1B's horizontal centering — the
+   reference composition keeps the typeface name and running text left-
+   aligned like every other prose page. "Better centered and composed" reads
+   as vertical placement, handled by the `:has()` rule above plus this
+   page's own `flex: 1; justify-content: center`. */
+.infocard-page--typography {
+  flex: 1;
+  justify-content: center;
+}
+
+/* Pass F1C (prompt 047 §H): a bounded measure reads as more "contained"
+   than the full-width column every other prose page already uses. */
+.infocard-page--dialogue .infocard-page__body {
+  max-width: 34ch;
 }
 
 .infocard-page--specimen {
