@@ -6,20 +6,21 @@ import PassportMapOverlay from "./components/PassportMapOverlay";
 import LoadingScreen from "./components/LoadingScreen";
 import GestureCoachmark from "./components/GestureCoachmark";
 import EntryCurtain from "./components/EntryCurtain";
-import { cases, findCaseBySlug } from "./data/cases";
+import { cases, findCaseBySlug, type CaseRecord } from "./data/cases";
 import { useCaseParam } from "./hooks/useCaseParam";
 import { usePrefersReducedMotion } from "./hooks/usePrefersReducedMotion";
 import { useReadiness } from "./hooks/useReadiness";
 import { useEntryCurtain } from "./hooks/useEntryCurtain";
 import { usePassport } from "./hooks/usePassport";
-import { usePhysicalEntrySignal } from "./hooks/usePhysicalEntrySignal";
+import { usePhysicalProof } from "./hooks/usePhysicalProof";
+import { useVisitProofSignal } from "./hooks/useVisitProofSignal";
 import { useMapPaintOverrides } from "./hooks/useMapPaintOverrides";
 import { useMapLodOverrides } from "./hooks/useMapLodOverrides";
 import { useViewportClass } from "./hooks/useViewportClass";
 import { useGestureCoachmark } from "./hooks/useGestureCoachmark";
 import { DEVTOOLS_ENABLED } from "./config/devtools";
 import type { EffectiveLodConfig } from "./config/mapLod";
-import { buildPhysicalEntryManifest } from "./lib/deepLink";
+import { buildQrDebugManifest } from "./lib/deepLink";
 import { useT } from "./i18n/context";
 
 // Purely cosmetic post-ready fade duration for LoadingScreen — see its
@@ -74,40 +75,62 @@ export default function App() {
   // contract's "no valid selected case is resolved on entry."
   const entryCurtain = useEntryCurtain({ hasValidCase: !!activeCase });
 
-  // TG010 (DEC-006): passport-progress authority + transient physical-entry
-  // signal consumption. `stampFeedback` carries the slug it belongs to so it
-  // can be cleared once the user navigates away from the just-stamped case,
-  // without becoming a second case-selection authority.
+  // TG010 (DEC-006): passport-progress authority. `stampFeedback` carries
+  // the slug it belongs to so it can be cleared once the user navigates away
+  // from the just-stamped case, without becoming a second case-selection
+  // authority.
   const passport = usePassport();
   const [stampFeedback, setStampFeedback] = useState<{
     slug: string;
     count: number;
     total: number;
   } | null>(null);
-  usePhysicalEntrySignal({
+  // TG014 (QR Contract v1): local physical-visit proof authority, separate
+  // from passport-stamp state — opening a case, proving a physical visit,
+  // and stamping the passport are three distinct facts (see
+  // usePhysicalProof.ts).
+  const physicalProof = usePhysicalProof();
+  const [proofStatus, setProofStatus] = useState<{ slug: string } | null>(null);
+  // Supersedes TG010's usePhysicalEntrySignal / the retired legacy
+  // physical-entry query signal: a printed plaque's `visit` token only ever
+  // records local proof here — it never
+  // stamps the passport directly. Passport stamping stays the dossier's own
+  // explicit Touch to Check action (handleStampCurrentCase below).
+  useVisitProofSignal({
     activeCase,
-    onValidPhysicalEntry: (slug) => {
-      const result = passport.stamp(slug);
-      if (result.stamped) setStampFeedback({ slug, count: result.count, total: result.total });
-    },
+    onValidProof: (slug) => physicalProof.recordProof(slug),
+    onInvalidProof: (slug) => setProofStatus({ slug }),
   });
   useEffect(() => {
     if (stampFeedback && activeCase?.slug !== stampFeedback.slug) {
       setStampFeedback(null);
     }
-  }, [activeCase, stampFeedback]);
+    if (proofStatus && activeCase?.slug !== proofStatus.slug) {
+      setProofStatus(null);
+    }
+  }, [activeCase, stampFeedback, proofStatus]);
+  // TG014: physical cases require locally-proven physical visit before the
+  // final Touch to Check control may stamp; digital cases never require
+  // proof. `experienceType` is the single existing authority for this
+  // distinction (cases.ts) — no second visit-mode field.
+  const canStampCase = useCallback(
+    (c: CaseRecord) => c.experienceType !== "physical_digital" || physicalProof.hasProof(c.slug),
+    [physicalProof]
+  );
   // TG012 Pass F1: the InfocardDossier passport-stamp step's sole stamp
   // trigger. Reuses the same canonical `passport.stamp` call and
-  // `stampFeedback` setter as `usePhysicalEntrySignal` above — a second
-  // call site, not a second completion-state mechanism.
+  // `stampFeedback` setter — never a second completion-state mechanism.
+  // TG014: also the defense-in-depth gate — InfocardDossier disables the
+  // control's UI when `canStampCase` is false, but this callback refuses
+  // the same way regardless of how it is invoked.
   const handleStampCurrentCase = useCallback(() => {
-    if (!activeCase) return null;
+    if (!activeCase || !canStampCase(activeCase)) return null;
     const result = passport.stamp(activeCase.slug);
     if (result.stamped) {
       setStampFeedback({ slug: activeCase.slug, count: result.count, total: result.total });
     }
     return result;
-  }, [activeCase, passport]);
+  }, [activeCase, passport, canStampCase]);
   // TG009 R1 corrective §1: the case selected immediately before the menu's
   // closed->open transition. TG010 Final Experience P1-R1
   // (ADGARC-DEC-010/Companion C3): the manual "Introducción" menu re-entry
@@ -172,7 +195,7 @@ export default function App() {
       origin: window.location.origin,
       baseUrl: import.meta.env.BASE_URL,
       hostingMode: (import.meta.env.BASE_URL === "/" ? "root" : "subpath") as "root" | "subpath",
-      manifest: buildPhysicalEntryManifest(),
+      manifest: buildQrDebugManifest(),
     }),
     []
   );
@@ -320,6 +343,13 @@ export default function App() {
               : null
           }
           onStampCurrentCase={handleStampCurrentCase}
+          stampEnabled={activeCase ? canStampCase(activeCase) : false}
+          stampDisabledReason={
+            activeCase && !canStampCase(activeCase) ? t("passport.stampBlockedPhysical") : null
+          }
+          proofStatus={
+            proofStatus && activeCase?.slug === proofStatus.slug ? t("passport.proofInvalid") : null
+          }
         />
       </main>
       {loadingVisible && (

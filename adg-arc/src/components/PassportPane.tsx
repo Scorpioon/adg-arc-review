@@ -180,7 +180,8 @@ function PassportStopRail({
 // stop-browsing surface is the .passport-carousel 9:16 content-card
 // carousel below. Opening a case from here goes through the same App-owned
 // `onSelectCase` the map already uses — never a second selection authority,
-// never a stamp (only a valid `entry=physical` signal stamps).
+// never a stamp (only the dossier's own Touch to Check control stamps, and
+// only once the QR Contract v1 gate — TG014 — allows it for that case).
 export default function PassportPane({ passport, cases, onSelectCase }: PassportPaneProps) {
   const t = useT();
   const reducedMotion = usePrefersReducedMotion();
@@ -281,7 +282,8 @@ export default function PassportPane({ passport, cases, onSelectCase }: Passport
           from the window/panel yellow title-bar treatment. Every card is a
           real button going through the same App-owned `onSelectCase` the
           map/menu already use — never a second selection authority, never a
-          stamp (only a valid `entry=physical` signal stamps).
+          stamp (only the dossier's own Touch to Check control stamps, and
+          only once the QR Contract v1 gate — TG014 — allows it for that case).
 
           TG011 Pass C (ADGARC-FB-044): the 9:16 ratio, the scroll-snap track
           and the per-card `onSelectCase` are all unchanged. The cards now

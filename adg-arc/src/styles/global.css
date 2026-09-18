@@ -2670,6 +2670,18 @@ body,
   font-weight: 600;
 }
 
+/* TG014 (QR Contract v1): restrained invalid-proof status — same slot
+   language as stamp-feedback above, not a new modal/banner system. */
+.infocard-dossier__proof-status {
+  flex: none;
+  margin: 0;
+  padding: 0.6rem 1.35rem;
+  background: var(--surface);
+  border-bottom: 1px solid var(--hairline);
+  font-size: 0.85rem;
+  font-weight: 600;
+}
+
 /* The dossier's one scrollable content region — every page, cover included,
    lands on canonical yellow per the Figma source (Pass E visual parity). */
 .infocard-dossier__content {
@@ -2833,6 +2845,13 @@ body,
   display: inline-flex;
   align-items: center;
   justify-content: center;
+}
+
+/* TG014 (QR Contract v1): physical case, no locally-proven visit yet. */
+.infocard-dossier__stamp-target:disabled {
+  cursor: not-allowed;
+  opacity: 0.45;
+  border-color: var(--hairline);
 }
 
 .infocard-dossier__stamp-tick {

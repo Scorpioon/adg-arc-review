@@ -18,7 +18,7 @@ import { PRODUCT_VERSION } from "../config/devtools";
 import { useT } from "../i18n/context";
 import type { CameraState } from "./MapView";
 import type { Milestone, ReadinessFailure, ReadinessStatus, ReadinessWarning } from "../hooks/useReadiness";
-import type { PhysicalEntryManifest } from "../lib/deepLink";
+import type { QrDebugManifest } from "../lib/deepLink";
 
 const EXPORT_SCHEMA = "adgarc.devtools.mapPaint.v2";
 const LOD_EXPORT_SCHEMA = "adgarc.devtools.mapLod.v1";
@@ -36,7 +36,7 @@ export interface DevToolsPhysicalEntryProps {
   origin: string;
   baseUrl: string;
   hostingMode: "root" | "subpath";
-  manifest: PhysicalEntryManifest;
+  manifest: QrDebugManifest;
   selectedCaseSlug: string | null;
 }
 
@@ -228,7 +228,7 @@ export default function DevTools({
     const url = URL.createObjectURL(blob);
     const link = document.createElement("a");
     link.href = url;
-    link.download = "adgarc-physical-entry-manifest.json";
+    link.download = "adgarc-qr-debug-manifest.json";
     document.body.appendChild(link);
     link.click();
     link.remove();
@@ -607,11 +607,11 @@ export default function DevTools({
         {selectedEntry && (
           <p className="dev-tools__section-note" style={{ marginTop: "0.6rem" }}>
             {t("devtools.physicalEntry.selectedUrlLabel")}{" "}
-            <span className="dev-tools__physical-url">{selectedEntry.physicalEntryUrl}</span>{" "}
+            <span className="dev-tools__physical-url">{selectedEntry.caseUrl}</span>{" "}
             <button
               type="button"
               className="settings-actions__btn"
-              onClick={() => handleCopyEntryUrl(selectedEntry.slug, selectedEntry.physicalEntryUrl)}
+              onClick={() => handleCopyEntryUrl(selectedEntry.slug, selectedEntry.caseUrl)}
             >
               {copiedEntrySlug === selectedEntry.slug
                 ? t("devtools.physicalEntry.copied")
@@ -624,11 +624,11 @@ export default function DevTools({
           {physicalEntry.manifest.entries.map((entry) => (
             <li className="dev-tools__physical-row" key={entry.slug}>
               <span className="dev-tools__physical-name">{entry.title}</span>
-              <span className="dev-tools__physical-url">{entry.physicalEntryUrl}</span>
+              <span className="dev-tools__physical-url">{entry.caseUrl}</span>
               <button
                 type="button"
                 className="settings-actions__btn"
-                onClick={() => handleCopyEntryUrl(entry.slug, entry.physicalEntryUrl)}
+                onClick={() => handleCopyEntryUrl(entry.slug, entry.caseUrl)}
               >
                 {copiedEntrySlug === entry.slug
                   ? t("devtools.physicalEntry.copied")

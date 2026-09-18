@@ -49,6 +49,17 @@ export interface InfocardDossierProps {
   // stamp trigger InfocardDossier ever calls, so canonical passport state
   // never gains a second/parallel writer.
   onStampCurrentCase?: () => InfocardStampResult | null;
+  // TG014 (QR Contract v1): App-resolved gate for the Touch to Check control
+  // — false for a physical case with no locally-proven visit, true for a
+  // proven physical case or any digital case. Defaults to true so existing
+  // callers/tests that omit it keep the pre-TG014 always-enabled behavior.
+  stampEnabled?: boolean;
+  // Pre-resolved (via i18n) explanatory copy shown in place of the ordinary
+  // stamp instruction while `stampEnabled` is false.
+  stampDisabledReason?: string | null;
+  // Pre-resolved restrained status text for an invalid/mismatched physical
+  // proof token — never blocks reading, never stamps, never persists proof.
+  proofStatus?: string | null;
 }
 
 // Pass F1 (Prompt 045 §8): the five canonical chapter section labels plus
@@ -91,6 +102,9 @@ export default function InfocardDossier({
   onAnchorChange,
   stampFeedback,
   onStampCurrentCase,
+  stampEnabled = true,
+  stampDisabledReason,
+  proofStatus,
 }: InfocardDossierProps) {
   const t = useT();
   const { currentPage, pageIndex, canGoPrevious, canGoNext, goPrevious, goNext, jumpToChapter } =
@@ -111,7 +125,7 @@ export default function InfocardDossier({
   // the resulting `setStep("finish")` re-render actually unmounting it.
   const stampingRef = useRef(false);
   const handleStampActivate = () => {
-    if (stampingRef.current) return;
+    if (stampingRef.current || !stampEnabled) return;
     stampingRef.current = true;
     const result = onStampCurrentCase ? onStampCurrentCase() : null;
     if (result) {
@@ -300,6 +314,12 @@ export default function InfocardDossier({
             </p>
           )}
 
+          {proofStatus && (
+            <p className="infocard-dossier__proof-status" role="status">
+              {proofStatus}
+            </p>
+          )}
+
           {step === "pages" && (
             <>
               <div
@@ -386,13 +406,17 @@ export default function InfocardDossier({
                   type="button"
                   className="infocard-dossier__stamp-target"
                   onClick={handleStampActivate}
-                  aria-label={t("passport.stampInstruction")}
+                  disabled={!stampEnabled}
+                  aria-disabled={!stampEnabled}
+                  aria-label={stampEnabled ? t("passport.stampInstruction") : stampDisabledReason ?? undefined}
                 >
                   <span className="infocard-dossier__stamp-tick" aria-hidden="true">
                     &#10003;
                   </span>
                 </button>
-                <p className="infocard-dossier__stamp-instruction">{t("passport.stampInstruction")}</p>
+                <p className="infocard-dossier__stamp-instruction">
+                  {stampEnabled ? t("passport.stampInstruction") : stampDisabledReason}
+                </p>
               </div>
               <nav className="infocard-dossier__nav" aria-label={t("caseSheet.navLabel")}>
                 <span className="infocard-dossier__nav-pill">{t("passport.railLabel")}</span>

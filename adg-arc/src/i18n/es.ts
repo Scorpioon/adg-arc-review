@@ -154,6 +154,14 @@ export const es = {
   // TG012 Pass F1: instruction copy for the Infocard dossier's passport-stamp
   // step — also doubles as the stamp target's accessible label.
   "passport.stampInstruction": "Toca el sello para registrar tu visita.",
+  // TG014 (QR Contract v1): shown instead of stampInstruction, and applied
+  // to the stamp target's disabled state, when a physical case has no
+  // locally-proven visit yet.
+  "passport.stampBlockedPhysical":
+    "Escanea el código QR de la placa física para poder registrar tu visita.",
+  // TG014: restrained status shown when a scanned `visit` token failed
+  // validation — reading/navigating the case is never blocked by this.
+  "passport.proofInvalid": "El código QR escaneado no es válido para este caso.",
   "passport.railOrdinalNote":
     "Los números identifican cada parada; no indican un orden de recorrido.",
   "passport.railCellStatus": "%{name}: %{status}",

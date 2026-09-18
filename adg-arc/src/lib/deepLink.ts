@@ -25,47 +25,37 @@ export function buildCaseDeepLink(slug: string, origin: string = window.location
   return url.toString();
 }
 
-// TG010 Scope: single canonical query-param key/value for the physical-entry
-// signal. Re-exported here (not duplicated) so usePhysicalEntrySignal.ts and
-// this module's URL builders always agree on the same literals.
-export const ENTRY_PARAM_KEY = "entry";
-export const ENTRY_PHYSICAL_VALUE = "physical";
+const QR_DEBUG_SCHEMA = "adgarc.qrDebugManifest.v1";
 
-// Canonical physical-entry deep-link helper (handoff Scope F/DEC-006):
-// additive to buildCaseDeepLink — same URL/URLSearchParams primitives, plus
-// the `entry=physical` signal a QR scan is expected to carry.
-export function buildPhysicalEntryUrl(slug: string, origin: string = window.location.origin): string {
-  const url = new URL(import.meta.env.BASE_URL, origin);
-  url.searchParams.set(CASE_PARAM_KEY, slug);
-  url.searchParams.set(ENTRY_PARAM_KEY, ENTRY_PHYSICAL_VALUE);
-  return url.toString();
-}
-
-const PHYSICAL_ENTRY_SCHEMA = "adgarc.physicalEntry.v2";
-
-export interface PhysicalEntryManifestEntry {
+export interface QrDebugManifestEntry {
   slug: string;
   title: string;
   caseUrl: string;
-  physicalEntryUrl: string;
 }
 
-export interface PhysicalEntryManifest {
-  schema: typeof PHYSICAL_ENTRY_SCHEMA;
+export interface QrDebugManifest {
+  schema: typeof QR_DEBUG_SCHEMA;
   productVersion: string;
   baseUrl: string;
-  entries: PhysicalEntryManifestEntry[];
+  entries: QrDebugManifestEntry[];
 }
 
-// Physical-entry manifest (handoff Scope F): derived directly from the
-// canonical case dataset and its `experienceType` classification — never a
-// second, manually maintained slug list. No QR image generation here.
-export function buildPhysicalEntryManifest(
+// TG014 (QR Contract v1): debug-only listing of the physical-set case deep
+// links, for DevTools' operator-facing QR review pane. Derived directly
+// from the canonical case dataset and its `experienceType` classification —
+// never a second, manually maintained slug list. Never includes a `visit=`
+// token: runtime product source holds only SHA-256 proof hashes (see
+// ../lib/qrContract.ts), never the raw per-case tokens needed to construct a
+// working printed-plaque URL — those stay in the operator-only private
+// manifest outside this subtree. Supersedes the retired TG010
+// `buildPhysicalEntryManifest` / legacy physical-entry query signal pair,
+// which emitted a working proof-bypass URL with no validation at all.
+export function buildQrDebugManifest(
   source: CaseRecord[] = cases,
   origin: string = window.location.origin
-): PhysicalEntryManifest {
+): QrDebugManifest {
   return {
-    schema: PHYSICAL_ENTRY_SCHEMA,
+    schema: QR_DEBUG_SCHEMA,
     productVersion: PRODUCT_VERSION,
     baseUrl: resolveBaseUrl(origin),
     entries: source
@@ -74,7 +64,6 @@ export function buildPhysicalEntryManifest(
         slug: c.slug,
         title: c.identity.name,
         caseUrl: buildCaseDeepLink(c.slug, origin),
-        physicalEntryUrl: buildPhysicalEntryUrl(c.slug, origin),
       })),
   };
 }

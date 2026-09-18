@@ -1,0 +1,48 @@
+{
+  "contractVersion": 1,
+  "algorithm": "SHA-256",
+  "encoding": "lowercase-hex",
+  "physicalCaseCount": 10,
+  "cases": [
+    {
+      "slug": "casa-caracoles",
+      "sha256": "8877ed729585234b8a79b43d500ab8a688ff5c44dbaabf45441aa0e2f70ab231"
+    },
+    {
+      "slug": "casa-rodriguez-arias",
+      "sha256": "eb0bf6d05b7f077598a90a34d193cc996150355c4450268ab5717154c0e9c12c"
+    },
+    {
+      "slug": "casa-de-la-marina",
+      "sha256": "9de3a1136ec7a98dc52cbb16ab43485ce5ee8ed71f605c7985c1845c3c65b37e"
+    },
+    {
+      "slug": "cocheras-de-sarria",
+      "sha256": "53b24bb61fb57db154e1eb1e8960b3bca7df87016a7fb28fb5efa3a92b4d8f8d"
+    },
+    {
+      "slug": "hotel-arts",
+      "sha256": "eb64f52c5953168b65a946caa4fb26450a036fbfa945d0ddec94628eff057f2f"
+    },
+    {
+      "slug": "illa-diagonal",
+      "sha256": "df1caaa9232c597ff7c4dbb4d7a9b510a88f718cc8217417282e4eee7f50e5cc"
+    },
+    {
+      "slug": "dhub",
+      "sha256": "01b139a6cf8c07ede028871797f0364091d96a4dad2dad3393eb56a517e7a49e"
+    },
+    {
+      "slug": "la-borda",
+      "sha256": "81d2219e005e487acbea05c5cb6049cae769aa873b51ba08d075196897977b08"
+    },
+    {
+      "slug": "biblioteca-ggm",
+      "sha256": "2336be504b30236d94725d3bb424ba8235d80e879ed1b5c23c85d662ada084c0"
+    },
+    {
+      "slug": "green-use-22",
+      "sha256": "3774557921a3c8f0dd19684158a703c9b71a6ce6763b6684282d049034b15801"
+    }
+  ]
+}
