@@ -27,75 +27,10 @@ const PHYSICAL_RAIL_POSITIONS = 10;
 // scrolling after the window immediately resumes driving the indicator.
 const PROGRAMMATIC_SCROLL_MS = 700;
 
-// TG010 S4/S5B (ADGARC-FB-023 / DEC-007 §13-14, ADGARC-FB-029 / DEC-008
-// §3.2): the horizontal ordinal+tick progress rail, rendered both at the top
-// of the Pasaporte pane and — since S5B — as the map's top-center overlay
-// chrome (see PassportMapOverlay.tsx) — one component, two variants, never
-// two drifting implementations of the same progress read.
-//
-// DEC-007 §14 / DEC-006 §5: the cells are deliberately NOT interactive.
-// They are a progress display whose numbers are stop identifiers, not a
-// route order, a required sequence, or a first/last-stop semantic — the
-// accessible per-case navigation stays the real button list below, so this
-// rail never becomes a second case-selection authority either. The physical
-// collection is derived here the same way usePassport derives it: from
-// `experienceType`, never a second hardcoded list or count.
-export function PassportRail({
-  passport,
-  cases,
-  variant,
-}: {
-  passport: PassportState;
-  cases: CaseRecord[];
-  variant: "pane" | "overlay";
-}) {
-  const t = useT();
-  const physicalCases = cases.filter((c) => c.experienceType === "physical_digital");
-
-  return (
-    <div className={`passport-rail passport-rail--${variant}`}>
-      <p className="passport-rail__head">
-        <span className="passport-rail__label">{t("passport.railLabel")}</span>
-        <span className="passport-rail__count">
-          {t("passport.progress", { count: passport.count, total: passport.total })}
-        </span>
-      </p>
-      <ol className="passport-rail__track">
-        {physicalCases.map((c, i) => {
-          const isVisited = passport.visited.has(c.slug);
-          return (
-            <li
-              key={c.slug}
-              className="passport-rail__cell"
-              data-visited={isVisited ? "true" : "false"}
-            >
-              {/* Status is never carried by color alone: the tick glyph
-                  differs, and the full name+status text below is available
-                  to assistive technology. */}
-              <span className="passport-rail__ordinal">{String(i + 1).padStart(2, "0")}</span>
-              <span className="passport-rail__tick" aria-hidden="true">
-                {isVisited ? "✓" : "·"}
-              </span>
-              <span className="visually-hidden">
-                {t("passport.railCellStatus", {
-                  name: c.identity.name,
-                  status: isVisited ? t("passport.stampObtained") : t("passport.stampPending"),
-                })}
-              </span>
-            </li>
-          );
-        })}
-      </ol>
-      <p className="passport-rail__note">{t("passport.railOrdinalNote")}</p>
-    </div>
-  );
-}
-
 // TG011 Pass C (ADGARC-FB-043 / DEC-010 §11.3): the Pasaporte pane's own
-// 1-20 circle rail, replacing the S4 ordinal+tick cell rail above for this
-// surface only. PassportRail itself is untouched and still serves the map
-// overlay, whose redesign is separately allocated (ADGARC-FB-046) — this
-// pass deliberately does not reach into that surface.
+// 1-20 circle rail. The S4 ordinal+tick cell rail this replaced (`.passport-
+// rail*`, once shared with the map's top-center overlay chrome) was removed
+// in TG016/TG017 once the map surface got its own FB-046 circle navbar.
 //
 // The rail is pure presentation over two authorities it never writes: the
 // visit fill reads `passport.visited` (usePassport / localStorage), and the

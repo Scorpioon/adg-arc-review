@@ -93,8 +93,6 @@ export const es = {
   "caseSheet.navLabel": "Navegación de casos",
   "caseSheet.previous": "Anterior",
   "caseSheet.next": "Siguiente",
-  "caseSheet.heroLabel": "Imagen del caso",
-  "caseSheet.heroEmpty": "Imagen pendiente de verificación.",
   // TG012 Pass F1C: label normalization — no article on any footer/chapter
   // label except "L'edifici" (prompt 047 §C). These six section labels are
   // deliberately Catalan, matching the dossier's own Catalan title/content
@@ -118,20 +116,9 @@ export const es = {
   "caseSheet.fact.year": "Año",
   "caseSheet.fact.architect": "Arquitecto/a",
   "caseSheet.fact.address": "Dirección",
-  "caseSheet.fact.primaryTypeface": "Tipografía principal",
-  "caseSheet.fact.designer": "Diseñador/a",
-  "caseSheet.typefaceSourceLink": "Fuente de la tipografía",
   "caseSheet.movementPrefix": "Movimiento:",
   "caseSheet.movementTbdInline": "Pendiente — no consta en el material fuente",
-  "caseSheet.movementTbdBlock": "Pendiente — no especificado en el material fuente.",
-  "caseSheet.correlationEmpty": "La correlación editorial de este caso aún no se ha desarrollado.",
   "caseSheet.specimenEmpty": "Todavía no hay espécimen para este caso.",
-  // TG010 S4 (ADGARC-DEC-007 §1/§2): explicit, non-drag size controls for
-  // the compact/tablet-portrait adaptive sheet. Never the *only* way to
-  // dismiss — "Volver al mapa" stays present in the same header.
-  "caseSheet.sizingLabel": "Tamaño de la ficha",
-  "caseSheet.expand": "Ampliar la ficha",
-  "caseSheet.collapse": "Reducir la ficha",
 
   // TG010 S4 (ADGARC-FB-024): Casos carousel.
   "cases.carouselLabel": "Casos de la colección",
@@ -164,7 +151,6 @@ export const es = {
   "passport.proofInvalid": "El código QR escaneado no es válido para este caso.",
   "passport.railOrdinalNote":
     "Los números identifican cada parada; no indican un orden de recorrido.",
-  "passport.railCellStatus": "%{name}: %{status}",
   // TG011 Pass C (ADGARC-FB-043 / DEC-010 §11.3): the Pasaporte pane's 1-20
   // circle rail. `stopStatus` is the accessible name of an active circle —
   // colour is never the only carrier of visit state, so the ordinal and the
@@ -178,6 +164,14 @@ export const es = {
   // TG010 S5B (ADGARC-FB-030 / DEC-008 §4): the Pasaporte destination's own
   // horizontal 9:16 stop-card carousel, replacing the former plain row list.
   "passport.carouselLabel": "Paradas del pasaporte",
+  // TG016 (ADGARC-FB-046 / DEC-010 §11.2, §11.6): the map-top windowed
+  // circle-navigation control replacing the dropped S5B PassportMapOverlay.
+  // Reuses `passport.railGroupLabel` / `stopStatus` / `stopReserved` above
+  // for the shared circle vocabulary; these three are the control's own
+  // landmark and pagination-arrow names.
+  "passport.mapNavLabel": "Navegación del pasaporte en el mapa",
+  "passport.mapNavPrevious": "Ver paradas anteriores",
+  "passport.mapNavNext": "Ver paradas siguientes",
 
   "mapControls.groupLabel": "Navegación del mapa",
   "mapControls.panUp": "Desplazar arriba",

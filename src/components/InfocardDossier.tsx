@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from "react";
 import { cases, type CaseRecord } from "../data/cases";
 import { useT } from "../i18n/context";
 import type { TranslationKey } from "../i18n/es";
+import type { PanelAnchor } from "../types/panelAnchor";
 import EditorialShell from "./EditorialShell";
 import {
   InfocardCoverPage,
@@ -19,16 +20,13 @@ import {
 // TG012 Pass C — final selected-case dossier. Composes the validated Pass A
 // data (cases.ts) through the validated Pass B primitives (InfocardPages)
 // and pagination hook (useInfocardPagination) inside the shared
-// EditorialShell chrome. Not mounted into App.tsx by this pass (DEC-010 §7
-// step 3/4 remains a separate, later-authorized cutover).
+// EditorialShell chrome. Mounted into App.tsx as the live case-detail
+// surface since TG012 Pass D.
 
-// Matches CaseSheet's existing exported `PanelAnchor` shape exactly, kept as
-// a local declaration rather than an import: CaseSheet is a read-only
-// surface this pass may not depend on for its own type contract.
-export interface InfocardDossierAnchor {
-  x: number;
-  y: number;
-}
+// TG017: backed by the shared `PanelAnchor` type (extracted from the
+// retired CaseSheet.tsx) rather than a locally-duplicated shape, so this
+// and MapView's tether-target prop can never structurally diverge.
+export type InfocardDossierAnchor = PanelAnchor;
 
 // Pass F1 (Prompt 045 §6) — structurally equivalent to usePassport's own
 // StampResult, declared locally rather than imported: InfocardDossier must

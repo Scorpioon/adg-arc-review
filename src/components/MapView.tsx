@@ -17,7 +17,7 @@ import maplibreWorkerUrl from "maplibre-gl/dist/maplibre-gl-worker.mjs?worker&ur
 // module scope, ahead of the mount effect below.
 maplibregl.setWorkerUrl(maplibreWorkerUrl);
 import type { CaseRecord } from "../data/cases";
-import type { PanelAnchor } from "./CaseSheet";
+import type { PanelAnchor } from "../types/panelAnchor";
 import { usePrefersReducedMotion } from "../hooks/usePrefersReducedMotion";
 import { useViewportClass } from "../hooks/useViewportClass";
 import type { Milestone } from "../hooks/useReadiness";
