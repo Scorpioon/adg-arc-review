@@ -12,38 +12,38 @@ export type InfocardPageId =
   | "dialogue"
   | "specimen";
 
-export type InfocardChapter = 1 | 2 | 3 | 4 | 5;
-
 export interface InfocardPageDescriptor {
   id: InfocardPageId;
-  chapter: InfocardChapter | null;
 }
 
-// Cover is outside the numbered chapter system (DEC-010 §D2). 1a/1b/1c all
-// carry chapter 1; 1b is omitted entirely when there is no approved
-// highlighted phrase, rather than rendered as an empty page.
+// TG018 Pass C / correction matrix §G: internal navigation now numbers every
+// actual page/ficha (one number per descriptor below), never a fixed
+// five-chapter grouping — the former `chapter`/`jumpToChapter` concept this
+// hook exposed is removed rather than left dead, since `InfocardDossier`'s
+// numeric nav now indexes this list directly (see `goToPage`). 1a/1b/1c all
+// belonged to "chapter 1"; that grouping added nothing the descriptor order
+// itself doesn't already say. 1b is still omitted entirely when there is no
+// approved highlighted phrase, rather than rendered as an empty page.
 function buildPageDescriptors(activeCase: CaseRecord | undefined): InfocardPageDescriptor[] {
   if (!activeCase) return [];
 
-  const descriptors: InfocardPageDescriptor[] = [
-    { id: "cover", chapter: null },
-    { id: "building-facts", chapter: 1 },
-  ];
+  const descriptors: InfocardPageDescriptor[] = [{ id: "cover" }, { id: "building-facts" }];
 
   if (activeCase.infocard.highlightedPhrase !== null) {
-    descriptors.push({ id: "building-highlight", chapter: 1 });
+    descriptors.push({ id: "building-highlight" });
   }
 
   descriptors.push(
-    { id: "building-prose", chapter: 1 },
-    // Pass F1C: Arquitectura is one chapter dot but two internal steps — a
-    // movement-only composition, then a running-text composition — never
-    // merged onto a single page (prompt 047 §F).
-    { id: "architecture-movement", chapter: 2 },
-    { id: "architecture-prose", chapter: 2 },
-    { id: "typography", chapter: 3 },
-    { id: "dialogue", chapter: 4 },
-    { id: "specimen", chapter: 5 }
+    { id: "building-prose" },
+    // Pass F1C: Arquitectura is a movement-only composition, then a
+    // running-text composition — two distinct pages, never merged onto one
+    // (prompt 047 §F); TG018 now also gives each its own nav number rather
+    // than sharing a single chapter dot.
+    { id: "architecture-movement" },
+    { id: "architecture-prose" },
+    { id: "typography" },
+    { id: "dialogue" },
+    { id: "specimen" }
   );
 
   return descriptors;
@@ -58,7 +58,10 @@ export interface UseInfocardPaginationResult {
   canGoNext: boolean;
   goPrevious: () => void;
   goNext: () => void;
-  jumpToChapter: (chapter: InfocardChapter) => void;
+  // TG018 Pass C: replaces `jumpToChapter` — the numeric nav pips now index
+  // real pages directly, so jumping means jumping to a 0-based page index.
+  // Clamped the same way `goPrevious`/`goNext` already are.
+  goToPage: (index: number) => void;
 }
 
 export function useInfocardPagination(
@@ -90,12 +93,11 @@ export function useInfocardPagination(
     setPageIndex((prev) => Math.min(prev + 1, pageCount - 1));
   }, [pageCount]);
 
-  const jumpToChapter = useCallback(
-    (chapter: InfocardChapter) => {
-      const target = descriptors.findIndex((descriptor) => descriptor.chapter === chapter);
-      if (target !== -1) setPageIndex(target);
+  const goToPage = useCallback(
+    (index: number) => {
+      setPageIndex(Math.min(Math.max(index, 0), pageCount - 1));
     },
-    [descriptors]
+    [pageCount]
   );
 
   return {
@@ -107,6 +109,6 @@ export function useInfocardPagination(
     canGoNext,
     goPrevious,
     goNext,
-    jumpToChapter,
+    goToPage,
   };
 }

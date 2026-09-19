@@ -14,9 +14,10 @@ interface PassportStopCircleProps {
   // Visit / stamp state — carries the fill colour only. DEC-010 §11.3:
   // never derived from `current`, and never derives it.
   visited: boolean;
-  // Selection / carousel-focus state — carries the 3px resting stroke only.
-  // Independent of `visited`: current+unvisited is grey fill + stroke,
-  // current+visited is yellow fill + stroke.
+  // Selection / carousel-focus state — carries the resting stroke only
+  // (TG018 correction matrix §A/§B: lightened from 3px to ~1px). Independent
+  // of `visited`: current+unvisited is grey fill + stroke, current+visited
+  // is yellow fill + stroke.
   current: boolean;
   // A reserved position whose source identity is unresolved (FB-043 source
   // discipline / DEC-010 §D4): rendered and named honestly, never
@@ -53,16 +54,10 @@ export default function PassportStopCircle({
       <span className="passport-stop-circle__ordinal" aria-hidden="true">
         {ordinal}
       </span>
-      {/* Status is never carried by colour alone (standing accessibility
-          invariant): the rail keeps the existing ✓ / · vocabulary as a small
-          mark below the ordinal, and the accessible name states the same
-          thing in words. A reserved position has no visit state, so it
-          carries neither mark. */}
-      {!disabled && (
-        <span className="passport-stop-circle__mark" aria-hidden="true">
-          {visited ? "✓" : "·"}
-        </span>
-      )}
+      {/* TG018 (operator decision, correction matrix §A/§B): the former
+          ✓ / · dot-tick glyph is removed — the yellow visited fill is
+          sufficient on its own. Status is still never carried by colour
+          alone: the full accessible name below states it in words. */}
       <span className="visually-hidden">{accessibleLabel}</span>
     </button>
   );

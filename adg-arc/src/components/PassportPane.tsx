@@ -3,6 +3,7 @@ import type { CaseRecord } from "../data/cases";
 import type { PassportState } from "../hooks/usePassport";
 import { usePrefersReducedMotion } from "../hooks/usePrefersReducedMotion";
 import { useT } from "../i18n/context";
+import { RotateCcwIcon } from "./icons";
 import PassportStopCircle from "./PassportStopCircle";
 
 interface PassportPaneProps {
@@ -43,19 +44,21 @@ function PassportStopRail({
   physicalCases,
   focusedOrdinal,
   onFocusStop,
+  onReload,
 }: {
   passport: PassportState;
   physicalCases: CaseRecord[];
   focusedOrdinal: number;
   onFocusStop: (ordinal: number) => void;
+  onReload: () => void;
 }) {
   const t = useT();
 
   return (
     <div className="passport-stop-rail">
-      <p className="passport-stop-rail__count">
-        {t("passport.progress", { count: passport.count, total: passport.total })}
-      </p>
+      {/* TG018 Pass B (operator decision, correction matrix §B): `1 de 10
+          paradas` is removed with no replacement — visit progress is still
+          announced in words via each circle's own accessible name. */}
       <div
         className="passport-stop-rail__track"
         role="group"
@@ -98,6 +101,21 @@ function PassportStopRail({
             </Fragment>
           );
         })}
+        {/* TG018 Pass B (operator decision, correction matrix §B / evidence
+            13_passaport_reset_circle_reference.png): reset is its own
+            separated action after the 20 building positions, never position
+            21 — its own divider, then a circle-scale control reusing the
+            existing settings-actions reset/confirm flow below rather than
+            duplicating it. */}
+        <span className="passport-stop-rail__divider" aria-hidden="true" />
+        <button
+          type="button"
+          className="passport-stop-rail__reload"
+          onClick={onReload}
+          aria-label={t("passport.reset")}
+        >
+          <RotateCcwIcon />
+        </button>
       </div>
       {/* The product's own statement that the ordinals identify stops rather
           than a route order. The final composition (mockup 02) has no room
@@ -203,6 +221,7 @@ export default function PassportPane({ passport, cases, onSelectCase }: Passport
         physicalCases={physicalCases}
         focusedOrdinal={focusedOrdinal}
         onFocusStop={focusStop}
+        onReload={() => setConfirmingReset(true)}
       />
       {completed && (
         <p className="passport-pane__status passport-pane__status--visited">{t("passport.completed")}</p>
@@ -224,16 +243,51 @@ export default function PassportPane({ passport, cases, onSelectCase }: Passport
           and the per-card `onSelectCase` are all unchanged. The cards now
           take their size from the pane's flex composition instead of a fixed
           width, which is what stops the card block from overflowing the fixed
-          shell — see .passport-carousel__card in global.css. */}
+          shell — see .passport-carousel__card in global.css.
+
+          TG018 Pass B (correction matrix §B): the track now spans all 20
+          rail positions, not just the 10 real ones — desktop's 5x4 grid
+          needs exactly 20 slots, and mobile keeps scrolling the same
+          honestly-reserved 11-20 placeholders the rail already shows,
+          rather than the two surfaces disagreeing on how many positions
+          exist. Reserved cards carry no name/image/status, are not
+          clickable, and never receive invented content (FB-043 / DEC-010
+          §D4 — same discipline as PassportStopRail above). */}
       <ul
         className="passport-carousel"
         aria-label={t("passport.carouselLabel")}
         ref={carouselRef}
         onScroll={syncFocusFromScroll}
       >
-        {physicalCases.map((c, i) => {
-          const isVisited = passport.visited.has(c.slug);
+        {Array.from({ length: RAIL_POSITIONS }, (_, i) => {
           const ordinal = i + 1;
+          const c = ordinal <= PHYSICAL_RAIL_POSITIONS ? physicalCases[i] : undefined;
+
+          if (!c) {
+            return (
+              <li key={`reserved-${ordinal}`} className="passport-carousel__item">
+                <div
+                  className="passport-carousel__card"
+                  data-reserved="true"
+                  role="group"
+                  aria-label={t("passport.stopReserved", { ordinal })}
+                >
+                  <span className="passport-carousel__media" aria-hidden="true">
+                    <span className="passport-carousel__media-empty">
+                      {t("passport.cardReserved")}
+                    </span>
+                  </span>
+                  <span className="passport-carousel__body">
+                    <span className="passport-carousel__ordinal">
+                      {String(ordinal).padStart(2, "0")}
+                    </span>
+                  </span>
+                </div>
+              </li>
+            );
+          }
+
+          const isVisited = passport.visited.has(c.slug);
           return (
             <li
               key={c.slug}
@@ -278,8 +332,12 @@ export default function PassportPane({ passport, cases, onSelectCase }: Passport
         })}
       </ul>
 
-      <div className="settings-actions">
-        {confirmingReset ? (
+      {/* TG018 Pass B (operator decision): the full-width "Reiniciar
+          progreso" trigger is gone — reset now starts from the reload circle
+          in the rail above (`onReload`). Only the confirm/cancel step still
+          renders here, exactly as before. */}
+      {confirmingReset && (
+        <div className="settings-actions">
           <div className="passport-pane__reset-confirm">
             <p className="app-modal__note">{t("passport.resetConfirm")}</p>
             <button type="button" className="settings-actions__btn" onClick={handleResetConfirmed}>
@@ -289,12 +347,8 @@ export default function PassportPane({ passport, cases, onSelectCase }: Passport
               {t("passport.resetConfirmCancel")}
             </button>
           </div>
-        ) : (
-          <button type="button" className="settings-actions__btn" onClick={() => setConfirmingReset(true)}>
-            {t("passport.reset")}
-          </button>
-        )}
-      </div>
+        </div>
+      )}
     </div>
   );
 }

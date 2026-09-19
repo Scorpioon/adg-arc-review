@@ -95,6 +95,68 @@
   --accent-highlight: var(--canonical-yellow);
 }
 
+/* TG018 Pass A — ADGARC_STYLE_GUIDE_v0.1 token layer. Explicit, compact
+   values normalized from the TG018 evidence pack (panel3-panel6 measurement
+   exports + operator-annotated screenshots) backing the map/Passport/dossier
+   corrective surfaces below. A second :root block on purpose — it groups
+   this pass's own new geometry/typography/motion tokens apart from the
+   color/z-index/font tokens above rather than interleaving them. */
+:root {
+  /* Typography hierarchy. `--type-body`/`--type-body-line` match the ratio
+     already proven correct against panel3/panel6 (32px/38px, 1.1875) — see
+     .infocard-page__body below, unchanged by this pass. `--type-fact-*`
+     normalize the Fitxa label/value pair toward panel5's measured parity
+     (both 37px, weight is the only distinguishing channel) instead of the
+     value dramatically outscaling the label. */
+  --type-body: 2rem;
+  --type-body-line: 1.1875;
+  --type-fact-label: 1.05rem;
+  --type-fact-value: 1.15rem;
+  --type-nav-pill: 0.85rem;
+
+  /* Spacing scale — compact chrome only; existing editorial body copy
+     spacing (.editorial-shell__body etc.) is untouched. */
+  --space-2xs: 0.25rem;
+  --space-xs: 0.5rem;
+  --space-sm: 0.75rem;
+
+  /* Numbered-circle / pill geometry. `--circle-nav-diameter` is the existing
+     Passport-rail/dossier-page-nav circle size (unchanged);
+     `--circle-map-diameter` is the map navbar's own circle, compacted down
+     from its former 55px toward this same Passport scale (matrix §A:
+     "compact Passport-scale visual language"). `--pill-nav-width` is fixed
+     so the footer section pill never resizes across labels (matrix §H).
+     `--pill-corner`/`--panel-corner` name the two corner-radius grammars
+     already in use across the app (round chrome vs. square panels) rather
+     than repeating the literal 999px/0 at each call site. */
+  --circle-nav-diameter: 2rem;
+  --circle-map-diameter: 40px;
+  --pill-nav-width: 8rem;
+  --pill-corner: 999px;
+  --panel-corner: 0;
+
+  /* Stroke weights. `--stroke-selected` is the correction matrix §A/§B
+     lightening of the former 3px selection ring to a lightweight ~1px. */
+  --stroke-hairline: 1px;
+  --stroke-selected: 1px;
+
+  /* Header heights / separators. `--header-topbar-padding-y` compacts the
+     shared EditorialShell yellow topbar; `--separator-width`/`-color` match
+     the value `.infocard-page__fact` already used per-row, reused now for
+     the added top rule above the first Fitxa row. */
+  --header-topbar-padding-y: 0.6rem;
+  --separator-width: 1px;
+  --separator-color: rgba(0, 0, 0, 0.3);
+
+  /* Motion duration/easing — subtle window-shift transitions on the map and
+     dossier numeric navs. `prefers-reduced-motion` is not re-declared per
+     token: the existing blanket `@media (prefers-reduced-motion: reduce)`
+     rule at the end of this file already zeroes every transition/animation
+     duration app-wide, this pass's included. */
+  --motion-duration: 180ms;
+  --motion-easing: ease;
+}
+
 body {
   font-family: var(--font-ui);
   /* TG010 S4 (ADGARC-FB-015): the light editorial baseline stated once,
@@ -474,15 +536,23 @@ body,
    shell chrome (see EditorialShell.tsx) — a canonical yellow topbar
    carrying the title and the [X] close control, reused as-is by every
    consumer of the shell. Replaces the former ADG·ARC wordmark header. */
+/* TG018 Pass C (operator decision, correction matrix §C / evidence
+   12_header_bottom_border_reference.png): a black rule closes the *bottom of
+   the yellow box itself* — explicitly not a text underline under the title
+   — and the box is shortened slightly (0.85rem -> the compact
+   `--header-topbar-padding-y` token). Shared by every EditorialShell
+   consumer (menu, Passport, dossier), matching the evidence's own use of
+   this same header across surfaces. */
 .editorial-shell__topbar {
   flex: none;
   display: flex;
   align-items: center;
   justify-content: space-between;
   gap: 0.75rem;
-  padding: 0.85rem 1.1rem;
+  padding: var(--header-topbar-padding-y) 1.1rem;
   background: var(--canonical-yellow);
   color: var(--canonical-ink);
+  border-bottom: var(--stroke-hairline) solid var(--canonical-ink);
 }
 
 .editorial-shell__title {
@@ -805,44 +875,50 @@ body,
   z-index: var(--z-map-chrome);
   display: flex;
   align-items: center;
-  gap: 48px;
-  padding: 16px;
+  /* TG018 correction matrix §A: "compact Passport-scale visual language" —
+     gap/padding cut substantially from the former 48px/16px so the bar reads
+     as compact chrome, not a dominant fixture; the map stays visually
+     primary underneath it. */
+  gap: var(--space-sm);
+  padding: var(--space-xs);
   background: var(--surface);
   border: 1px solid rgba(90, 42, 18, 0.18);
-  border-radius: 999px;
+  border-radius: var(--pill-corner);
   box-shadow: 0 8px 24px rgba(40, 24, 12, 0.16);
 }
 
 .passport-map-navbar__window {
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: 6px;
 }
 
-/* DEC-010 §11.6: the 55px circle/arrow diameter is never scaled down to
-   force-fit a viewport — narrower windows reduce `visibleCount` (see
-   PassportMapNavbar.tsx) instead. The primitive itself stays untouched
-   (PassportStopCircle.tsx); this is purely a descendant size override for
-   this surface, the same way the pane's own 44px touch-floor override below
-   already scopes by ancestor rather than adding a size prop. */
+/* TG018 correction matrix §A: the circle/arrow diameter is compacted from
+   its former 55px down to the Passport-scale token — narrower windows still
+   reduce `visibleCount` (see PassportMapNavbar.tsx) rather than shrinking
+   this further. Descendant size override, same pattern as the pane's own
+   44px touch-floor override below. Each circle also gets a brief mount
+   transition (`--motion-duration`/`--motion-easing`): the window's arrow
+   click remounts a fresh set of ordinals (new React keys), so a plain
+   opacity/transform-in on mount reads as the "subtle movement" the
+   correction calls for without any JS animation code; the blanket
+   `prefers-reduced-motion` rule at the end of this file already neutralizes
+   it for visitors who ask for less motion. */
 .passport-map-navbar__window .passport-stop-circle {
-  width: 55px;
-  height: 55px;
+  width: var(--circle-map-diameter);
+  height: var(--circle-map-diameter);
+  animation: passport-window-shift-in var(--motion-duration) var(--motion-easing);
 }
 
 .passport-map-navbar__window .passport-stop-circle__ordinal {
-  font-size: 0.95rem;
-}
-
-.passport-map-navbar__window .passport-stop-circle__mark {
-  font-size: 0.6rem;
+  font-size: 0.8rem;
 }
 
 .passport-map-navbar__arrow {
   appearance: none;
   flex: none;
-  width: 55px;
-  height: 55px;
+  width: var(--circle-map-diameter);
+  height: var(--circle-map-diameter);
   padding: 0;
   border: 1px solid var(--hairline);
   border-radius: 50%;
@@ -855,8 +931,8 @@ body,
 }
 
 .passport-map-navbar__arrow svg {
-  width: 22px;
-  height: 22px;
+  width: 18px;
+  height: 18px;
 }
 
 .passport-map-navbar__arrow:hover:not(:disabled) {
@@ -870,20 +946,30 @@ body,
   cursor: default;
 }
 
-/* DEC-010 §11.6: below 768px the locked 48px group-gap and 16px padding are
-   the values allowed to yield ("preserve wherever the viewport permits") so
-   more of the fixed-size 55px circles/arrows can fit; visibleCount itself
-   drops to 3 in PassportMapNavbar.tsx at this same 767px boundary (mirrors
-   config/breakpoints.ts's TABLET_MIN, not a value invented for this
-   control). */
+@keyframes passport-window-shift-in {
+  from {
+    opacity: 0;
+    transform: translateY(2px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Below 768px/480px only the bar's own padding/gap yield further — the
+   compacted circle/arrow diameter itself does not shrink again at these
+   tiers; visibleCount itself drops to 3 then 2 in PassportMapNavbar.tsx at
+   these same two boundaries (mirrors config/breakpoints.ts's TABLET_MIN,
+   not a value invented for this control). */
 @media (max-width: 767px) {
   .passport-map-navbar {
-    gap: 16px;
-    padding: 12px;
+    gap: var(--space-xs);
+    padding: 10px;
   }
 
   .passport-map-navbar__window {
-    gap: 6px;
+    gap: 5px;
   }
 }
 
@@ -892,8 +978,8 @@ body,
    .passport-stop-circle touch-floor rule below) — not a new breakpoint. */
 @media (max-width: 480px), (pointer: coarse) {
   .passport-map-navbar {
-    gap: 12px;
-    padding: 8px;
+    gap: var(--space-2xs);
+    padding: var(--space-2xs) var(--space-xs);
   }
 }
 
@@ -972,14 +1058,6 @@ body,
   margin-bottom: 0.9rem;
 }
 
-.passport-stop-rail__count {
-  margin: 0;
-  text-align: right;
-  font-size: 0.85rem;
-  font-weight: 700;
-  font-variant-numeric: tabular-nums;
-}
-
 /* The negative inline margins pay back the padding: the padding exists only
    so the first and last circle's 2px/2px focus ring is not clipped by this
    scroller, and the margins keep circle 1 optically aligned with the
@@ -1012,6 +1090,37 @@ body,
   opacity: 0.45;
 }
 
+/* TG018 Pass B (correction matrix §B / evidence
+   13_passaport_reset_circle_reference.png): reset's own circle-scale
+   control, sitting in the track after its own divider — never position 21,
+   never a second implementation of the stop-circle look (same diameter/
+   border-radius token, distinct class since it carries no ordinal/visited/
+   current state at all). */
+.passport-stop-rail__reload {
+  appearance: none;
+  flex: none;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: var(--circle-nav-diameter);
+  height: var(--circle-nav-diameter);
+  padding: 0;
+  border: 1px solid var(--canonical-ink);
+  border-radius: 50%;
+  background: var(--surface);
+  color: var(--canonical-ink);
+  cursor: pointer;
+}
+
+.passport-stop-rail__reload:hover {
+  background: rgba(90, 42, 18, 0.08);
+}
+
+.passport-stop-rail__reload svg {
+  width: 16px;
+  height: 16px;
+}
+
 .passport-stop-circle {
   appearance: none;
   flex: none;
@@ -1019,8 +1128,8 @@ body,
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  width: 2rem;
-  height: 2rem;
+  width: var(--circle-nav-diameter);
+  height: var(--circle-nav-diameter);
   padding: 0;
   /* Border width is the *selection* channel and nothing else, so it is
      declared at 0 here and only the current stop raises it (DEC-010 §11.3:
@@ -1046,14 +1155,16 @@ body,
   background: var(--canonical-yellow);
 }
 
-/* Current = a 3px resting stroke, independent of the fill: current+unvisited
-   is grey + stroke, current+visited is yellow + stroke. Deliberately NOT a
-   focus style — the global :focus-visible ring (one 2px canonical-ink
-   outline at 2px offset, ADGARC-DEC-009 / ADGARC-FB-038) remains the only
-   focus treatment, and stays visually separate by sitting outside the circle
-   edge while this sits inside it. */
+/* Current = a lightweight resting stroke, independent of the fill:
+   current+unvisited is grey + stroke, current+visited is yellow + stroke.
+   TG018 correction matrix §A/§B: lightened from a former 3px treatment to
+   ~1px — "selected clear but not dominant." Deliberately NOT a focus style —
+   the global :focus-visible ring (one 2px canonical-ink outline at 2px
+   offset, ADGARC-DEC-009 / ADGARC-FB-038) remains the only focus treatment,
+   and stays visually separate by sitting outside the circle edge while this
+   sits inside it. */
 .passport-stop-circle[data-current="true"] {
-  border-width: 3px;
+  border-width: var(--stroke-selected);
 }
 
 /* Reserved digital-only positions (FB-043 source discipline / DEC-010 §D4):
@@ -1074,15 +1185,6 @@ body,
 /* FB-043: 1-10 bold, 11-20 not. */
 .passport-stop-circle[data-bold="true"] .passport-stop-circle__ordinal {
   font-weight: 700;
-}
-
-/* The non-colour visit signal — the rail's existing ✓ / · vocabulary, kept
-   small enough beneath the ordinal that it never obscures it. The circle's
-   accessible name states the same status in words. */
-.passport-stop-circle__mark {
-  font-size: 0.5rem;
-  line-height: 1;
-  margin-top: 1px;
 }
 
 /* TG010 S5B (ADGARC-FB-030 / DEC-008 §4): the Pasaporte destination's own
@@ -1141,7 +1243,7 @@ body,
   padding: 0;
   overflow: hidden;
   border: 1px solid var(--canonical-ink);
-  border-radius: 0;
+  border-radius: var(--panel-corner);
   background: #ffffff;
   color: inherit;
   font: inherit;
@@ -1149,8 +1251,18 @@ body,
   cursor: pointer;
 }
 
-.passport-carousel__card:hover {
+.passport-carousel__card:hover:not([data-reserved="true"]) {
   box-shadow: 0 6px 18px rgba(40, 24, 12, 0.12);
+}
+
+/* TG018 Pass B (correction matrix §B): positions 11-20 render as reserved
+   placeholder cards — same 9:16 geometry, no name/image/status, not
+   clickable (a plain <div>, not a <button>), never invented content
+   (FB-043 / DEC-010 §D4 — same discipline as the reserved rail circles). */
+.passport-carousel__card[data-reserved="true"] {
+  cursor: default;
+  background: var(--surface-sunken);
+  color: var(--ink-muted);
 }
 
 .passport-carousel__media {
@@ -1202,6 +1314,46 @@ body,
   font-size: 0.92rem;
   font-weight: 600;
   line-height: 1.2;
+}
+
+/* TG018 Pass B (correction matrix §B/§I): "Desktop: 5 columns x 4 rows with
+   vertical flow." 1024px mirrors config/breakpoints.ts's DESKTOP_MIN, the
+   same threshold the dossier itself switches to its fixed side-panel at
+   (global.css, `.infocard-dossier` below) — not a new value invented for
+   this surface. The mobile-only fixed-height flex/horizontal-scroll
+   correction (TG011 Pass C, directly above `.passport-stop-rail`) was
+   solving a mobile-specific accidental-scrollbar defect; at this width the
+   pane instead reverts to ordinary block flow and lets the shared
+   `.editorial-shell__body`'s own vertical scrollbar (its default treatment
+   everywhere else) absorb four rows of 9:16 cards, exactly as "vertical
+   flow" asks. */
+@media (min-width: 1024px) {
+  .editorial-shell__body:has(> .passport-pane) {
+    display: block;
+  }
+
+  .passport-pane {
+    display: block;
+  }
+
+  .passport-pane > .passport-carousel {
+    flex: initial;
+    min-height: 0;
+    display: grid;
+    grid-template-columns: repeat(5, 1fr);
+    gap: 0.75rem;
+    overflow: visible;
+    scroll-snap-type: none;
+  }
+
+  .passport-carousel__item {
+    scroll-snap-align: none;
+  }
+
+  .passport-carousel__card {
+    height: auto;
+    width: 100%;
+  }
 }
 
 /* TG006D: Settings — real one-off map actions only, no preference store. */
@@ -1864,7 +2016,7 @@ body,
    missed then. */
 .app-menu__row:active,
 .app-modal__close:active,
-.passport-carousel__card:active,
+.passport-carousel__card:active:not([data-reserved="true"]),
 .settings-actions__btn:active,
 .lang-switch__btn:active:not(:disabled) {
   background: rgba(90, 42, 18, 0.16);
@@ -1948,7 +2100,8 @@ body,
      32px circle would overlap its neighbours' targets, which is worse than
      no floor at all. The rail already scrolls horizontally, so the wider
      track costs nothing. */
-  .passport-stop-circle {
+  .passport-stop-circle,
+  .passport-stop-rail__reload {
     width: 44px;
     height: 44px;
   }
@@ -1999,7 +2152,7 @@ body,
 .infocard-dossier__row {
   flex: none;
   display: flex;
-  align-items: baseline;
+  align-items: center;
   justify-content: space-between;
   gap: 0.75rem;
   padding: 1.1rem 1.35rem;
@@ -2008,9 +2161,14 @@ body,
   border-bottom: 1px solid var(--canonical-ink);
 }
 
+/* TG018 Pass C (operator decision, correction matrix §C): the former
+   third-slot hairline (`.infocard-dossier__row-right`) is removed with no
+   replacement — this is now a two-slot row, `align-items: center` (was
+   `baseline`) so the number circle and building title share one balanced
+   vertical composition instead of sitting on a text baseline. */
 .infocard-dossier__row-left {
   display: flex;
-  align-items: baseline;
+  align-items: center;
   gap: 0.65rem;
   min-width: 0;
 }
@@ -2034,19 +2192,6 @@ body,
   line-height: 1;
 }
 
-/* Pass F1B §4A: the row's third (right) slot — structurally present per the
-   target's three-slot layout, deliberately never a text label (that role
-   moved to the footer pill in Pass F1). A bare vertical hairline reads as an
-   intentional structural region rather than dead space or a reintroduced
-   section label. */
-.infocard-dossier__row-right {
-  flex: none;
-  align-self: stretch;
-  width: 1px;
-  min-height: 1.5rem;
-  background: var(--hairline);
-}
-
 .infocard-dossier__case-name {
   /* Pass F1 (Prompt 045 §4): full building name wraps naturally — no
      truncation. The section label that used to compete for this row's
@@ -2062,20 +2207,32 @@ body,
    as plain text on every page (not only the facts page the operator's note
    named), so this fix is general rather than facts-specific.
    Pass F1C (prompt 047 §B): smaller/more compact — the target pill reads
-   noticeably tighter than a 40px-min-height chip. */
+   noticeably tighter than a 40px-min-height chip.
+   TG018 Pass A/C (correction matrix §H / evidence
+   07_figma_fitxa_footer_reference.png "la pill siempre ocupa lo mismo"):
+   fixed width AND fixed font-size — a `vw`-fluid size and content-driven
+   width both let the pill resize across labels ("Fitxa" vs "Arquitectura"),
+   which is exactly what the evidence rules out. `--pill-nav-width` is sized
+   for the longest live label ("Arquitectura", 12 characters); `white-space:
+   nowrap` plus that fixed width is what keeps every shorter label centered
+   in the same box rather than shrinking it. */
 .infocard-dossier__nav-pill {
   flex: none;
   display: inline-flex;
   align-items: center;
   justify-content: center;
   min-height: 32px;
-  padding: 0.3rem 0.85rem;
+  width: var(--pill-nav-width);
+  padding: 0.3rem 0.5rem;
   border: 1px solid var(--canonical-ink);
-  border-radius: 999px;
+  border-radius: var(--pill-corner);
   background: var(--surface);
-  font-size: clamp(0.8rem, 2vw, 0.95rem);
+  font-size: var(--type-nav-pill);
   font-weight: 700;
   color: var(--canonical-ink);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 /* Pass F1C §B: tighter cluster between the back arrow, chapter dots, and
@@ -2110,10 +2267,15 @@ body,
 
 /* The dossier's one scrollable content region — every page, cover included,
    lands on canonical yellow per the Figma source (Pass E visual parity). */
+/* TG018 Pass D (correction matrix §F/§I): "No horizontal dossier scrolling.
+   Vertical content scroll is allowed where needed." `overflow-x: hidden`
+   makes that a hard property of the dossier's one scrollable region rather
+   than an incidental fact of every child never being wide enough. */
 .infocard-dossier__content {
   flex: 1 1 auto;
   min-height: 0;
   overflow-y: auto;
+  overflow-x: hidden;
   padding: clamp(1.25rem, 4vw, 2.5rem);
 }
 
@@ -2211,22 +2373,27 @@ body,
   cursor: default;
 }
 
-/* Pass F1C §B: dots closer together, all the same size (unchanged — every
-   pip already shared one rule, so this was never a size mismatch, only a
-   spacing one). */
-.infocard-dossier__chapters {
+/* TG018 Pass C / correction matrix §G (replaces the former fixed
+   5-chapter `.infocard-dossier__chapters`/`__chapter-pip`): a moving window
+   over the real page count (`InfocardDossier.tsx`'s `navWindowStart`),
+   dots closer together, all the same size — spacing/sizing unchanged from
+   the prior chapter pips, only what they number and how they fill has. */
+.infocard-dossier__page-window {
   display: flex;
   align-items: center;
   gap: 6px;
 }
 
-.infocard-dossier__chapter-pip {
+.infocard-dossier__page-pip {
   appearance: none;
-  width: 32px;
-  height: 32px;
+  width: var(--circle-nav-diameter);
+  height: var(--circle-nav-diameter);
   border-radius: 50%;
-  border: 1px solid var(--canonical-ink);
-  background: var(--surface);
+  border: var(--stroke-hairline) solid var(--canonical-ink);
+  /* Unselected = no fill/transparent on the yellow nav surface (operator
+     decision — overrides the plain white/black-fill Figma reference; see
+     00_AUTHORITY.md's authority order). */
+  background: transparent;
   color: var(--canonical-ink);
   font: inherit;
   font-size: 0.85rem;
@@ -2236,15 +2403,20 @@ body,
   display: inline-flex;
   align-items: center;
   justify-content: center;
+  transition: background-color var(--motion-duration) var(--motion-easing),
+    transform var(--motion-duration) var(--motion-easing);
 }
 
-/* Active chapter carries two independent signals — fill and border weight —
-   so the state never rests on color alone (contract §10). */
-.infocard-dossier__chapter-pip[data-active="true"] {
-  background: var(--canonical-ink);
-  color: var(--surface);
+/* Selected = white fill. Still carries a second signal (border weight/
+   font-weight) alongside the fill so state never rests on color alone
+   (contract §10), plus the brief scale-in the correction calls "subtle
+   motion" on the window shifting/current page changing. */
+.infocard-dossier__page-pip[data-active="true"] {
+  background: var(--surface);
+  color: var(--canonical-ink);
   border-width: 2px;
   font-weight: 700;
+  transform: scale(1.05);
 }
 
 /* Pass F1 §6 — passport-stamp step: post-chapter, outside the numbered
@@ -2385,34 +2557,51 @@ body,
   justify-content: center;
 }
 
+/* TG018 Pass C (correction matrix §D): explicit top separator above the
+   first row — every row already carried its own border-bottom, but nothing
+   closed the top edge above `Any` (evidence
+   05_fitxa_alignment_annotated.png). Same value `.infocard-page__fact`
+   already used per row, now shared through the `--separator-*` tokens. */
 .infocard-page__facts {
   margin: 0;
   display: flex;
   flex-direction: column;
   gap: 0;
+  border-top: var(--separator-width) solid var(--separator-color);
 }
 
+/* TG018 Pass C (correction matrix §D): `align-items: baseline` -> `flex-start`
+   so label and value top-align on the same row edge, rather than sharing a
+   text baseline that reads as misaligned once the value is markedly larger
+   than the label (evidence 05_fitxa_alignment_annotated.png). */
 .infocard-page__fact {
   display: flex;
-  align-items: baseline;
+  align-items: flex-start;
   justify-content: space-between;
   gap: 1.25rem;
   padding: 0.9rem 0;
-  border-bottom: 1px solid rgba(0, 0, 0, 0.3);
+  border-bottom: var(--separator-width) solid var(--separator-color);
 }
 
 .infocard-page__fact dt {
   flex: none;
   margin: 0;
-  font-size: clamp(0.95rem, 2.2vw, 1.1rem);
+  font-size: var(--type-fact-label);
   font-weight: 600;
 }
 
+/* TG018 Pass C (correction matrix §D): normalized toward panel5's measured
+   label/value parity (both 37px, weight is the only distinguishing
+   channel) instead of a `vw`-fluid size that let the value dramatically
+   outscale the label ("reduce oversized value typography" — 01_OPERATOR_
+   FEEDBACK.md). `overflow-wrap` guards a long address/architect name from
+   ever forcing horizontal overflow (Pass D). */
 .infocard-page__fact dd {
   margin: 0;
   text-align: right;
-  font-size: clamp(1.2rem, 3.6vw, 1.6rem);
+  font-size: var(--type-fact-value);
   font-weight: 700;
+  overflow-wrap: anywhere;
 }
 
 .infocard-page--highlight {
@@ -2489,6 +2678,9 @@ body,
   margin: 0;
   font-size: clamp(1.8rem, 6vw, 2.6rem);
   font-weight: 700;
+  /* TG018 Pass D: a long/unbroken typeface family name must never be the
+     one thing that forces horizontal dossier overflow. */
+  overflow-wrap: anywhere;
 }
 
 /* Pass F1B (prompt 046 §4E): running-text ratio — ~32px font / ~38px
@@ -2497,8 +2689,9 @@ body,
    typeface-name display treatment (`__meta-typeface` below). */
 .infocard-page__body {
   margin: 0;
-  font-size: clamp(1.35rem, 6vw, 2rem);
-  line-height: 1.1875;
+  font-size: clamp(1.35rem, 6vw, var(--type-body));
+  line-height: var(--type-body-line);
+  overflow-wrap: anywhere;
 }
 
 /* Pass F1C (prompt 047 §F): useInfocardPagination.ts now exposes two
@@ -2605,6 +2798,41 @@ body,
   .infocard-dossier__nav {
     padding-left: max(1.1rem, env(safe-area-inset-left));
     padding-right: max(1.1rem, env(safe-area-inset-right));
+  }
+}
+
+/* TG018 Pass D (correction matrix §I "Bottom navigation must remain usable
+   at supported widths" / "No horizontal dossier scrolling"): at the
+   narrowest supported phone widths (≤380px — iPhone SE class), the fixed
+   pill plus two arrows plus a `visibleCount: 2` page-window (see
+   `computeDossierVisibleCount` in InfocardDossier.tsx) at their default
+   sizes leaves too little of the row width to guarantee no overflow, so the
+   chrome (never the pill's own fixed-width invariant across labels —
+   §H — which this preserves at every size) steps down one notch. Verified
+   arithmetically against a 320px viewport; not confirmed by eye
+   (NO_RUNTIME) — see this pass's report for the runtime-review ask. */
+@media (max-width: 380px) {
+  .infocard-dossier__nav-pill {
+    width: 6.5rem;
+  }
+
+  .infocard-dossier__nav-arrow {
+    width: 34px;
+    height: 34px;
+  }
+
+  .infocard-dossier__page-pip {
+    width: 28px;
+    height: 28px;
+    font-size: 0.78rem;
+  }
+
+  .infocard-dossier__page-window {
+    gap: 4px;
+  }
+
+  .infocard-dossier__nav-controls {
+    gap: 0.3rem;
   }
 }
 

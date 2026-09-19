@@ -119,12 +119,20 @@ export const es = {
   "caseSheet.movementPrefix": "Movimiento:",
   "caseSheet.movementTbdInline": "Pendiente — no consta en el material fuente",
   "caseSheet.specimenEmpty": "Todavía no hay espécimen para este caso.",
+  // TG018 Pass C (correction matrix §G): accessible name for one page-number
+  // pip in the dossier's internal numeric nav — replaces the retired
+  // per-chapter aria-label now that the nav indexes real pages, not a fixed
+  // five-chapter set.
+  "caseSheet.pageOrdinal": "Página %{index} de %{total}",
 
   // TG010 S4 (ADGARC-FB-024): Casos carousel.
   "cases.carouselLabel": "Casos de la colección",
   "cases.mediaPending": "Imagen pendiente de verificación",
 
-  "passport.progress": "%{count} de %{total} paradas",
+  // TG018 Pass B (correction matrix §B): `passport.progress` ("1 de 10
+  // paradas") is removed — its sole consumer, the rail's own count line,
+  // was deleted by this same pass (PassportPane.tsx). Confirmed zero
+  // remaining call sites before removal.
   "passport.stampObtained": "Sello conseguido",
   "passport.stampPending": "Por visitar",
   "passport.completed": "Ruta completada",
@@ -172,6 +180,11 @@ export const es = {
   "passport.mapNavLabel": "Navegación del pasaporte en el mapa",
   "passport.mapNavPrevious": "Ver paradas anteriores",
   "passport.mapNavNext": "Ver paradas siguientes",
+  // TG018 Pass B (correction matrix §B): short visible label for an 11-20
+  // placeholder card — distinct from `passport.stopReserved` (a full
+  // accessible sentence used as that same card's aria-label) and from
+  // `cases.mediaPending` (a missing-image state a *real* case can have).
+  "passport.cardReserved": "Posición reservada",
 
   "mapControls.groupLabel": "Navegación del mapa",
   "mapControls.panUp": "Desplazar arriba",

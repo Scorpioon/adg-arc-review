@@ -34,35 +34,32 @@ export function InfocardCoverPage({ caseName, heroMedia }: InfocardCoverPageProp
   );
 }
 
+// TG018 Pass C (operator decision, correction matrix §D): `Moviment` is
+// removed from this presentation entirely — not hidden, not TBD-labeled.
+// The architecture movement fact still exists and is still shown elsewhere
+// (the dossier's own "architecture-movement" page), so no source content is
+// lost; this component simply no longer renders it. Its former `movement`/
+// `movementStatus`/`labels.movement`/`labels.movementTbd` props are dropped
+// as a direct consequence rather than left as unused dead parameters.
 export interface InfocardFactsPageLabels {
   year: string;
   architect: string;
   address: string;
-  movement: string;
-  movementTbd: string;
 }
 
 export interface InfocardFactsPageProps {
   year: number;
   architect: string;
   address: string | null;
-  movement: string | null;
-  movementStatus: "verified" | "tbd";
   labels: InfocardFactsPageLabels;
 }
 
-export function InfocardFactsPage({
-  year,
-  architect,
-  address,
-  movement,
-  movementStatus,
-  labels,
-}: InfocardFactsPageProps) {
-  const resolvedMovement = movementStatus === "verified" && movement ? movement : null;
-
+export function InfocardFactsPage({ year, architect, address, labels }: InfocardFactsPageProps) {
   return (
     <section className="infocard-page infocard-page--facts">
+      {/* TG018 Pass C (correction matrix §D): explicit top separator above
+          the first row — every row already carried its own border-bottom,
+          but nothing closed the top edge above `Any`. */}
       <dl className="infocard-page__facts">
         <div className="infocard-page__fact">
           <dt>{labels.year}</dt>
@@ -78,10 +75,6 @@ export function InfocardFactsPage({
             <dd>{address}</dd>
           </div>
         )}
-        <div className="infocard-page__fact">
-          <dt>{labels.movement}</dt>
-          <dd>{resolvedMovement ?? labels.movementTbd}</dd>
-        </div>
       </dl>
     </section>
   );

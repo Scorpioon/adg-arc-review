@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { cases, type CaseRecord } from "../data/cases";
+import { useWindowedIndex } from "../hooks/useWindowedIndex";
 import { useT } from "../i18n/context";
 import type { TranslationKey } from "../i18n/es";
 import type { PanelAnchor } from "../types/panelAnchor";
@@ -11,11 +12,7 @@ import {
   InfocardProsePage,
   InfocardSpecimenPage,
 } from "./InfocardPages";
-import {
-  useInfocardPagination,
-  type InfocardChapter,
-  type InfocardPageId,
-} from "../hooks/useInfocardPagination";
+import { useInfocardPagination, type InfocardPageId } from "../hooks/useInfocardPagination";
 
 // TG012 Pass C — final selected-case dossier. Composes the validated Pass A
 // data (cases.ts) through the validated Pass B primitives (InfocardPages)
@@ -77,15 +74,32 @@ const SECTION_LABEL_KEY: Record<Exclude<InfocardPageId, "cover">, TranslationKey
   specimen: "caseSheet.section.specimen",
 };
 
-const CHAPTERS: InfocardChapter[] = [1, 2, 3, 4, 5];
+// TG018 Pass C / correction matrix §G: the internal nav's visible window —
+// same bounded-window primitive the map-top Passport navbar uses (Pass A/
+// §J), but this one tracks `pageIndex` (the `follow` argument) so the
+// window always keeps the current page in view rather than only responding
+// to its own arrows. `MAX_VISIBLE` intentionally does not match the map
+// navbar's own 5 — this surface sits inside the dossier's own narrower
+// column (full width on mobile, a capped ~360-480px side panel at desktop),
+// not the full map viewport, so a desktop window is never widened past what
+// that panel can hold without wrapping/overflowing.
+const MAX_VISIBLE = 5;
+const NARROW_MAX = 767;
+const COMPACT_MAX = 480;
+// Mirrors config/breakpoints.ts's DESKTOP_MIN (1024): past this width the
+// dossier becomes the fixed ~360-480px side panel (see global.css), not a
+// full-viewport surface, so its own window stays at the same compact count
+// the narrow tablet tier uses rather than widening with the outer window.
+const DESKTOP_MIN = 1024;
 
-const CHAPTER_LABEL_KEY: Record<InfocardChapter, TranslationKey> = {
-  1: "caseSheet.section.building",
-  2: "caseSheet.section.architecture",
-  3: "caseSheet.section.typography",
-  4: "caseSheet.section.dialogue",
-  5: "caseSheet.section.specimen",
-};
+function computeDossierVisibleCount(): number {
+  if (typeof window === "undefined") return MAX_VISIBLE;
+  const width = window.innerWidth;
+  if (width >= DESKTOP_MIN) return 3;
+  if (width <= COMPACT_MAX) return 2;
+  if (width <= NARROW_MAX) return 3;
+  return MAX_VISIBLE;
+}
 
 // Pass F1 §3: the specimen page is the terminal numbered-chapter page. Past
 // it, the dossier moves through two post-chapter steps that live outside
@@ -105,8 +119,19 @@ export default function InfocardDossier({
   proofStatus,
 }: InfocardDossierProps) {
   const t = useT();
-  const { currentPage, pageIndex, canGoPrevious, canGoNext, goPrevious, goNext, jumpToChapter } =
+  const { currentPage, pageIndex, pageCount, canGoPrevious, canGoNext, goPrevious, goNext, goToPage } =
     useInfocardPagination(activeCase);
+
+  // TG018 Pass C: the numeric nav's visible window, kept synced to whatever
+  // page is actually current (`follow: pageIndex`) — see the shared
+  // `useWindowedIndex` primitive and `computeDossierVisibleCount` above.
+  const [visibleCount, setVisibleCount] = useState(computeDossierVisibleCount);
+  useEffect(() => {
+    const onResize = () => setVisibleCount(computeDossierVisibleCount());
+    window.addEventListener("resize", onResize);
+    return () => window.removeEventListener("resize", onResize);
+  }, []);
+  const { windowStart: navWindowStart } = useWindowedIndex(pageCount, visibleCount, pageIndex);
 
   const panelRef = useRef<HTMLDivElement | null>(null);
   const closeButtonRef = useRef<HTMLButtonElement | null>(null);
@@ -197,19 +222,18 @@ export default function InfocardDossier({
           <InfocardCoverPage caseName={activeCase.identity.name} heroMedia={activeCase.heroMedia} />
         );
       case "building-facts":
+        // TG018 Pass C (correction matrix §D): Moviment is not passed to
+        // this page at all — it stays live only on the dedicated
+        // "architecture-movement" page below.
         return (
           <InfocardFactsPage
             year={activeCase.identity.year}
             architect={activeCase.identity.architect}
             address={activeCase.identity.address ?? null}
-            movement={activeCase.architecture.movement ?? null}
-            movementStatus={activeCase.architecture.movementStatus}
             labels={{
               year: t("caseSheet.fact.year"),
               architect: t("caseSheet.fact.architect"),
               address: t("caseSheet.fact.address"),
-              movement: t("caseSheet.movementPrefix"),
-              movementTbd: t("caseSheet.movementTbdInline"),
             }}
           />
         );
@@ -295,15 +319,14 @@ export default function InfocardDossier({
       >
         <div className="infocard-dossier__panel">
           <div className="infocard-dossier__row">
+            {/* TG018 Pass C (operator decision): the former third-slot
+                hairline is removed with no replacement — the row is now a
+                two-slot identity row, the number circle and building title
+                sharing one balanced, vertically-centered baseline. */}
             <div className="infocard-dossier__row-left">
               <span className="infocard-dossier__ordinal">{ordinalLabel}</span>
               <span className="infocard-dossier__case-name">{activeCase.identity.name}</span>
             </div>
-            {/* Pass F1B (prompt 046 §4A): the row's third slot — structurally
-                present per the target's three-slot identity row, but never a
-                reintroduced text section label (that stays in the footer
-                pill, §5C). A bare hairline, not a control. */}
-            <span className="infocard-dossier__row-right" aria-hidden="true" />
           </div>
 
           {stampFeedback && (
@@ -349,24 +372,37 @@ export default function InfocardDossier({
                     >
                       <span aria-hidden="true">&#8592;</span>
                     </button>
+                    {/* TG018 Pass C / correction matrix §G: one number per
+                        actual page, a moving window (never a fixed 5-chapter
+                        set) shifting one position at a time and always
+                        keeping the current page in view (`navWindowStart`
+                        above). Unselected pips are transparent on the yellow
+                        surface; selected is white fill — operator decision,
+                        overriding the plain white/black-fill Figma reference
+                        (00_AUTHORITY.md §authority order: operator decisions
+                        rank above screenshots/exports). */}
                     <div
-                      className="infocard-dossier__chapters"
+                      className="infocard-dossier__page-window"
                       role="group"
                       aria-label={t("caseSheet.navLabel")}
                     >
-                      {CHAPTERS.map((chapter) => {
-                        const active = currentPage.chapter === chapter;
+                      {Array.from({ length: Math.min(visibleCount, pageCount) }, (_, i) => {
+                        const index = navWindowStart + i;
+                        const active = index === pageIndex;
                         return (
                           <button
-                            key={chapter}
+                            key={index}
                             type="button"
-                            className="infocard-dossier__chapter-pip"
+                            className="infocard-dossier__page-pip"
                             data-active={active ? "true" : "false"}
                             aria-current={active ? "true" : undefined}
-                            aria-label={`${chapter} — ${t(CHAPTER_LABEL_KEY[chapter])}`}
-                            onClick={() => jumpToChapter(chapter)}
+                            aria-label={t("caseSheet.pageOrdinal", {
+                              index: index + 1,
+                              total: pageCount,
+                            })}
+                            onClick={() => goToPage(index)}
                           >
-                            {chapter}
+                            {index + 1}
                           </button>
                         );
                       })}

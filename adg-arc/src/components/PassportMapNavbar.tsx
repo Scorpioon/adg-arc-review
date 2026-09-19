@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import type { CaseRecord } from "../data/cases";
 import type { PassportState } from "../hooks/usePassport";
+import { useWindowedIndex } from "../hooks/useWindowedIndex";
 import { useT } from "../i18n/context";
 import { PanLeftIcon, PanRightIcon } from "./icons";
 import PassportStopCircle from "./PassportStopCircle";
@@ -21,18 +22,18 @@ interface PassportMapNavbarProps {
 const RAIL_POSITIONS = 20;
 const PHYSICAL_RAIL_POSITIONS = 10;
 
-// DEC-010 §11.6 locked geometry — the number a `visibleCount` decision is
-// solved against, never scaled itself. Mirrored by the matching CSS
-// (.passport-map-navbar / __window rules in global.css) at each of the
-// breakpoints below; kept as a sibling constant here rather than imported
-// since CSS cannot read a TS value (same split as config/breakpoints.ts).
-const MAX_VISIBLE = 5; // DEC-010 §11.6: visibleCount must never exceed 5.
+// TG018 correction matrix §A: compact Passport-scale chrome, so the visible
+// window still tops out at 5 — kept as a sibling constant here rather than
+// imported since CSS cannot read a TS value (same split as
+// config/breakpoints.ts). Mirrored by the matching CSS
+// (.passport-map-navbar / __window rules in global.css) at each breakpoint.
+const MAX_VISIBLE = 5;
 
 // Mirrors config/breakpoints.ts's TABLET_MIN (768) plus the file's existing
 // 480px coarse-pointer tier (global.css) — deliberately not a new value
-// invented for this control. Below 768px the locked 48px group-gap and 16px
-// padding are the ones DEC-010 §11.6 allows to yield ("preserve wherever the
-// viewport permits"); the 55px circle/arrow diameter itself never does.
+// invented for this control. Below 768px the bar's own padding/gap (see
+// global.css) are what yield first; the compacted circle/arrow diameter
+// itself does not shrink further at these two tiers.
 const NARROW_MAX = 767;
 const COMPACT_MAX = 480;
 
@@ -54,7 +55,6 @@ export default function PassportMapNavbar({
   const physicalCases = cases.filter((c) => c.experienceType === "physical_digital");
 
   const [visibleCount, setVisibleCount] = useState(computeVisibleCount);
-  const [windowStart, setWindowStart] = useState(0);
 
   useEffect(() => {
     const onResize = () => setVisibleCount(computeVisibleCount());
@@ -62,21 +62,16 @@ export default function PassportMapNavbar({
     return () => window.removeEventListener("resize", onResize);
   }, []);
 
-  // A resize can only ever shrink/grow `visibleCount`, never move the
-  // catalog itself — clamping keeps `windowStart` valid without resetting
-  // deterministic pagination back to the beginning.
-  useEffect(() => {
-    setWindowStart((start) => Math.min(start, RAIL_POSITIONS - visibleCount));
-  }, [visibleCount]);
-
-  const atStart = windowStart === 0;
-  const atEnd = windowStart + visibleCount >= RAIL_POSITIONS;
-
-  // Pagination only: never touches `onSelectCase`, passport stamping, or
-  // visited state (DEC-010 §11.6 / handoff "Arrow interaction must NEVER…").
-  const goPrevious = () => setWindowStart((start) => Math.max(0, start - visibleCount));
-  const goNext = () =>
-    setWindowStart((start) => Math.min(RAIL_POSITIONS - visibleCount, start + visibleCount));
+  // TG018 correction matrix §A/§J: arrows shift the visible window by
+  // exactly one position (`1 2 3 4 5` -> `2 3 4 5 6`), never a
+  // `visibleCount`-sized jump — shared windowing primitive with the
+  // dossier's own internal page nav. No `follow` index: this window never
+  // auto-tracks the current selection (DEC-010 §11 — pagination only,
+  // never touches `onSelectCase`, passport stamping, or visited state).
+  const { windowStart, atStart, atEnd, goPrevious, goNext } = useWindowedIndex(
+    RAIL_POSITIONS,
+    visibleCount
+  );
 
   return (
     <nav className="passport-map-navbar" aria-label={t("passport.mapNavLabel")}>
