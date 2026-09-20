@@ -352,82 +352,95 @@ export default function InfocardDossier({
                 aria-label={sectionLabel ?? activeCase.identity.name}
               >
                 {renderPage()}
-                {isCover && (
-                  <button type="button" className="infocard-dossier__explore" onClick={goNext}>
-                    Explora →
-                  </button>
-                )}
               </div>
 
-              {currentPage && !isCover && (
+              {/* TG019 Pass D (operator feedback §10): `Explora →` used to
+                  render inside the cover's own content flow, allocating a
+                  row of its own and leaving an unused extra footer-height gap
+                  below it (evidence 14_explora_extra_row_height.png) — every
+                  other page already has a footer row here, the cover simply
+                  never rendered one. Reusing the same `.infocard-dossier__nav`
+                  footer for the cover too puts Explora at the identical
+                  vertical level as every other page's controls and hands the
+                  freed height back to the hero-media slot above
+                  (`.infocard-page__hero`'s own `flex: 1 1 auto` absorbs it). */}
+              {currentPage && (
                 <nav className="infocard-dossier__nav" aria-label={t("caseSheet.navLabel")}>
-                  <span className="infocard-dossier__nav-pill">{sectionLabel}</span>
-                  <div className="infocard-dossier__nav-controls">
-                    <button
-                      type="button"
-                      className="infocard-dossier__nav-arrow"
-                      onClick={goPrevious}
-                      disabled={!canGoPrevious}
-                      aria-label={t("caseSheet.previous")}
-                    >
-                      <span aria-hidden="true">&#8592;</span>
+                  {isCover ? (
+                    <button type="button" className="infocard-dossier__explore" onClick={goNext}>
+                      Explora →
                     </button>
-                    {/* TG018 Pass C / correction matrix §G: one number per
-                        actual page, a moving window (never a fixed 5-chapter
-                        set) shifting one position at a time and always
-                        keeping the current page in view (`navWindowStart`
-                        above). Unselected pips are transparent on the yellow
-                        surface; selected is white fill — operator decision,
-                        overriding the plain white/black-fill Figma reference
-                        (00_AUTHORITY.md §authority order: operator decisions
-                        rank above screenshots/exports). */}
-                    <div
-                      className="infocard-dossier__page-window"
-                      role="group"
-                      aria-label={t("caseSheet.navLabel")}
-                    >
-                      {Array.from({ length: Math.min(visibleCount, pageCount) }, (_, i) => {
-                        const index = navWindowStart + i;
-                        const active = index === pageIndex;
-                        return (
+                  ) : (
+                    <>
+                      <span className="infocard-dossier__nav-pill">{sectionLabel}</span>
+                      <div className="infocard-dossier__nav-controls">
+                        <button
+                          type="button"
+                          className="infocard-dossier__nav-arrow"
+                          onClick={goPrevious}
+                          disabled={!canGoPrevious}
+                          aria-label={t("caseSheet.previous")}
+                        >
+                          <span aria-hidden="true">&#8592;</span>
+                        </button>
+                        {/* TG018 Pass C / correction matrix §G: one number per
+                            actual page, a moving window (never a fixed 5-chapter
+                            set) shifting one position at a time and always
+                            keeping the current page in view (`navWindowStart`
+                            above). Unselected pips are transparent on the yellow
+                            surface; selected is white fill — operator decision,
+                            overriding the plain white/black-fill Figma reference
+                            (00_AUTHORITY.md §authority order: operator decisions
+                            rank above screenshots/exports). */}
+                        <div
+                          className="infocard-dossier__page-window"
+                          role="group"
+                          aria-label={t("caseSheet.navLabel")}
+                        >
+                          {Array.from({ length: Math.min(visibleCount, pageCount) }, (_, i) => {
+                            const index = navWindowStart + i;
+                            const active = index === pageIndex;
+                            return (
+                              <button
+                                key={index}
+                                type="button"
+                                className="infocard-dossier__page-pip"
+                                data-active={active ? "true" : "false"}
+                                aria-current={active ? "true" : undefined}
+                                aria-label={t("caseSheet.pageOrdinal", {
+                                  index: index + 1,
+                                  total: pageCount,
+                                })}
+                                onClick={() => goToPage(index)}
+                              >
+                                {index + 1}
+                              </button>
+                            );
+                          })}
+                        </div>
+                        {isSpecimen ? (
                           <button
-                            key={index}
                             type="button"
-                            className="infocard-dossier__page-pip"
-                            data-active={active ? "true" : "false"}
-                            aria-current={active ? "true" : undefined}
-                            aria-label={t("caseSheet.pageOrdinal", {
-                              index: index + 1,
-                              total: pageCount,
-                            })}
-                            onClick={() => goToPage(index)}
+                            className="infocard-dossier__nav-arrow"
+                            onClick={() => setStep("passport-stamp")}
+                            aria-label={t("caseSheet.next")}
                           >
-                            {index + 1}
+                            <span aria-hidden="true">&#10003;</span>
                           </button>
-                        );
-                      })}
-                    </div>
-                    {isSpecimen ? (
-                      <button
-                        type="button"
-                        className="infocard-dossier__nav-arrow"
-                        onClick={() => setStep("passport-stamp")}
-                        aria-label={t("caseSheet.next")}
-                      >
-                        <span aria-hidden="true">&#10003;</span>
-                      </button>
-                    ) : (
-                      <button
-                        type="button"
-                        className="infocard-dossier__nav-arrow"
-                        onClick={goNext}
-                        disabled={!canGoNext}
-                        aria-label={t("caseSheet.next")}
-                      >
-                        <span aria-hidden="true">&#8594;</span>
-                      </button>
-                    )}
-                  </div>
+                        ) : (
+                          <button
+                            type="button"
+                            className="infocard-dossier__nav-arrow"
+                            onClick={goNext}
+                            disabled={!canGoNext}
+                            aria-label={t("caseSheet.next")}
+                          >
+                            <span aria-hidden="true">&#8594;</span>
+                          </button>
+                        )}
+                      </div>
+                    </>
+                  )}
                 </nav>
               )}
             </>

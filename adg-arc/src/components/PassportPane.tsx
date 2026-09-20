@@ -1,5 +1,6 @@
-import { Fragment, useCallback, useEffect, useRef, useState } from "react";
+import { Fragment, useCallback, useEffect, useRef, useState, type ReactNode, type RefObject } from "react";
 import type { CaseRecord } from "../data/cases";
+import { useDialogA11y } from "../hooks/useDialogA11y";
 import type { PassportState } from "../hooks/usePassport";
 import { usePrefersReducedMotion } from "../hooks/usePrefersReducedMotion";
 import { useT } from "../i18n/context";
@@ -10,6 +11,11 @@ interface PassportPaneProps {
   passport: PassportState;
   cases: CaseRecord[];
   onSelectCase: (slug: string) => void;
+  // TG019 Pass D (operator feedback §13): the "01 Passaport" destination
+  // header, owned/rendered by AppMenuModal — accepted here so it can share
+  // one sticky wrapper with the numbered rail/reset control below rather
+  // than sitting outside this component as an independent sticky layer.
+  header?: ReactNode;
 }
 
 // TG011 Pass C (ADGARC-FB-043 / DEC-010 §D4): the Passport rail is literally
@@ -45,12 +51,17 @@ function PassportStopRail({
   focusedOrdinal,
   onFocusStop,
   onReload,
+  reloadButtonRef,
 }: {
   passport: PassportState;
   physicalCases: CaseRecord[];
   focusedOrdinal: number;
   onFocusStop: (ordinal: number) => void;
   onReload: () => void;
+  // TG019 Pass D: so the reset dialog's `useDialogA11y` can return focus to
+  // the exact control that opened it, the same contract AppModal/AppMenuDialog
+  // already use with their own trigger buttons.
+  reloadButtonRef: RefObject<HTMLButtonElement>;
 }) {
   const t = useT();
 
@@ -110,6 +121,7 @@ function PassportStopRail({
         <span className="passport-stop-rail__divider" aria-hidden="true" />
         <button
           type="button"
+          ref={reloadButtonRef}
           className="passport-stop-rail__reload"
           onClick={onReload}
           aria-label={t("passport.reset")}
@@ -127,6 +139,51 @@ function PassportStopRail({
   );
 }
 
+// TG019 Pass D (operator feedback §12): the reset confirmation as a real
+// small dialog/popup inside the Passport surface, replacing the former
+// bottom-of-flow confirm block. Reuses `useDialogA11y` — the same focus-in/
+// Tab-trap/Escape/focus-return primitive AppModal and the menu dialog
+// already use — rather than a third, parallel modal implementation.
+function PassportResetDialog({
+  triggerRef,
+  onConfirm,
+  onCancel,
+}: {
+  triggerRef: RefObject<HTMLButtonElement>;
+  onConfirm: () => void;
+  onCancel: () => void;
+}) {
+  const t = useT();
+  const dialogRef = useDialogA11y({ onClose: onCancel, triggerRef });
+
+  return (
+    <div
+      className="passport-reset-dialog__backdrop"
+      onMouseDown={(e) => {
+        if (e.target === e.currentTarget) onCancel();
+      }}
+    >
+      <div
+        ref={dialogRef}
+        className="passport-reset-dialog"
+        role="dialog"
+        aria-modal="true"
+        aria-label={t("passport.resetConfirm")}
+      >
+        <p className="passport-reset-dialog__message">{t("passport.resetConfirm")}</p>
+        <div className="passport-reset-dialog__actions">
+          <button type="button" className="passport-reset-dialog__confirm" onClick={onConfirm}>
+            {t("passport.resetConfirmYes")}
+          </button>
+          <button type="button" className="passport-reset-dialog__cancel" onClick={onCancel}>
+            {t("passport.resetConfirmCancel")}
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 // TG010 (DEC-006); S5B card carousel (DEC-008 §4/§5.2): Pasaporte
 // destination pane — reuses .settings-actions / .settings-actions__btn for
 // its reset action rather than inventing a parallel visual language; its own
@@ -135,10 +192,12 @@ function PassportStopRail({
 // `onSelectCase` the map already uses — never a second selection authority,
 // never a stamp (only the dossier's own Touch to Check control stamps, and
 // only once the QR Contract v1 gate — TG014 — allows it for that case).
-export default function PassportPane({ passport, cases, onSelectCase }: PassportPaneProps) {
+export default function PassportPane({ passport, cases, onSelectCase, header }: PassportPaneProps) {
   const t = useT();
   const reducedMotion = usePrefersReducedMotion();
   const [confirmingReset, setConfirmingReset] = useState(false);
+  // TG019 Pass D: the reset dialog's focus-return target.
+  const reloadButtonRef = useRef<HTMLButtonElement | null>(null);
 
   // TG011 Pass C (ADGARC-FB-043): which card the carousel is currently
   // looking at. This is pane-local *presentation* state and nothing else —
@@ -216,13 +275,19 @@ export default function PassportPane({ passport, cases, onSelectCase }: Passport
 
   return (
     <div className="passport-pane">
-      <PassportStopRail
-        passport={passport}
-        physicalCases={physicalCases}
-        focusedOrdinal={focusedOrdinal}
-        onFocusStop={focusStop}
-        onReload={() => setConfirmingReset(true)}
-      />
+      {/* TG019 Pass D (operator feedback §13): `header` + the rail as one
+          sticky wrapper — see `.passport-pane__sticky` in global.css. */}
+      <div className="passport-pane__sticky">
+        {header}
+        <PassportStopRail
+          passport={passport}
+          physicalCases={physicalCases}
+          focusedOrdinal={focusedOrdinal}
+          onFocusStop={focusStop}
+          onReload={() => setConfirmingReset(true)}
+          reloadButtonRef={reloadButtonRef}
+        />
+      </div>
       {completed && (
         <p className="passport-pane__status passport-pane__status--visited">{t("passport.completed")}</p>
       )}
@@ -334,20 +399,15 @@ export default function PassportPane({ passport, cases, onSelectCase }: Passport
 
       {/* TG018 Pass B (operator decision): the full-width "Reiniciar
           progreso" trigger is gone — reset now starts from the reload circle
-          in the rail above (`onReload`). Only the confirm/cancel step still
-          renders here, exactly as before. */}
+          in the rail above (`onReload`).
+          TG019 Pass D (operator feedback §12): the confirm/cancel step is now
+          a centered dialog/popup rather than a block appended to the flow. */}
       {confirmingReset && (
-        <div className="settings-actions">
-          <div className="passport-pane__reset-confirm">
-            <p className="app-modal__note">{t("passport.resetConfirm")}</p>
-            <button type="button" className="settings-actions__btn" onClick={handleResetConfirmed}>
-              {t("passport.resetConfirmYes")}
-            </button>
-            <button type="button" className="settings-actions__btn" onClick={() => setConfirmingReset(false)}>
-              {t("passport.resetConfirmCancel")}
-            </button>
-          </div>
-        </div>
+        <PassportResetDialog
+          triggerRef={reloadButtonRef}
+          onConfirm={handleResetConfirmed}
+          onCancel={() => setConfirmingReset(false)}
+        />
       )}
     </div>
   );

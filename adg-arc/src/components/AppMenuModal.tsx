@@ -191,6 +191,20 @@ function AppMenuDialog({
     onSelectDestination(null);
   };
 
+  // TG019 Pass D: one back-header element, referenced both from its usual
+  // spot above every other destination's body and, for Passport only,
+  // passed down as PassportPane's `header` prop — never two copies of this
+  // markup to keep in sync.
+  const destinationHeader = activeNavItem ? (
+    <div className="app-menu__destination-header">
+      <button type="button" className="app-menu__back" onClick={backToRoot} aria-label={t("menu.back")}>
+        <span aria-hidden="true">←</span>
+      </button>
+      <span className="app-menu__row-index">{padOrdinal(activeIndex + 1)}</span>
+      <span className="app-menu__row-label">{t(activeNavItem.labelKey)}</span>
+    </div>
+  ) : null;
+
   // useDialogA11y returns focus to the menu trigger when the whole surface
   // closes; this is the same courtesy one level down, for a back that only
   // unwinds a destination. It runs on the transition to root and nowhere
@@ -270,20 +284,12 @@ function AppMenuDialog({
               Información, Acerca de, Ajustes and Dev Settings alike — rather
               than a per-destination variant. The ordinal is the row's menu
               ordinal and carries no route, stop or sequence meaning. */}
-          {activeNavItem && (
-            <div className="app-menu__destination-header">
-              <button
-                type="button"
-                className="app-menu__back"
-                onClick={backToRoot}
-                aria-label={t("menu.back")}
-              >
-                <span aria-hidden="true">←</span>
-              </button>
-              <span className="app-menu__row-index">{padOrdinal(activeIndex + 1)}</span>
-              <span className="app-menu__row-label">{t(activeNavItem.labelKey)}</span>
-            </div>
-          )}
+          {/* TG019 Pass D (operator feedback §13): for the Passport
+              destination only, this header is not rendered here — it is
+              handed to PassportPane as `header` so it can sit inside the
+              same sticky wrapper as the numbered rail/reset control (one
+              sticky region, not two). Every other destination is unchanged. */}
+          {activeNavItem && active !== "passport" && destinationHeader}
 
           {active === "info" && (
             <>
@@ -354,7 +360,12 @@ function AppMenuDialog({
           )}
 
           {active === "passport" && (
-            <PassportPane passport={passport} cases={cases} onSelectCase={onSelectCase} />
+            <PassportPane
+              passport={passport}
+              cases={cases}
+              onSelectCase={onSelectCase}
+              header={destinationHeader}
+            />
           )}
 
           {/* TG011 Pass B (ADGARC-FB-045 / DEC-010 §11.5): row 05 is now a

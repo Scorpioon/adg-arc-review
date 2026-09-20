@@ -818,7 +818,13 @@ export const cases: CaseRecord[] = [
       sourceName: "Cooperativa de Vivienda La Borda",
       year: 2018,
       architect: "La Col",
-      address: null,
+      // TG019 Pass B (operator feedback §4 / 00_AUTHORITY.md): the recovered
+      // spreadsheet left this blank, so it stayed null through TG018 (see the
+      // geo-coordinate provenance note below — that external address was
+      // deliberately kept out of the product as unverified enrichment). This
+      // exact string is the operator's own explicit, one-off authorization —
+      // the only content mutation TG019 authorizes in this file.
+      address: "Carrer de la Constitució, 85-89, 08014",
     },
     experienceType: "physical_digital",
     architecture: {

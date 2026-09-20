@@ -102,13 +102,17 @@
    this pass's own new geometry/typography/motion tokens apart from the
    color/z-index/font tokens above rather than interleaving them. */
 :root {
-  /* Typography hierarchy. `--type-body`/`--type-body-line` match the ratio
-     already proven correct against panel3/panel6 (32px/38px, 1.1875) — see
-     .infocard-page__body below, unchanged by this pass. `--type-fact-*`
+  /* Typography hierarchy. TG019 Pass C (operator feedback §7): the reading
+     body was reading as oversized/display-like prose. The correction names
+     its own font-size reference explicitly — the same size as the top
+     EditorialShell title ("Arquitectura i tipografia en diàleg",
+     `.editorial-shell__title`, 0.95rem) — regular weight rather than that
+     title's bold. `--type-body-line` is unchanged (the ratio holds
+     regardless of the absolute size it is paired with). `--type-fact-*`
      normalize the Fitxa label/value pair toward panel5's measured parity
      (both 37px, weight is the only distinguishing channel) instead of the
      value dramatically outscaling the label. */
-  --type-body: 2rem;
+  --type-body: 0.95rem;
   --type-body-line: 1.1875;
   --type-fact-label: 1.05rem;
   --type-fact-value: 1.15rem;
@@ -130,7 +134,14 @@
      already in use across the app (round chrome vs. square panels) rather
      than repeating the literal 999px/0 at each call site. */
   --circle-nav-diameter: 2rem;
-  --circle-map-diameter: 40px;
+  /* TG019 Pass A (operator feedback §9): the map-top navbar's overall height
+     must equal the existing menu-control height (`.app-menu-trigger`,
+     36px, border-box). `.passport-map-navbar` fixes its own height at 36px
+     and drops its vertical padding to 0 to make that equality exact by
+     construction; this diameter is sized to fit inside the 36px pill (minus
+     its 1px top/bottom border) with a few px of breathing room, compacted
+     further from the former 40px. */
+  --circle-map-diameter: 28px;
   --pill-nav-width: 8rem;
   --pill-corner: 999px;
   --panel-corner: 0;
@@ -510,6 +521,11 @@ body,
 }
 
 .app-menu {
+  /* TG019 Pass D: positioning context for the Passport reset dialog's
+     backdrop (`.passport-reset-dialog__backdrop`, `position: absolute;
+     inset: 0;`) — scopes that overlay to the menu panel rather than the
+     full viewport, "inside the Passport surface" per the correction. */
+  position: relative;
   width: min(920px, 100%);
   /* TG006G Scope A: a fixed `height` (not `max-height`) so the desktop
      application-menu frame is stable across every destination — switching
@@ -630,21 +646,32 @@ body,
    the shared [X] in the yellow topbar still closes the whole menu. */
 .app-menu__destination-header {
   display: flex;
-  align-items: baseline;
+  align-items: center;
   gap: 8px;
   border-top: 1px solid var(--hairline);
   padding: 1.1rem 0;
 }
 
+/* TG019 Pass A (operator feedback §2): was a plain text glyph whose hover/
+   active tint therefore read as a stray gray rectangle. Rebuilt as a
+   circular control in the same design language as the other nav circles
+   (dossier page-nav pip / Passport rail) — same diameter token — so the
+   same rgba hover/active tint now paints a circular badge, not a rectangle. */
 .app-menu__back {
   appearance: none;
   position: relative;
-  border: none;
-  background: transparent;
+  flex: none;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: var(--circle-nav-diameter);
+  height: var(--circle-nav-diameter);
+  border-radius: 50%;
+  border: 1px solid var(--hairline);
+  background: var(--surface);
   color: inherit;
   font: inherit;
-  font-size: 1.3rem;
-  font-weight: 700;
+  font-size: 1rem;
   line-height: 1;
   cursor: pointer;
   padding: 0;
@@ -875,12 +902,17 @@ body,
   z-index: var(--z-map-chrome);
   display: flex;
   align-items: center;
+  /* TG019 Pass A (operator feedback §9): fixed at the menu-control's own
+     height (`.app-menu-trigger`, 36px) rather than let padding/circle size
+     derive it — this is what makes the two heights equal by construction.
+     Padding stays horizontal-only; height owns the vertical dimension. */
+  height: 36px;
   /* TG018 correction matrix §A: "compact Passport-scale visual language" —
      gap/padding cut substantially from the former 48px/16px so the bar reads
      as compact chrome, not a dominant fixture; the map stays visually
      primary underneath it. */
   gap: var(--space-sm);
-  padding: var(--space-xs);
+  padding: 0 var(--space-sm);
   background: var(--surface);
   border: 1px solid rgba(90, 42, 18, 0.18);
   border-radius: var(--pill-corner);
@@ -965,7 +997,9 @@ body,
 @media (max-width: 767px) {
   .passport-map-navbar {
     gap: var(--space-xs);
-    padding: 10px;
+    /* Horizontal-only, as above — the fixed 36px height (equal to the
+       menu-control) is not a per-breakpoint value. */
+    padding: 0 10px;
   }
 
   .passport-map-navbar__window {
@@ -979,7 +1013,7 @@ body,
 @media (max-width: 480px), (pointer: coarse) {
   .passport-map-navbar {
     gap: var(--space-2xs);
-    padding: var(--space-2xs) var(--space-xs);
+    padding: 0 var(--space-xs);
   }
 }
 
@@ -1022,10 +1056,6 @@ body,
   flex-direction: column;
 }
 
-.editorial-shell__body:has(> .passport-pane) > .app-menu__destination-header {
-  flex: none;
-}
-
 .passport-pane {
   flex: 1 1 auto;
   min-height: 0;
@@ -1047,13 +1077,38 @@ body,
   min-height: 8rem;
 }
 
+/* TG019 Pass D (operator feedback §13): `01 Passaport` (passed in as
+   `header`) plus the numbered rail/reset control now sit in one wrapper so
+   they can share a single sticky region while the carousel scrolls beneath —
+   never two independent sticky layers with their own top offsets to keep in
+   sync. Sticks against whichever ancestor is actually the scrolling one: the
+   desktop `.editorial-shell__body` (block flow, grid carousel) or, on a
+   viewport too short even for the mobile flex composition below, the same
+   body's own scrollbar. Opaque background so scrolled card content never
+   shows through underneath it. */
+.passport-pane__sticky {
+  position: sticky;
+  top: 0;
+  z-index: 1;
+  background: var(--surface);
+}
+
 /* TG011 Pass C (ADGARC-FB-043 / DEC-010 §11.3): the Pasaporte pane's literal
    1-20 circle rail. The S4 .passport-rail cell rail this superseded was
    removed in TG016 once its sole consumer, the map overlay, was replaced by
    the FB-046 circle navbar. */
+/* TG019 Pass A (operator feedback §1): `align-items: stretch` (the flex
+   default) was making the track fill the pane's full width, leaving dead
+   trailing space after the last circle whenever the rail's own content was
+   narrower than the panel (desktop). `flex-start` sizes the track to its own
+   content instead — it still clamps down to the available width and keeps
+   scrolling internally exactly as before whenever content overflows (mobile),
+   so nothing about the circle-to-circle gap or the mobile scroll behavior
+   changes, only the now-removed trailing space on wide surfaces. */
 .passport-stop-rail {
   display: flex;
   flex-direction: column;
+  align-items: flex-start;
   gap: 0.4rem;
   margin-bottom: 0.9rem;
 }
@@ -1404,11 +1459,81 @@ body,
   font-weight: 600;
 }
 
-.passport-pane__reset-confirm {
+/* TG019 Pass D (operator feedback §12): replaces the former bottom-of-flow
+   `.passport-pane__reset-confirm` block (evidence
+   18_passport_reset_confirmation_wrong_position.png) with a real centered
+   dialog/popup — `useDialogA11y` (the same focus-in/Tab-trap/Escape/focus-
+   return primitive AppModal and the menu dialog already use) rather than a
+   third, parallel implementation. Absolutely positioned against `.app-menu`
+   (see its own `position: relative` above) so it centers over the visible
+   Passport surface regardless of carousel scroll position — "must not
+   require scrolling to find." */
+.passport-reset-dialog__backdrop {
+  position: absolute;
+  inset: 0;
+  z-index: 3;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 1.5rem;
+  background: rgba(40, 24, 12, 0.35);
+}
+
+.passport-reset-dialog {
+  width: min(320px, 100%);
   display: flex;
   flex-direction: column;
-  align-items: flex-start;
-  gap: 0.5rem;
+  gap: 1rem;
+  padding: 1.25rem;
+  background: var(--surface);
+  color: var(--ink);
+  border: 1px solid var(--canonical-ink);
+  box-shadow: 0 12px 32px rgba(20, 12, 6, 0.28);
+}
+
+.passport-reset-dialog__message {
+  margin: 0;
+  font-size: 0.92rem;
+}
+
+.passport-reset-dialog__actions {
+  display: flex;
+  gap: 0.6rem;
+}
+
+/* Destructive confirm — red, per the correction. */
+.passport-reset-dialog__confirm {
+  appearance: none;
+  flex: 1;
+  border: 1px solid #c62828;
+  border-radius: 8px;
+  background: #c62828;
+  color: #ffffff;
+  font: inherit;
+  font-weight: 700;
+  padding: 0.6rem 0.9rem;
+  cursor: pointer;
+}
+
+.passport-reset-dialog__confirm:hover {
+  background: #b71c1c;
+}
+
+/* Cancel — the existing non-destructive settings-actions button language. */
+.passport-reset-dialog__cancel {
+  appearance: none;
+  flex: 1;
+  border: 1px solid rgba(90, 42, 18, 0.25);
+  border-radius: 8px;
+  background: var(--surface);
+  color: var(--ink);
+  font: inherit;
+  padding: 0.6rem 0.9rem;
+  cursor: pointer;
+}
+
+.passport-reset-dialog__cancel:hover {
+  background: rgba(90, 42, 18, 0.08);
 }
 
 /* TG006I Scope E (ADGARC-FB-010): CAT / ES / ENG language selector. Only
@@ -2309,9 +2434,14 @@ body,
    vertical centering — Facts/Specimen's own dormant `flex: 1` rules are
    deliberately left inert, since their top-anchored composition is already
    correct. */
+/* TG019 Pass B (operator feedback §6): `.infocard-page--facts` added to this
+   list — its own `flex: 1; justify-content: center;` (below) already existed
+   from TG018 but was inert, since its parent here was never a flex container
+   for it. Same technique as the three page types already on this list. */
 .infocard-dossier__content:has(.infocard-page--highlight),
 .infocard-dossier__content:has(.infocard-page--typography),
-.infocard-dossier__content:has(.infocard-page--architecture-movement) {
+.infocard-dossier__content:has(.infocard-page--architecture-movement),
+.infocard-dossier__content:has(.infocard-page--facts) {
   display: flex;
   flex-direction: column;
 }
@@ -2341,21 +2471,29 @@ body,
    flagged.
    Pass F1C (prompt 047 §B): padding/gap tightened again — the target footer
    band overall reads more compact than F1B's widened-margin corrective. */
+/* TG019 Pass A (operator feedback §8): exactly 16px on all four sides —
+   was 0.55rem (8.8px) top/bottom, 1rem (16px) left/right. The bottom side
+   keeps a safe-area floor (never less than 16px) rather than dropping the
+   existing home-indicator clearance on notch devices. */
 .infocard-dossier__nav {
   flex: none;
   display: flex;
   align-items: center;
   justify-content: space-between;
   gap: 0.6rem;
-  padding: 0.55rem 1rem max(0.55rem, env(safe-area-inset-bottom));
+  padding: 16px 16px max(16px, env(safe-area-inset-bottom));
   background: var(--canonical-yellow);
 }
 
+/* TG019 Pass A (operator feedback §3): was a literal 40px, one size larger
+   than the page-nav pip's `--circle-nav-diameter` (32px) below — the exact
+   arrow/number mismatch the correction calls out. Same token now, so the
+   two can never drift again. */
 .infocard-dossier__nav-arrow {
   appearance: none;
   flex: none;
-  width: 40px;
-  height: 40px;
+  width: var(--circle-nav-diameter);
+  height: var(--circle-nav-diameter);
   border-radius: 50%;
   border: 1px solid var(--canonical-ink);
   background: var(--surface);
@@ -2574,13 +2712,25 @@ body,
    so label and value top-align on the same row edge, rather than sharing a
    text baseline that reads as misaligned once the value is markedly larger
    than the label (evidence 05_fitxa_alignment_annotated.png). */
+/* TG019 Pass B (operator feedback §5): the internal row dividers are
+   thickened by 1px over the shared `--separator-width` token (never moved
+   vertically) — `calc()` keeps the relationship explicit rather than a new
+   literal. The last row's own border-bottom is dropped entirely below: every
+   row used to carry one, which is what produced the surplus rule after the
+   final fact (evidence 03_fitxa_bottom_separator_surplus.png) — the block's
+   already-separate top rule (`.infocard-page__facts`, unchanged at 1px) is
+   the only edge that was ever meant to close on its own. */
 .infocard-page__fact {
   display: flex;
   align-items: flex-start;
   justify-content: space-between;
   gap: 1.25rem;
   padding: 0.9rem 0;
-  border-bottom: var(--separator-width) solid var(--separator-color);
+  border-bottom: calc(var(--separator-width) + 1px) solid var(--separator-color);
+}
+
+.infocard-page__fact:last-child {
+  border-bottom: none;
 }
 
 .infocard-page__fact dt {
@@ -2683,13 +2833,22 @@ body,
   overflow-wrap: anywhere;
 }
 
-/* Pass F1B (prompt 046 §4E): running-text ratio — ~32px font / ~38px
-   line-height at the target's reference width (2rem / 1.1875 unitless, so
-   the ratio holds as the clamp scales). Body copy only, never the oversized
-   typeface-name display treatment (`__meta-typeface` below). */
+/* TG019 Pass C (operator feedback §7): shared reading-body treatment for
+   L'edifici / Arquitectura (body only) / Tipografia (body only) / Diàleg —
+   already one shared class/component (InfocardProsePage) across all four,
+   so the "too many variants" defect was the *size*, not a missing
+   consolidation. Stable at `--type-body` (no more `vw`-driven clamp scaling
+   toward a 2rem ceiling — that scaling is what read as oversized/display-
+   like prose), regular weight, left-aligned (both already the unset
+   default), a controlled reading measure now shared by all four instead of
+   only Diàleg's own override below it (removed as redundant). Never the
+   intentionally distinct specimen/display typeface treatment
+   (`__meta-typeface` below, or the quote/phrase treatments). */
 .infocard-page__body {
   margin: 0;
-  font-size: clamp(1.35rem, 6vw, var(--type-body));
+  max-width: 34ch;
+  font-size: var(--type-body);
+  font-weight: 400;
   line-height: var(--type-body-line);
   overflow-wrap: anywhere;
 }
@@ -2700,10 +2859,19 @@ body,
    same chapter dot, never merged on one page. `.infocard-page--architecture`
    stays a shared base class on both steps for the properties below that
    apply to either. */
+/* TG019 corrective C1 (operator confirmation, evidence
+   16_internal_separator_stroke.png): the +1px internal-separator stroke
+   correction extends to this divider too — same `calc(var(--separator-width)
+   + 1px)` logic as the Fitxa fix (`.infocard-page__fact`). `--separator-width`
+   is 1px, the same value this rule's own literal already was, so this is a
+   pure +1px width increase (1px -> 2px) with no other change: color stays
+   the existing `rgba(29, 29, 27, 0.3)` literal (not switched to
+   `--separator-color`), and the divider is not moved (`border-top`,
+   `padding-top` unchanged). */
 .infocard-page--architecture .infocard-page__meta {
   margin: 0;
   padding-top: 1.1rem;
-  border-top: 1px solid rgba(29, 29, 27, 0.3);
+  border-top: calc(var(--separator-width) + 1px) solid rgba(29, 29, 27, 0.3);
 }
 
 /* The movement-only step: a label/value row (matching the Facts page's own
@@ -2744,12 +2912,6 @@ body,
 .infocard-page--typography {
   flex: 1;
   justify-content: center;
-}
-
-/* Pass F1C (prompt 047 §H): a bounded measure reads as more "contained"
-   than the full-width column every other prose page already uses. */
-.infocard-page--dialogue .infocard-page__body {
-  max-width: 34ch;
 }
 
 .infocard-page--specimen {
@@ -2796,8 +2958,8 @@ body,
   }
 
   .infocard-dossier__nav {
-    padding-left: max(1.1rem, env(safe-area-inset-left));
-    padding-right: max(1.1rem, env(safe-area-inset-right));
+    padding-left: max(16px, env(safe-area-inset-left));
+    padding-right: max(16px, env(safe-area-inset-right));
   }
 }
 
@@ -2812,18 +2974,19 @@ body,
    arithmetically against a 320px viewport; not confirmed by eye
    (NO_RUNTIME) — see this pass's report for the runtime-review ask. */
 @media (max-width: 380px) {
+  /* TG019 Pass A: was two literals (34px arrow / 28px pip) that mismatched
+     each other exactly like the base-size bug above. Scoped through the
+     shared token instead so arrow and number circles can only ever shrink
+     together at this breakpoint. */
+  .infocard-dossier {
+    --circle-nav-diameter: 28px;
+  }
+
   .infocard-dossier__nav-pill {
     width: 6.5rem;
   }
 
-  .infocard-dossier__nav-arrow {
-    width: 34px;
-    height: 34px;
-  }
-
   .infocard-dossier__page-pip {
-    width: 28px;
-    height: 28px;
     font-size: 0.78rem;
   }
 
