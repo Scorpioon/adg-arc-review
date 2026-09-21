@@ -3,7 +3,6 @@ import type { CaseRecord } from "../data/cases";
 import type { PassportState } from "../hooks/usePassport";
 import { useWindowedIndex } from "../hooks/useWindowedIndex";
 import { useT } from "../i18n/context";
-import { PanLeftIcon, PanRightIcon } from "./icons";
 import PassportStopCircle from "./PassportStopCircle";
 
 interface PassportMapNavbarProps {
@@ -15,11 +14,12 @@ interface PassportMapNavbarProps {
 
 // ADGARC-FB-046 / ADGARC-DEC-010 §11.2, §11.6: replaces the dropped S5B
 // `PassportMapOverlay` rectangular rail with a windowed circle-navigation
-// control. Same catalog shape as PassportPane's own PassportStopRail — the
-// full ordered case set, physical then digital, every ordinal resolving to
-// a real case (TG020: no more fixed 1-20 / reserved-position split) — but
-// this surface paginates a fixed-size visible window instead of scrolling
-// the full rail, per §11.6.
+// control. Same catalog shape as PassportPane's own PassportStopRail — every
+// ordinal resolving to a real case (TG020: no more fixed 1-20 / reserved-
+// position split) — but this surface paginates a fixed-size visible window
+// instead of scrolling the full rail, per §11.6. TG020-R1: the case list
+// this receives is App's public/active set (`activeCases`), not the full
+// authored dataset, so this window's own total is always the public count.
 
 // TG018 correction matrix §A: compact Passport-scale chrome, so the visible
 // window still tops out at 5 — kept as a sibling constant here rather than
@@ -51,9 +51,9 @@ export default function PassportMapNavbar({
   onSelectCase,
 }: PassportMapNavbarProps) {
   const t = useT();
-  // TG020: total rail positions is the full ordered case set — never a
-  // hard-coded 20/30, so Phase 2 additions/removals resize this rail for
-  // free.
+  // TG020: total rail positions is derived from whatever `cases` this is
+  // handed — never a hard-coded 20/30, so Phase 2 additions/removals resize
+  // this rail for free. TG020-R1: that's now App's public/active case list.
   const totalPositions = cases.length;
 
   const [visibleCount, setVisibleCount] = useState(computeVisibleCount);
@@ -77,6 +77,12 @@ export default function PassportMapNavbar({
 
   return (
     <nav className="passport-map-navbar" aria-label={t("passport.mapNavLabel")}>
+      {/* TG020-R1 (FB-048/FB-060): a plain centered ←/→ glyph, not the
+          MapControls-style pan-arrow SVG icon this used to render — the
+          canonical circular-arrow grammar (true circle, white fill, thin
+          black border, one glyph) is otherwise only `.infocard-dossier__nav-
+          arrow`'s, and the feedback is explicit that no surface may carry an
+          alternative arrow shape. Same markup pattern as that control. */}
       <button
         type="button"
         className="passport-map-navbar__arrow"
@@ -84,7 +90,7 @@ export default function PassportMapNavbar({
         disabled={atStart}
         aria-label={t("passport.mapNavPrevious")}
       >
-        <PanLeftIcon />
+        <span aria-hidden="true">&#8592;</span>
       </button>
       <div
         className="passport-map-navbar__window"
@@ -127,7 +133,7 @@ export default function PassportMapNavbar({
         disabled={atEnd}
         aria-label={t("passport.mapNavNext")}
       >
-        <PanRightIcon />
+        <span aria-hidden="true">&#8594;</span>
       </button>
     </nav>
   );

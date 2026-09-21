@@ -613,9 +613,11 @@ body,
   /* TG011 Pass A (ADGARC-FB-039 / DEC-010 §11.4): literal `ordinal, 8px,
      label`. Replaces the former two-column grid, whose wide optical gap was
      read off the mockup image — the written 2026-09-14 spacing rule is
-     normative over that image and is not to be re-inferred from it. */
+     normative over that image and is not to be re-inferred from it.
+     TG020-R1 (FB-059): `center`, not `baseline` — the index is now a fixed-
+     diameter circle badge, not inline text sharing the label's baseline. */
   display: flex;
-  align-items: baseline;
+  align-items: center;
   gap: 8px;
   width: 100%;
   border: none;
@@ -631,7 +633,28 @@ body,
   background: rgba(90, 42, 18, 0.06);
 }
 
-.app-menu__row-index,
+/* TG020-R1 (FB-059): the root menu's "01".."05" indices render inside true
+   circles now, sharing `--circle-nav-diameter` and the same 1px canonical-
+   ink outline as the dossier's own case-ordinal badge
+   (`.infocard-dossier__ordinal`) — "visually relate to the rest of the
+   product's numbered navigation controls," not free-standing text. One class
+   serves both the root list (`.app-menu__row`) and the destination header
+   (`.app-menu__destination-header`, e.g. "← 01 Passaporte"), so the two
+   surfaces can never carry two different index treatments. */
+.app-menu__row-index {
+  flex: none;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: var(--circle-nav-diameter);
+  height: var(--circle-nav-diameter);
+  border-radius: 50%;
+  border: 1px solid var(--canonical-ink);
+  font-size: 0.95rem;
+  font-weight: 700;
+  line-height: 1;
+}
+
 .app-menu__row-label {
   font-size: 1.3rem;
   font-weight: 700;
@@ -902,11 +925,14 @@ body,
   z-index: var(--z-map-chrome);
   display: flex;
   align-items: center;
-  /* TG019 Pass A (operator feedback §9): fixed at the menu-control's own
-     height (`.app-menu-trigger`, 36px) rather than let padding/circle size
-     derive it — this is what makes the two heights equal by construction.
-     Padding stays horizontal-only; height owns the vertical dimension. */
-  height: 36px;
+  /* TG019 Pass A (operator feedback §9): originally a bare 36px literal
+     chosen to equal `.app-menu-trigger`'s own 36px height. TG020-R1
+     (FB-047): "bar padding derived from that diameter" — expressed as a
+     formula over the circle/arrow diameter and a vertical padding token
+     instead, so the relationship is load-bearing code rather than a
+     coincidence two independent literals have to be kept in sync by hand.
+     28px + 2*4px still equals 36px, so the menu-trigger parity holds too. */
+  height: calc(var(--circle-map-diameter) + 2 * var(--space-2xs));
   /* TG018 correction matrix §A: "compact Passport-scale visual language" —
      gap/padding cut substantially from the former 48px/16px so the bar reads
      as compact chrome, not a dominant fixture; the map stays visually
@@ -946,25 +972,30 @@ body,
   font-size: 0.8rem;
 }
 
+/* TG020-R1 (FB-048/FB-060): the canonical circular arrow control — true
+   circle, white fill, thin black outline, one centered glyph — matching
+   `.infocard-dossier__nav-arrow` exactly (border/color on `--canonical-ink`,
+   not the near-invisible `--hairline` this used before) so the two surfaces
+   can never visually diverge again. The glyph itself is now plain text
+   (PassportMapNavbar.tsx), not an SVG pan-icon, so font-size/line-height —
+   not an `svg` sub-rule — center it. */
 .passport-map-navbar__arrow {
   appearance: none;
   flex: none;
   width: var(--circle-map-diameter);
   height: var(--circle-map-diameter);
   padding: 0;
-  border: 1px solid var(--hairline);
+  border: 1px solid var(--canonical-ink);
   border-radius: 50%;
   background: var(--surface);
-  color: var(--ink);
+  color: var(--canonical-ink);
+  font: inherit;
+  font-size: 0.9rem;
+  line-height: 1;
   display: inline-flex;
   align-items: center;
   justify-content: center;
   cursor: pointer;
-}
-
-.passport-map-navbar__arrow svg {
-  width: 18px;
-  height: 18px;
 }
 
 .passport-map-navbar__arrow:hover:not(:disabled) {
@@ -1348,12 +1379,21 @@ body,
   color: var(--ink-muted);
 }
 
+/* TG020-R1 (FB-057): the text/status region carries the same grey-
+   unvisited/yellow-visited vocabulary PassportStopCircle's own fill already
+   uses (`.passport-carousel__body[data-visited]` below), generalized from
+   the single status line to the whole metadata block. */
 .passport-carousel__body {
   flex: none;
   display: flex;
   flex-direction: column;
   gap: 0.15rem;
   padding: 0.55rem 0.6rem 0.65rem;
+  background: #9d9d9d;
+}
+
+.passport-carousel__body[data-visited="true"] {
+  background: var(--canonical-yellow);
 }
 
 .passport-carousel__ordinal {
@@ -1364,11 +1404,21 @@ body,
   color: var(--ink-muted);
 }
 
+/* TG020-R1 (FB-056): a fixed two-line box (not just a two-line clamp) so
+   every card's name region — and therefore its metadata block and media
+   region above it — is the same height regardless of whether this
+   particular building name wraps to one line or two; a longer name never
+   makes one card's text box taller than its neighbours. */
 .passport-carousel__name {
   font-family: var(--font-editorial);
   font-size: 0.92rem;
   font-weight: 600;
   line-height: 1.2;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  height: calc(1.2em * 2);
+  overflow: hidden;
 }
 
 /* TG018 Pass B (correction matrix §B/§I): "Desktop: 5 columns x 4 rows with
@@ -1380,8 +1430,13 @@ body,
    solving a mobile-specific accidental-scrollbar defect; at this width the
    pane instead reverts to ordinary block flow and lets the shared
    `.editorial-shell__body`'s own vertical scrollbar (its default treatment
-   everywhere else) absorb four rows of 9:16 cards, exactly as "vertical
-   flow" asks. */
+   everywhere else) absorb the card grid's rows, exactly as "vertical flow"
+   asks. The rule itself never assumes a row count — TG020 Phase 1 grew the
+   authored dataset to 31 records (7 rows) without any change needed here.
+   TG020-R1: the pane now receives the public/active case list only
+   (App's `activeCases`), currently 20 — back to the original "four rows"
+   this comment described, but by construction (`repeat(5, 1fr)` over
+   whatever it is handed), not by re-tuning this rule to a count. */
 @media (min-width: 1024px) {
   .editorial-shell__body:has(> .passport-pane) {
     display: block;
@@ -2438,31 +2493,62 @@ body,
    list — its own `flex: 1; justify-content: center;` (below) already existed
    from TG018 but was inert, since its parent here was never a flex container
    for it. Same technique as the three page types already on this list. */
+/* TG020-R1 (FB-051): L'edifici (`--building`), the Arquitectura running-text
+   step (`--architecture-prose`) and Diàleg (`--dialogue`) join this list —
+   same `:has()` technique, so their own `flex: 1; justify-content: center;
+   align-items: center;` below (previously dormant, exactly like the others
+   were before this rule existed) finally takes effect. */
 .infocard-dossier__content:has(.infocard-page--highlight),
 .infocard-dossier__content:has(.infocard-page--typography),
 .infocard-dossier__content:has(.infocard-page--architecture-movement),
-.infocard-dossier__content:has(.infocard-page--facts) {
+.infocard-dossier__content:has(.infocard-page--facts),
+.infocard-dossier__content:has(.infocard-page--building),
+.infocard-dossier__content:has(.infocard-page--architecture-prose),
+.infocard-dossier__content:has(.infocard-page--dialogue) {
   display: flex;
   flex-direction: column;
 }
 
+/* TG020-R1 (FB-049): exactly the chapter/status pill's own control height,
+   border weight, corner radius and vertical text alignment
+   (`.infocard-dossier__nav-pill` below) — Explora no longer carries a
+   separate CTA geometry (44px min-height, larger padding). A pseudo-element
+   hit area restores the touch floor `min-height: 32px` gives up, the same
+   technique `.app-menu__back` already uses for its own compact circle. */
 .infocard-dossier__explore {
   appearance: none;
+  position: relative;
   align-self: center;
   flex: none;
-  min-height: 44px;
-  border: 1px solid var(--canonical-ink);
-  border-radius: 999px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 32px;
+  border: var(--stroke-hairline) solid var(--canonical-ink);
+  border-radius: var(--pill-corner);
   background: var(--surface);
   color: var(--canonical-ink);
   font: inherit;
+  font-size: var(--type-nav-pill);
   font-weight: 700;
-  padding: 0.7rem 1.5rem;
+  padding: 0.3rem 1.1rem;
   cursor: pointer;
 }
 
 .infocard-dossier__explore:hover {
   background: var(--canonical-yellow);
+}
+
+@media (max-width: 480px), (pointer: coarse) {
+  .infocard-dossier__explore::after {
+    content: "";
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 44px;
+    height: 44px;
+    transform: translate(-50%, -50%);
+  }
 }
 
 /* Pass F1B (prompt 046 §4B): border-top removed — the target's footer band
@@ -2756,6 +2842,11 @@ body,
 
 .infocard-page--highlight {
   flex: 1;
+  /* TG020-R1 (FB-050): overrides the base `.infocard-page`'s 1rem gap — the
+     quote/phrase and its attribution footer must read as one unit while
+     staying typographically distinct (already true via the italic
+     cite/smaller size below), not as two separate blocks. */
+  gap: 0.4rem;
   align-items: center;
   justify-content: center;
   text-align: center;
@@ -2828,6 +2919,12 @@ body,
   margin: 0;
   font-size: clamp(1.8rem, 6vw, 2.6rem);
   font-weight: 700;
+  /* TG020-R1 (FB-052): a long typeface name (e.g. "Horizontype Monospaced")
+     wrapping onto two lines at this display size was reading as two
+     separate headings rather than one compact multiline one — the browser
+     default line-height at this font-size leaves too much interline gap for
+     a display treatment. */
+  line-height: 0.95;
   /* TG018 Pass D: a long/unbroken typeface family name must never be the
      one thing that forces horizontal dossier overflow. */
   overflow-wrap: anywhere;
@@ -2851,6 +2948,35 @@ body,
   font-weight: 400;
   line-height: var(--type-body-line);
   overflow-wrap: anywhere;
+}
+
+/* TG020-R1 (FB-051): L'edifici, Arquitectura (running-text step) and Diàleg
+   were reading as anchored toward the upper-left of the yellow content area.
+   `align-items: center` on the (now-flex, via the `:has()` rule above)
+   section centers the `.infocard-page__body` block horizontally — it keeps
+   its own `max-width: 34ch`, so it no longer stretches edge-to-edge, and its
+   paragraph text stays left-aligned inside that narrower centered box (no
+   `text-align` set here). `justify-content: center` centers it vertically,
+   the same mechanism `--highlight`/`--typography` already use. Tipografia
+   itself is deliberately NOT in this list — TG019 Pass C already settled it
+   on left-aligned/vertical-only centering and this correction does not
+   revisit that. */
+.infocard-page--building,
+.infocard-page--architecture-prose,
+.infocard-page--dialogue {
+  flex: 1;
+  justify-content: center;
+  align-items: center;
+}
+
+/* TG020-R1 (FB-051): "increase prose size approximately 4 CSS px" —
+   `--type-body` (0.95rem / 15.2px) + 4px = 1.2rem / 19.2px, exactly.
+   Scoped to these three pages' own body copy only; Tipografia's running text
+   stays at the shared `--type-body` size (see the comment above). */
+.infocard-page--building .infocard-page__body,
+.infocard-page--architecture-prose .infocard-page__body,
+.infocard-page--dialogue .infocard-page__body {
+  font-size: 1.2rem;
 }
 
 /* Pass F1C (prompt 047 §F): useInfocardPagination.ts now exposes two

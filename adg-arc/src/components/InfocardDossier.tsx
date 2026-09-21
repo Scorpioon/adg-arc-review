@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import { cases, type CaseRecord } from "../data/cases";
+import { activeCases, type CaseRecord } from "../data/cases";
 import { useWindowedIndex } from "../hooks/useWindowedIndex";
 import { useT } from "../i18n/context";
 import type { TranslationKey } from "../i18n/es";
@@ -195,7 +195,14 @@ export default function InfocardDossier({
 
   if (!activeCase) return null;
 
-  const ordinal = cases.findIndex((c) => c.slug === activeCase.slug) + 1;
+  // TG020-R1: derived from the public/active case list, not the full 31-
+  // record dataset — "case lookup" is one of the surfaces the visibility
+  // correction requires to track `activeCases`, so this ordinal can never
+  // drift from what the Passport/navbar show. A hidden case opened directly
+  // via `?case=<slug>` resolves to -1 here (`Math.max(ordinal, 0)` below
+  // already handled the "not found" case before this change) — its dossier
+  // still opens, it just carries no public ordinal.
+  const ordinal = activeCases.findIndex((c) => c.slug === activeCase.slug) + 1;
   // Pass F1B (prompt 046 §4A): the top-row marker is a circled digit, not a
   // zero-padded ordinal — the leading zero read as an artifact once the
   // number sits inside a small circle rather than as loose bold text.
@@ -242,8 +249,16 @@ export default function InfocardDossier({
           <InfocardHighlightedPhrasePage phrase={activeCase.infocard.highlightedPhrase} />
         ) : null;
       case "building-prose":
-        // No in-body heading — the footer pill already carries the section label.
-        return <InfocardProsePage copy={activeCase.infocard.buildingProse} />;
+        // No in-body heading — the footer pill already carries the section
+        // label. TG020-R1 (FB-051): its own class so the prose-centering/
+        // size correction below can target L'edifici specifically, the same
+        // way Arquitectura/Diàleg already carry their own modifier classes.
+        return (
+          <InfocardProsePage
+            className="infocard-page--building"
+            copy={activeCase.infocard.buildingProse}
+          />
+        );
       case "architecture-movement":
         // Pass F1C §F: movement-only composition — no heading (the footer
         // pill already reads "Arquitectura") and no running text, so this

@@ -2586,3 +2586,36 @@ export function findCaseBySlug(slug: string | null): CaseRecord | undefined {
   if (!slug) return undefined;
   return cases.find((c) => c.slug === slug);
 }
+
+// TG020-R1 (operator visual review, ADGARC_TG020_VISUAL_FEEDBACK_R1_v1.0.md
+// "Dataset / visibility decision"): the 31 authored CaseRecords above are
+// never deleted or reordered for this — visibility is a separate,
+// data/config-driven layer on top of them. Cases 01-10 (physical) and 11-20
+// (the first ten digital_only records) stay public; 21-31 are held back from
+// ordinary public product surfaces until a later phase, without touching
+// their content. Re-enabling a hidden case is a one-line edit to this set —
+// never a CaseRecord rewrite, never a Passport/architecture change.
+export const HIDDEN_CASE_SLUGS: ReadonlySet<string> = new Set([
+  "caixaforum-casaramona",
+  "torre-glories",
+  "biblioteca-jaume-fuster",
+  "pavello-de-la-republica",
+  "palau-de-la-musica-catalana",
+  "fundacio-joan-miro",
+  "hotel-vela-w-barcelona",
+  "hospital-de-sant-pau",
+  "cementiri-de-montjuic-zona-racionalista",
+  "teatre-nacional-de-catalunya",
+  "edifici-meridiana",
+]);
+
+// Canonical public/active case list and the single selector every ordinary
+// product surface must derive from (Passport rail/carousel, the map-top
+// navbar, and — once Phase 2 adds coordinates — map markers) rather than
+// consuming `cases` directly or re-slicing it ad hoc in more than one place.
+// One selector, one order, one ordinal numbering (1..activeCases.length) —
+// Map, Passport, navigation and case lookup can never drift from each other.
+// `findCaseBySlug` still searches the full 31-record `cases` array — a
+// direct `?case=<slug>` deep link to a hidden case still opens its dossier;
+// only listing/rail/ordinal surfaces are scoped to `activeCases`.
+export const activeCases: CaseRecord[] = cases.filter((c) => !HIDDEN_CASE_SLUGS.has(c.slug));

@@ -46,10 +46,11 @@ function PassportStopRail({
   reloadButtonRef,
 }: {
   passport: PassportState;
-  // TG020: the full ordered case set (physical, then digital) — the rail no
-  // longer has a fixed 1-20 shape or reserved positions past the physical
-  // set. Every ordinal 1..cases.length now resolves to a real case; the
-  // total is derived here, never hard-coded (Phase 2 may change it again).
+  // TG020: no longer a fixed 1-20 shape or reserved positions past the
+  // physical set — every ordinal 1..cases.length resolves to a real case.
+  // TG020-R1: the caller now hands this the public/active case list (App's
+  // `activeCases`, currently 20), not the full authored dataset — the rail
+  // itself stays total-agnostic and simply renders whatever it is given.
   cases: CaseRecord[];
   physicalCount: number;
   focusedOrdinal: number;
@@ -301,11 +302,13 @@ export default function PassportPane({ passport, cases, onSelectCase, header }: 
           width, which is what stops the card block from overflowing the fixed
           shell — see .passport-carousel__card in global.css.
 
-          TG020: the track spans the full dynamic case set — every position
-          now resolves to a real case (no reserved 11-20 placeholders remain,
-          and the total is never hard-coded — see the passport-stop-rail
-          divider comment above and the desktop 5-column/auto-row CSS in
-          global.css, which already grows past any fixed row count). */}
+          TG020: every position resolves to a real case (no reserved 11-20
+          placeholders remain, and the total is never hard-coded — see the
+          passport-stop-rail divider comment above and the desktop 5-column/
+          auto-row CSS in global.css, which grows past any fixed row count).
+          TG020-R1: the track now renders the public/active case list (App's
+          `activeCases`, currently 20 — 5 columns x 4 rows at desktop, no
+          horizontal overflow), never the full 31-record authored dataset. */}
       <ul
         className="passport-carousel"
         aria-label={t("passport.carouselLabel")}
@@ -342,7 +345,17 @@ export default function PassportPane({ passport, cases, onSelectCase, header }: 
                     </span>
                   )}
                 </span>
-                <span className="passport-carousel__body">
+                {/* TG020-R1 (FB-057): the text/status region itself carries
+                    the grey-unvisited/yellow-visited state (not just the
+                    status line's own weight/opacity below) — the same
+                    visited-fill vocabulary PassportStopCircle already uses,
+                    generalized to this card's metadata block. Selection has
+                    no equivalent here; this pane never carries a second
+                    selection authority (see the header comment above). */}
+                <span
+                  className="passport-carousel__body"
+                  data-visited={isVisited ? "true" : "false"}
+                >
                   <span className="passport-carousel__ordinal">
                     {String(ordinal).padStart(2, "0")}
                   </span>

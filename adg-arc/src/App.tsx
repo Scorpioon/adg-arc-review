@@ -6,7 +6,7 @@ import PassportMapNavbar from "./components/PassportMapNavbar";
 import LoadingScreen from "./components/LoadingScreen";
 import GestureCoachmark from "./components/GestureCoachmark";
 import EntryCurtain from "./components/EntryCurtain";
-import { cases, findCaseBySlug, type CaseRecord } from "./data/cases";
+import { activeCases, findCaseBySlug, type CaseRecord } from "./data/cases";
 import { useCaseParam } from "./hooks/useCaseParam";
 import { usePrefersReducedMotion } from "./hooks/usePrefersReducedMotion";
 import { useReadiness } from "./hooks/useReadiness";
@@ -273,7 +273,7 @@ export default function App() {
           onClose={() => setMenuOpen(false)}
           onSelectDestination={setMenuActive}
           triggerRef={menuTriggerRef}
-          cases={cases}
+          cases={activeCases}
           onSelectCase={handleCaseSelect}
           onResetMap={() => mapViewRef.current?.reset()}
           onNorthUp={() => mapViewRef.current?.setNorthUp()}
@@ -308,7 +308,7 @@ export default function App() {
         />
         <MapView
           ref={mapViewRef}
-          cases={cases}
+          cases={activeCases}
           selectedSlug={activeCase?.slug ?? null}
           onSelectCase={setCaseSlug}
           panelAnchor={panelAnchor}
@@ -331,7 +331,7 @@ export default function App() {
             second selection authority. */}
         <PassportMapNavbar
           passport={passport}
-          cases={cases}
+          cases={activeCases}
           selectedSlug={activeCase?.slug ?? null}
           onSelectCase={setCaseSlug}
         />
