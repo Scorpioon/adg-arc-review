@@ -159,32 +159,25 @@ export const es = {
   "passport.proofInvalid": "El código QR escaneado no es válido para este caso.",
   "passport.railOrdinalNote":
     "Los números identifican cada parada; no indican un orden de recorrido.",
-  // TG011 Pass C (ADGARC-FB-043 / DEC-010 §11.3): the Pasaporte pane's 1-20
+  // TG011 Pass C (ADGARC-FB-043 / DEC-010 §11.3): the Pasaporte pane's
   // circle rail. `stopStatus` is the accessible name of an active circle —
   // colour is never the only carrier of visit state, so the ordinal and the
-  // status are always available in words. `stopReserved` names a digital-only
-  // position whose source identity does not exist yet (DEC-010 §D4): it
-  // states the position is reserved and pending source, and deliberately
-  // invents no name, no content and no case identity for it.
-  "passport.railGroupLabel": "Índice de paradas, 1 a 20",
+  // status are always available in words. TG020: the rail's total is now the
+  // dynamic case count (no more fixed 1-20 / reserved-position split), so
+  // `railGroupLabel` interpolates it rather than hard-coding it.
+  "passport.railGroupLabel": "Índice de paradas, 1 a %{total}",
   "passport.stopStatus": "Parada %{ordinal}, %{name}: %{status}",
-  "passport.stopReserved": "Parada %{ordinal}: reservada, pendiente de fuente",
   // TG010 S5B (ADGARC-FB-030 / DEC-008 §4): the Pasaporte destination's own
   // horizontal 9:16 stop-card carousel, replacing the former plain row list.
   "passport.carouselLabel": "Paradas del pasaporte",
   // TG016 (ADGARC-FB-046 / DEC-010 §11.2, §11.6): the map-top windowed
   // circle-navigation control replacing the dropped S5B PassportMapOverlay.
-  // Reuses `passport.railGroupLabel` / `stopStatus` / `stopReserved` above
-  // for the shared circle vocabulary; these three are the control's own
-  // landmark and pagination-arrow names.
+  // Reuses `passport.railGroupLabel` / `stopStatus` above for the shared
+  // circle vocabulary; these are the control's own landmark and
+  // pagination-arrow names.
   "passport.mapNavLabel": "Navegación del pasaporte en el mapa",
   "passport.mapNavPrevious": "Ver paradas anteriores",
   "passport.mapNavNext": "Ver paradas siguientes",
-  // TG018 Pass B (correction matrix §B): short visible label for an 11-20
-  // placeholder card — distinct from `passport.stopReserved` (a full
-  // accessible sentence used as that same card's aria-label) and from
-  // `cases.mediaPending` (a missing-image state a *real* case can have).
-  "passport.cardReserved": "Posición reservada",
 
   "mapControls.groupLabel": "Navegación del mapa",
   "mapControls.panUp": "Desplazar arriba",

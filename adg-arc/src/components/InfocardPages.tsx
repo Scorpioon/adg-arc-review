@@ -48,13 +48,16 @@ export interface InfocardFactsPageLabels {
 }
 
 export interface InfocardFactsPageProps {
-  year: number;
+  // TG020: the dossier's own display label (CaseIdentity.date.displayLabel),
+  // not a raw year — source-faithful for exact/ranged/fuzzy dates alike
+  // ("1929", "1906 - 1912", "~S. XX", "Anys 60").
+  dateLabel: string;
   architect: string;
   address: string | null;
   labels: InfocardFactsPageLabels;
 }
 
-export function InfocardFactsPage({ year, architect, address, labels }: InfocardFactsPageProps) {
+export function InfocardFactsPage({ dateLabel, architect, address, labels }: InfocardFactsPageProps) {
   return (
     <section className="infocard-page infocard-page--facts">
       {/* TG018 Pass C (correction matrix §D): explicit top separator above
@@ -63,7 +66,7 @@ export function InfocardFactsPage({ year, architect, address, labels }: Infocard
       <dl className="infocard-page__facts">
         <div className="infocard-page__fact">
           <dt>{labels.year}</dt>
-          <dd>{year}</dd>
+          <dd>{dateLabel}</dd>
         </div>
         <div className="infocard-page__fact">
           <dt>{labels.architect}</dt>

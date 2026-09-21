@@ -7,15 +7,34 @@
 
 export type SourceId =
   | "source:csv-tipografia-arquitectura"
-  | "product:tg004-prototype-coordinate";
+  | "product:tg004-prototype-coordinate"
+  // TG020 Phase 1: the 21 digital_only fiches (source doc) plus the
+  // authored Walden 7 completion (authority doc) — one coarse-grained
+  // SourceId, matching the granularity of the two constants above.
+  | "source:tg020-digital-cases";
 
 const CSV_SOURCE: SourceId = "source:csv-tipografia-arquitectura";
 const PROTOTYPE_COORDINATE: SourceId = "product:tg004-prototype-coordinate";
+const TG020_SOURCE: SourceId = "source:tg020-digital-cases";
+
+// TG020: evolves the former bare `year: number` into a machine/display pair
+// so a fuzzy or ranged source date can be shown honestly without inventing a
+// precise year. `year` stays the sortable/machine value (the most recent
+// exact year for a range, null when the source gives no reliable single
+// year — century/decade wording only); `displayLabel` is what the dossier
+// actually renders, source-faithful (e.g. "1906 - 1912", "~S. XX", "Anys
+// 60", "1929"). The 10 pre-TG020 physical cases all carry an exact single
+// year, so their `displayLabel` is simply that year's string form — no
+// content change, just the shape evolving to also fit ranges/fuzz.
+export interface CaseDate {
+  year: number | null;
+  displayLabel: string;
+}
 
 export interface CaseIdentity {
   name: string;
   sourceName?: string;
-  year: number;
+  date: CaseDate;
   architect: string;
   address?: string | null;
 }
@@ -31,7 +50,10 @@ export interface CaseArchitecture {
 
 export interface CaseTypography {
   primaryFamily: string;
-  designer: string;
+  // TG020: nullable — most of the 21 digital fiches name a typeface without
+  // crediting its designer in the source text, and that fact stays null
+  // rather than invented (never rendered in the UI; see cases.ts header).
+  designer?: string | null;
   sourceUrl?: string | null;
   // Secondary typefaces are PARKED for every case per TG005 handoff §3.3 —
   // never active product content, never surfaced in the interface.
@@ -179,7 +201,7 @@ export const cases: CaseRecord[] = [
     slug: "casa-caracoles",
     identity: {
       name: "Casa de los Caracoles",
-      year: 1895,
+      date: { year: 1895, displayLabel: "1895" },
       architect: "Carles Bosch i Negre",
       address: "Entença, 2",
     },
@@ -266,7 +288,7 @@ export const cases: CaseRecord[] = [
     slug: "casa-rodriguez-arias",
     identity: {
       name: "Casa Rodriguez Arias",
-      year: 1931,
+      date: { year: 1931, displayLabel: "1931" },
       architect: "Germà Rodríguez i Arias",
       address: "Vía Augusta 61",
     },
@@ -352,7 +374,7 @@ export const cases: CaseRecord[] = [
     identity: {
       name: "Casa de la Marina",
       sourceName: "Casa de la Marina en la Barceloneta",
-      year: 1955,
+      date: { year: 1955, displayLabel: "1955" },
       architect: "José Antonio Coderch",
       address: "Paseo Juan de Borbón 43",
     },
@@ -443,7 +465,7 @@ export const cases: CaseRecord[] = [
     identity: {
       name: "Cocheras de Sarrià",
       sourceName: "Viviendas Cocheras de Sarriá",
-      year: 1970,
+      date: { year: 1970, displayLabel: "1970" },
       architect: "José Antonio Coderch",
       address: "Passeig Manuel Girona",
     },
@@ -532,7 +554,7 @@ export const cases: CaseRecord[] = [
     identity: {
       name: "Hotel Arts",
       sourceName: "Hotel Arts Villa Olímpica",
-      year: 1992,
+      date: { year: 1992, displayLabel: "1992" },
       architect: "Bruce Graham",
       address: "Villa Olímpica",
     },
@@ -622,7 +644,7 @@ export const cases: CaseRecord[] = [
     slug: "illa-diagonal",
     identity: {
       name: "Illa Diagonal",
-      year: 1993,
+      date: { year: 1993, displayLabel: "1993" },
       architect: "Rafael Moneo i Manuel S. Morales",
       address: "Avenida Diagonal 577",
     },
@@ -711,7 +733,7 @@ export const cases: CaseRecord[] = [
     identity: {
       name: "DhUB",
       sourceName: "DHub",
-      year: 2014,
+      date: { year: 2014, displayLabel: "2014" },
       architect: "MBM",
       address: "Plaça de les Glòries Catalanes, 38, 08018 Barcelona",
     },
@@ -816,7 +838,7 @@ export const cases: CaseRecord[] = [
     identity: {
       name: "La Borda",
       sourceName: "Cooperativa de Vivienda La Borda",
-      year: 2018,
+      date: { year: 2018, displayLabel: "2018" },
       architect: "La Col",
       // TG019 Pass B (operator feedback §4 / 00_AUTHORITY.md): the recovered
       // spreadsheet left this blank, so it stayed null through TG018 (see the
@@ -913,7 +935,7 @@ export const cases: CaseRecord[] = [
       sourceName: "Biblioteca Grabiel Garcia Marquez",
       // TG012 §21.2: accepted final editorial year, superseding the prior
       // recovered-source value.
-      year: 2022,
+      date: { year: 2022, displayLabel: "2022" },
       architect: "Elena Orte, Guillermo Sevillano",
       address: "C/ del Treball, 219",
     },
@@ -1007,7 +1029,7 @@ export const cases: CaseRecord[] = [
     identity: {
       name: "Green@Use / 22@",
       sourceName: "Grenh@Use 140 22@",
-      year: 2025,
+      date: { year: 2025, displayLabel: "2025" },
       architect: "Marta Peris, Jose Toral, Jaime Pastor",
       address: "carrer Veneçuela 100,106 c/de l'Agricultura 92",
     },
@@ -1094,6 +1116,1466 @@ export const cases: CaseRecord[] = [
         provenance: {
           mappingRef: "§13 > 4 Diàleg",
           sourceLocator: "main .md > DIÀLEG",
+        },
+      },
+    },
+  },
+  // ---------------------------------------------------------------------
+  // TG020 Phase 1 — 21 digital_only cases (ADGARC_TG020_PHASE1_AUTHORITY_v1.0
+  // "New digital order" §11-31; editorial fiches transcribed/segmented from
+  // ADGARC_TG020_DIGITAL_CASES_SOURCE_v1.0.md, Walden 7 authored per the
+  // authority doc's own completion section). No geocoding in this phase —
+  // `coordinates` stays null for all 21, and `address` stays null since the
+  // source fiches name buildings, not street addresses (never fabricated).
+  // `highlightedPhrase.kind` is "synthesis" throughout per the authority's
+  // "do not interpret Frase destacada as proof of a literal quote" rule —
+  // even where a fiche implies a named quote source, this source document
+  // alone is not independent literal-quote authority.
+  // ---------------------------------------------------------------------
+  {
+    slug: "pavello-mies-van-der-rohe",
+    identity: {
+      name: "Pavelló Mies van der Rohe",
+      date: { year: 1929, displayLabel: "1929" },
+      architect: "Ludwig Mies van der Rohe",
+      address: null,
+    },
+    experienceType: "digital_only",
+    architecture: { movement: "Estil Internacional", movementStatus: "verified" },
+    typography: {
+      primaryFamily: "Futura",
+      designer: "Paul Renner",
+      secondaryStatus: "parked",
+    },
+    correlation: {
+      sourceRationale:
+        "Aquest pavelló, construït per representar Alemanya a l'Exposició Internacional de 1929, exemplifica la màxima del seu arquitecte: “less is more”. Materials nobles com el marbre i l'acer, combinats amb línies netes i horitzontals, defineixen un espai que prioritza la puresa formal i la llibertat visual.\n\n" +
+        "La tipografia Futura, contemporània al pavelló, tradueix aquesta mateixa voluntat de simplicitat i ordre a través de formes geomètriques pures. És una tipografia sense floritures, precisa i atemporal. Arquitectura i lletra caminen aquí en paral·lel cap a la modernitat.",
+      provenance: TG020_SOURCE,
+    },
+    coordinates: null,
+    heroMedia: null,
+    editorial: false,
+    specimenMode: null,
+    infocard: {
+      highlightedPhrase: {
+        kind: "synthesis",
+        displayText: "Menys és més.",
+        attribution: "Síntesi, ideari de Mies van der Rohe",
+        bibliographicContext: null,
+        provenance: {
+          mappingRef: "TG020 §Fitxa 1: Pavelló Mies van der Rohe",
+          sourceLocator: "ADGARC_TG020_DIGITAL_CASES_SOURCE_v1.0.md > Fitxa 1 > Frase destacada",
+        },
+      },
+      buildingProse: {
+        displayText:
+          "Aquest pavelló, construït per representar Alemanya a l'Exposició Internacional de 1929, exemplifica la màxima del seu arquitecte: “less is more”.",
+        provenance: {
+          mappingRef: "TG020 §Fitxa 1: Pavelló Mies van der Rohe",
+          sourceLocator: "ADGARC_TG020_DIGITAL_CASES_SOURCE_v1.0.md > Fitxa 1 > Text explicatiu ¶1",
+        },
+      },
+      architectureCopy: {
+        displayText:
+          "Materials nobles com el marbre i l'acer, combinats amb línies netes i horitzontals, defineixen un espai que prioritza la puresa formal i la llibertat visual.",
+        provenance: {
+          mappingRef: "TG020 §Fitxa 1: Pavelló Mies van der Rohe",
+          sourceLocator: "ADGARC_TG020_DIGITAL_CASES_SOURCE_v1.0.md > Fitxa 1 > Text explicatiu ¶1",
+        },
+      },
+      typographyCopy: {
+        displayText:
+          "La tipografia Futura, contemporània al pavelló, tradueix aquesta mateixa voluntat de simplicitat i ordre a través de formes geomètriques pures. És una tipografia sense floritures, precisa i atemporal.",
+        provenance: {
+          mappingRef: "TG020 §Fitxa 1: Pavelló Mies van der Rohe",
+          sourceLocator: "ADGARC_TG020_DIGITAL_CASES_SOURCE_v1.0.md > Fitxa 1 > Text explicatiu ¶2",
+        },
+      },
+      dialogueCopy: {
+        displayText: "Arquitectura i lletra caminen aquí en paral·lel cap a la modernitat.",
+        provenance: {
+          mappingRef: "TG020 §Fitxa 1: Pavelló Mies van der Rohe",
+          sourceLocator: "ADGARC_TG020_DIGITAL_CASES_SOURCE_v1.0.md > Fitxa 1 > Text explicatiu ¶2",
+        },
+      },
+    },
+  },
+  {
+    slug: "walden-7",
+    identity: {
+      name: "Walden 7",
+      date: { year: 1975, displayLabel: "1975" },
+      architect: "Ricardo Bofill / Taller de Arquitectura",
+      address: null,
+    },
+    experienceType: "digital_only",
+    architecture: {
+      movement: "Brutalisme orgànic / arquitectura modular residencial",
+      movementStatus: "verified",
+    },
+    typography: {
+      primaryFamily: "Brut Grotesque",
+      designer: null,
+      secondaryStatus: "parked",
+    },
+    correlation: {
+      sourceRationale:
+        "Walden 7 planteja l'habitatge col·lectiu com una estructura vertical formada per volums modulars, patis i recorreguts interconnectats. La massa ceràmica vermella, els grans buits interiors i l'acumulació de cossos converteixen l'edifici en una arquitectura contundent, però al mateix temps pensada per afavorir la vida comunitària.\n\n" +
+        "Brut Grotesque trasllada aquesta contundència a la lletra: formes robustes, directes i de gran presència que funcionen gairebé com blocs construïts. El diàleg no depèn de l'ornament, sinó del pes, la repetició i la força estructural compartida entre edifici i tipografia.",
+      provenance: TG020_SOURCE,
+    },
+    coordinates: null,
+    heroMedia: null,
+    editorial: false,
+    specimenMode: null,
+    infocard: {
+      highlightedPhrase: {
+        kind: "synthesis",
+        displayText: "Habitar en comunitat.",
+        attribution: "Síntesi, Ricardo Bofill / Taller de Arquitectura",
+        bibliographicContext: null,
+        provenance: {
+          mappingRef: "TG020 Authority §Walden 7 — authored completion",
+          sourceLocator: "ADGARC_TG020_PHASE1_AUTHORITY_v1.0.md > Walden 7 > Frase destacada",
+        },
+      },
+      buildingProse: {
+        displayText:
+          "Walden 7 planteja l'habitatge col·lectiu com una estructura vertical formada per volums modulars, patis i recorreguts interconnectats.",
+        provenance: {
+          mappingRef: "TG020 Authority §Walden 7 — authored completion",
+          sourceLocator: "ADGARC_TG020_PHASE1_AUTHORITY_v1.0.md > Walden 7 > Text explicatiu ¶1",
+        },
+      },
+      architectureCopy: {
+        displayText:
+          "La massa ceràmica vermella, els grans buits interiors i l'acumulació de cossos converteixen l'edifici en una arquitectura contundent, però al mateix temps pensada per afavorir la vida comunitària.",
+        provenance: {
+          mappingRef: "TG020 Authority §Walden 7 — authored completion",
+          sourceLocator: "ADGARC_TG020_PHASE1_AUTHORITY_v1.0.md > Walden 7 > Text explicatiu ¶1",
+        },
+      },
+      typographyCopy: {
+        displayText:
+          "Brut Grotesque trasllada aquesta contundència a la lletra: formes robustes, directes i de gran presència que funcionen gairebé com blocs construïts.",
+        provenance: {
+          mappingRef: "TG020 Authority §Walden 7 — authored completion",
+          sourceLocator: "ADGARC_TG020_PHASE1_AUTHORITY_v1.0.md > Walden 7 > Text explicatiu ¶2",
+        },
+      },
+      dialogueCopy: {
+        displayText:
+          "El diàleg no depèn de l'ornament, sinó del pes, la repetició i la força estructural compartida entre edifici i tipografia.",
+        provenance: {
+          mappingRef: "TG020 Authority §Walden 7 — authored completion",
+          sourceLocator: "ADGARC_TG020_PHASE1_AUTHORITY_v1.0.md > Walden 7 > Text explicatiu ¶2",
+        },
+      },
+    },
+  },
+  {
+    slug: "la-pedrera-casa-mila",
+    identity: {
+      name: "La Pedrera / Casa Milà",
+      date: { year: 1912, displayLabel: "1906 - 1912" },
+      architect: "Antoni Gaudí",
+      address: null,
+    },
+    experienceType: "digital_only",
+    architecture: { movement: "Modernisme orgànic", movementStatus: "verified" },
+    typography: {
+      primaryFamily: "Zaha Hadid Typeface",
+      designer: null,
+      secondaryStatus: "parked",
+    },
+    correlation: {
+      sourceRationale:
+        "La Pedrera és una obra mestra del modernisme, plena de corbes, formes orgàniques i una expressió gairebé escultòrica. Gaudí trenca amb la simetria clàssica i proposa una arquitectura fluida, inspirada en la natura.\n\n" +
+        "La tipografia Zaha Hadid Typeface, igualment orgànica i fluida, tradueix en lletra aquest esperit: traços que flueixen com les façanes de l'edifici, allunyant-se de la rigidesa i celebrant el moviment.",
+      provenance: TG020_SOURCE,
+    },
+    coordinates: null,
+    heroMedia: null,
+    editorial: false,
+    specimenMode: null,
+    infocard: {
+      highlightedPhrase: {
+        kind: "synthesis",
+        displayText: "L'arquitectura és l'ordenació de la llum.",
+        attribution: "Síntesi, ideari d'Antoni Gaudí",
+        bibliographicContext: null,
+        provenance: {
+          mappingRef: "TG020 §Fitxa 4: La Pedrera (Casa Milà)",
+          sourceLocator: "ADGARC_TG020_DIGITAL_CASES_SOURCE_v1.0.md > Fitxa 4 > Frase destacada",
+        },
+      },
+      buildingProse: {
+        displayText:
+          "La Pedrera és una obra mestra del modernisme, plena de corbes, formes orgàniques i una expressió gairebé escultòrica.",
+        provenance: {
+          mappingRef: "TG020 §Fitxa 4: La Pedrera (Casa Milà)",
+          sourceLocator: "ADGARC_TG020_DIGITAL_CASES_SOURCE_v1.0.md > Fitxa 4 > Text explicatiu ¶1",
+        },
+      },
+      architectureCopy: {
+        displayText:
+          "Gaudí trenca amb la simetria clàssica i proposa una arquitectura fluida, inspirada en la natura.",
+        provenance: {
+          mappingRef: "TG020 §Fitxa 4: La Pedrera (Casa Milà)",
+          sourceLocator: "ADGARC_TG020_DIGITAL_CASES_SOURCE_v1.0.md > Fitxa 4 > Text explicatiu ¶1",
+        },
+      },
+      typographyCopy: {
+        displayText:
+          "La tipografia Zaha Hadid Typeface, igualment orgànica i fluida, tradueix en lletra aquest esperit.",
+        provenance: {
+          mappingRef: "TG020 §Fitxa 4: La Pedrera (Casa Milà)",
+          sourceLocator: "ADGARC_TG020_DIGITAL_CASES_SOURCE_v1.0.md > Fitxa 4 > Text explicatiu ¶2",
+        },
+      },
+      dialogueCopy: {
+        displayText:
+          "Traços que flueixen com les façanes de l'edifici, allunyant-se de la rigidesa i celebrant el moviment.",
+        provenance: {
+          mappingRef: "TG020 §Fitxa 4: La Pedrera (Casa Milà)",
+          sourceLocator: "ADGARC_TG020_DIGITAL_CASES_SOURCE_v1.0.md > Fitxa 4 > Text explicatiu ¶2",
+        },
+      },
+    },
+  },
+  {
+    slug: "torre-de-collserola",
+    identity: {
+      name: "Torre de Collserola",
+      date: { year: 1992, displayLabel: "1992" },
+      architect: "Norman Foster",
+      address: null,
+    },
+    experienceType: "digital_only",
+    architecture: { movement: "High-Tech", movementStatus: "verified" },
+    typography: {
+      primaryFamily: "Eurostile",
+      designer: null,
+      secondaryStatus: "parked",
+    },
+    correlation: {
+      sourceRationale:
+        "Dissenyada com a torre de telecomunicacions per als Jocs Olímpics de 1992, la Torre de Collserola és una estructura altament tecnològica, vertical i funcional. Situada al Tibidabo, combina estructura lleugera i eficiència màxima amb una presència simbòlica sobre la ciutat.\n\n" +
+        "Eurostile és una tipografia d'esperit futurista, molt utilitzada en contextos tecnològics i industrials. Les seves formes quadrades i la seva aparença sòlida la fan idònia per representar aquest símbol high-tech de Barcelona.",
+      provenance: TG020_SOURCE,
+    },
+    coordinates: null,
+    heroMedia: null,
+    editorial: false,
+    specimenMode: null,
+    infocard: {
+      highlightedPhrase: {
+        kind: "synthesis",
+        displayText: "Altura i tecnologia.",
+        attribution: "Síntesi, Norman Foster",
+        bibliographicContext: null,
+        provenance: {
+          mappingRef: "TG020 §Fitxa 22: Torre de Collserola",
+          sourceLocator: "ADGARC_TG020_DIGITAL_CASES_SOURCE_v1.0.md > Fitxa 22 > Frase destacada",
+        },
+      },
+      buildingProse: {
+        displayText:
+          "Dissenyada com a torre de telecomunicacions per als Jocs Olímpics de 1992, la Torre de Collserola és una estructura altament tecnològica, vertical i funcional.",
+        provenance: {
+          mappingRef: "TG020 §Fitxa 22: Torre de Collserola",
+          sourceLocator: "ADGARC_TG020_DIGITAL_CASES_SOURCE_v1.0.md > Fitxa 22 > Text explicatiu ¶1",
+        },
+      },
+      architectureCopy: {
+        displayText:
+          "Situada al Tibidabo, combina estructura lleugera i eficiència màxima amb una presència simbòlica sobre la ciutat.",
+        provenance: {
+          mappingRef: "TG020 §Fitxa 22: Torre de Collserola",
+          sourceLocator: "ADGARC_TG020_DIGITAL_CASES_SOURCE_v1.0.md > Fitxa 22 > Text explicatiu ¶1",
+        },
+      },
+      typographyCopy: {
+        displayText:
+          "Eurostile és una tipografia d'esperit futurista, molt utilitzada en contextos tecnològics i industrials.",
+        provenance: {
+          mappingRef: "TG020 §Fitxa 22: Torre de Collserola",
+          sourceLocator: "ADGARC_TG020_DIGITAL_CASES_SOURCE_v1.0.md > Fitxa 22 > Text explicatiu ¶2",
+        },
+      },
+      dialogueCopy: {
+        displayText:
+          "Les seves formes quadrades i la seva aparença sòlida la fan idònia per representar aquest símbol high-tech de Barcelona.",
+        provenance: {
+          mappingRef: "TG020 §Fitxa 22: Torre de Collserola",
+          sourceLocator: "ADGARC_TG020_DIGITAL_CASES_SOURCE_v1.0.md > Fitxa 22 > Text explicatiu ¶2",
+        },
+      },
+    },
+  },
+  {
+    slug: "mercat-de-santa-caterina",
+    identity: {
+      name: "Mercat de Santa Caterina",
+      date: { year: 2005, displayLabel: "2005 (reforma)" },
+      architect: "Enric Miralles i Benedetta Tagliabue",
+      address: null,
+    },
+    experienceType: "digital_only",
+    architecture: { movement: "Arquitectura contemporània orgànica", movementStatus: "verified" },
+    typography: {
+      primaryFamily: "FF Blur",
+      designer: "Neville Brody",
+      secondaryStatus: "parked",
+    },
+    correlation: {
+      sourceRationale:
+        "El Mercat de Santa Caterina va ser rehabilitat per oferir una nova mirada a un espai tradicional. La seva coberta acolorida, ondulada i gairebé viva, aporta un dinamisme visual que contrasta amb l'entorn històric i convida a reinterpretar la quotidianitat.\n\n" +
+        "La tipografia FF Blur, creada per Neville Brody als anys 90, té una aparença fluida, borrosa i experimental que evoca molt bé l'energia visual del mercat. És una lletra en transformació constant, com l'espai del mercat que viu i es reinventa.",
+      provenance: TG020_SOURCE,
+    },
+    coordinates: null,
+    heroMedia: null,
+    editorial: false,
+    specimenMode: null,
+    infocard: {
+      highlightedPhrase: {
+        kind: "synthesis",
+        displayText: "Tradició en moviment.",
+        attribution: "Síntesi, Enric Miralles i Benedetta Tagliabue",
+        bibliographicContext: null,
+        provenance: {
+          mappingRef: "TG020 §Fitxa 20: Mercat de Santa Caterina",
+          sourceLocator: "ADGARC_TG020_DIGITAL_CASES_SOURCE_v1.0.md > Fitxa 20 > Frase destacada",
+        },
+      },
+      buildingProse: {
+        displayText:
+          "El Mercat de Santa Caterina va ser rehabilitat per oferir una nova mirada a un espai tradicional.",
+        provenance: {
+          mappingRef: "TG020 §Fitxa 20: Mercat de Santa Caterina",
+          sourceLocator: "ADGARC_TG020_DIGITAL_CASES_SOURCE_v1.0.md > Fitxa 20 > Text explicatiu ¶1",
+        },
+      },
+      architectureCopy: {
+        displayText:
+          "La seva coberta acolorida, ondulada i gairebé viva, aporta un dinamisme visual que contrasta amb l'entorn històric i convida a reinterpretar la quotidianitat.",
+        provenance: {
+          mappingRef: "TG020 §Fitxa 20: Mercat de Santa Caterina",
+          sourceLocator: "ADGARC_TG020_DIGITAL_CASES_SOURCE_v1.0.md > Fitxa 20 > Text explicatiu ¶1",
+        },
+      },
+      typographyCopy: {
+        displayText:
+          "La tipografia FF Blur, creada per Neville Brody als anys 90, té una aparença fluida, borrosa i experimental que evoca molt bé l'energia visual del mercat.",
+        provenance: {
+          mappingRef: "TG020 §Fitxa 20: Mercat de Santa Caterina",
+          sourceLocator: "ADGARC_TG020_DIGITAL_CASES_SOURCE_v1.0.md > Fitxa 20 > Text explicatiu ¶2",
+        },
+      },
+      dialogueCopy: {
+        displayText: "És una lletra en transformació constant, com l'espai del mercat que viu i es reinventa.",
+        provenance: {
+          mappingRef: "TG020 §Fitxa 20: Mercat de Santa Caterina",
+          sourceLocator: "ADGARC_TG020_DIGITAL_CASES_SOURCE_v1.0.md > Fitxa 20 > Text explicatiu ¶2",
+        },
+      },
+    },
+  },
+  {
+    slug: "macba",
+    identity: {
+      name: "MACBA",
+      date: { year: 1995, displayLabel: "1995" },
+      architect: "Richard Meier",
+      address: null,
+    },
+    experienceType: "digital_only",
+    architecture: { movement: "Modernisme racional blanc", movementStatus: "verified" },
+    typography: {
+      primaryFamily: "Helvetica Neue",
+      designer: null,
+      secondaryStatus: "parked",
+    },
+    correlation: {
+      sourceRationale:
+        "El MACBA s'articula a partir de línies netes, superfícies blanques i una llum que es converteix en protagonista. L'edifici funciona com una caixa de llum, racional i clara, que reflecteix una arquitectura centrada en l'ordre i la contemplació.\n\n" +
+        "La tipografia Helvetica Neue reforça aquesta mateixa idea: llegibilitat, neutralitat i equilibri. És una tipografia institucional i funcional que s'adapta perfectament al llenguatge clar i essencial del MACBA.",
+      provenance: TG020_SOURCE,
+    },
+    coordinates: null,
+    heroMedia: null,
+    editorial: false,
+    specimenMode: null,
+    infocard: {
+      highlightedPhrase: {
+        kind: "synthesis",
+        displayText: "La claredat és la nova bellesa.",
+        attribution: "Síntesi, Richard Meier",
+        bibliographicContext: null,
+        provenance: {
+          mappingRef: "TG020 §Fitxa 5: MACBA",
+          sourceLocator: "ADGARC_TG020_DIGITAL_CASES_SOURCE_v1.0.md > Fitxa 5 > Frase destacada",
+        },
+      },
+      buildingProse: {
+        displayText:
+          "El MACBA s'articula a partir de línies netes, superfícies blanques i una llum que es converteix en protagonista.",
+        provenance: {
+          mappingRef: "TG020 §Fitxa 5: MACBA",
+          sourceLocator: "ADGARC_TG020_DIGITAL_CASES_SOURCE_v1.0.md > Fitxa 5 > Text explicatiu ¶1",
+        },
+      },
+      architectureCopy: {
+        displayText:
+          "L'edifici funciona com una caixa de llum, racional i clara, que reflecteix una arquitectura centrada en l'ordre i la contemplació.",
+        provenance: {
+          mappingRef: "TG020 §Fitxa 5: MACBA",
+          sourceLocator: "ADGARC_TG020_DIGITAL_CASES_SOURCE_v1.0.md > Fitxa 5 > Text explicatiu ¶1",
+        },
+      },
+      typographyCopy: {
+        displayText: "La tipografia Helvetica Neue reforça aquesta mateixa idea: llegibilitat, neutralitat i equilibri.",
+        provenance: {
+          mappingRef: "TG020 §Fitxa 5: MACBA",
+          sourceLocator: "ADGARC_TG020_DIGITAL_CASES_SOURCE_v1.0.md > Fitxa 5 > Text explicatiu ¶2",
+        },
+      },
+      dialogueCopy: {
+        displayText:
+          "És una tipografia institucional i funcional que s'adapta perfectament al llenguatge clar i essencial del MACBA.",
+        provenance: {
+          mappingRef: "TG020 §Fitxa 5: MACBA",
+          sourceLocator: "ADGARC_TG020_DIGITAL_CASES_SOURCE_v1.0.md > Fitxa 5 > Text explicatiu ¶2",
+        },
+      },
+    },
+  },
+  {
+    slug: "casa-planells",
+    identity: {
+      name: "Casa Planells",
+      date: { year: 1924, displayLabel: "1924" },
+      architect: "Josep Maria Jujol",
+      address: null,
+    },
+    experienceType: "digital_only",
+    architecture: { movement: "Modernisme avançat / singular", movementStatus: "verified" },
+    typography: {
+      primaryFamily: "Didot",
+      designer: null,
+      secondaryStatus: "parked",
+    },
+    correlation: {
+      sourceRationale:
+        "La Casa Planells és una petita joia d'autor signada per Josep Maria Jujol, amb una planta triangular complexa i una façana elegantment corba. És un exemple d'inventiva arquitectònica dins les restriccions d'un espai molt limitat.\n\n" +
+        "Didot, una tipografia d'alt contrast, refinada i clàssica, reflecteix la mateixa sensibilitat formal i sofisticació que Jujol aconsegueix amb pocs elements. Totes dues expressen una elegància arquitectònica i gràfica sense estridències.",
+      provenance: TG020_SOURCE,
+    },
+    coordinates: null,
+    heroMedia: null,
+    editorial: false,
+    specimenMode: null,
+    infocard: {
+      highlightedPhrase: {
+        kind: "synthesis",
+        displayText: "Menys espai, més bellesa.",
+        attribution: "Síntesi, Josep Maria Jujol",
+        bibliographicContext: null,
+        provenance: {
+          mappingRef: "TG020 §Fitxa 6: Casa Planells",
+          sourceLocator: "ADGARC_TG020_DIGITAL_CASES_SOURCE_v1.0.md > Fitxa 6 > Frase destacada",
+        },
+      },
+      buildingProse: {
+        displayText:
+          "La Casa Planells és una petita joia d'autor signada per Josep Maria Jujol, amb una planta triangular complexa i una façana elegantment corba.",
+        provenance: {
+          mappingRef: "TG020 §Fitxa 6: Casa Planells",
+          sourceLocator: "ADGARC_TG020_DIGITAL_CASES_SOURCE_v1.0.md > Fitxa 6 > Text explicatiu ¶1",
+        },
+      },
+      architectureCopy: {
+        displayText: "És un exemple d'inventiva arquitectònica dins les restriccions d'un espai molt limitat.",
+        provenance: {
+          mappingRef: "TG020 §Fitxa 6: Casa Planells",
+          sourceLocator: "ADGARC_TG020_DIGITAL_CASES_SOURCE_v1.0.md > Fitxa 6 > Text explicatiu ¶1",
+        },
+      },
+      typographyCopy: {
+        displayText:
+          "Didot, una tipografia d'alt contrast, refinada i clàssica, reflecteix la mateixa sensibilitat formal i sofisticació que Jujol aconsegueix amb pocs elements.",
+        provenance: {
+          mappingRef: "TG020 §Fitxa 6: Casa Planells",
+          sourceLocator: "ADGARC_TG020_DIGITAL_CASES_SOURCE_v1.0.md > Fitxa 6 > Text explicatiu ¶2",
+        },
+      },
+      dialogueCopy: {
+        displayText: "Totes dues expressen una elegància arquitectònica i gràfica sense estridències.",
+        provenance: {
+          mappingRef: "TG020 §Fitxa 6: Casa Planells",
+          sourceLocator: "ADGARC_TG020_DIGITAL_CASES_SOURCE_v1.0.md > Fitxa 6 > Text explicatiu ¶2",
+        },
+      },
+    },
+  },
+  {
+    slug: "media-tic",
+    identity: {
+      name: "Media-TIC",
+      date: { year: 2010, displayLabel: "2010" },
+      architect: "Enric Ruiz-Geli (Cloud 9)",
+      address: null,
+    },
+    experienceType: "digital_only",
+    architecture: { movement: "Arquitectura paramètrica / ecològica", movementStatus: "verified" },
+    typography: {
+      primaryFamily: "Klim Geometric",
+      designer: null,
+      secondaryStatus: "parked",
+    },
+    correlation: {
+      sourceRationale:
+        "El Media-TIC és un edifici tecnològic i sostenible, pioner en l'ús de façanes intel·ligents i materials avançats. La seva estructura reticulada i la pell translúcida responen a criteris científics i climàtics.\n\n" +
+        "Klim Geometric és una tipografia moderna, precisa i digital, que s'alinea amb el caràcter innovador i experimental de l'edifici. Amb formes netes i simètriques, reflecteix la recerca d'eficiència i equilibri del disseny paramètric.",
+      provenance: TG020_SOURCE,
+    },
+    coordinates: null,
+    heroMedia: null,
+    editorial: false,
+    specimenMode: null,
+    infocard: {
+      highlightedPhrase: {
+        kind: "synthesis",
+        displayText: "Arquitectura viva i adaptable.",
+        attribution: "Síntesi, Enric Ruiz-Geli",
+        bibliographicContext: null,
+        provenance: {
+          mappingRef: "TG020 §Fitxa 7: Media-TIC",
+          sourceLocator: "ADGARC_TG020_DIGITAL_CASES_SOURCE_v1.0.md > Fitxa 7 > Frase destacada",
+        },
+      },
+      buildingProse: {
+        displayText:
+          "El Media-TIC és un edifici tecnològic i sostenible, pioner en l'ús de façanes intel·ligents i materials avançats.",
+        provenance: {
+          mappingRef: "TG020 §Fitxa 7: Media-TIC",
+          sourceLocator: "ADGARC_TG020_DIGITAL_CASES_SOURCE_v1.0.md > Fitxa 7 > Text explicatiu ¶1",
+        },
+      },
+      architectureCopy: {
+        displayText: "La seva estructura reticulada i la pell translúcida responen a criteris científics i climàtics.",
+        provenance: {
+          mappingRef: "TG020 §Fitxa 7: Media-TIC",
+          sourceLocator: "ADGARC_TG020_DIGITAL_CASES_SOURCE_v1.0.md > Fitxa 7 > Text explicatiu ¶1",
+        },
+      },
+      typographyCopy: {
+        displayText:
+          "Klim Geometric és una tipografia moderna, precisa i digital, que s'alinea amb el caràcter innovador i experimental de l'edifici.",
+        provenance: {
+          mappingRef: "TG020 §Fitxa 7: Media-TIC",
+          sourceLocator: "ADGARC_TG020_DIGITAL_CASES_SOURCE_v1.0.md > Fitxa 7 > Text explicatiu ¶2",
+        },
+      },
+      dialogueCopy: {
+        displayText: "Amb formes netes i simètriques, reflecteix la recerca d'eficiència i equilibri del disseny paramètric.",
+        provenance: {
+          mappingRef: "TG020 §Fitxa 7: Media-TIC",
+          sourceLocator: "ADGARC_TG020_DIGITAL_CASES_SOURCE_v1.0.md > Fitxa 7 > Text explicatiu ¶2",
+        },
+      },
+    },
+  },
+  {
+    slug: "casa-bloc",
+    identity: {
+      name: "Casa Bloc",
+      date: { year: 1936, displayLabel: "1933 - 1936" },
+      architect: "Sert, Torres Clavé i Subirana",
+      address: null,
+    },
+    experienceType: "digital_only",
+    architecture: { movement: "Racionalisme social", movementStatus: "verified" },
+    typography: {
+      primaryFamily: "DIN",
+      designer: null,
+      secondaryStatus: "parked",
+    },
+    correlation: {
+      sourceRationale:
+        "La Casa Bloc va ser un projecte pioner d'habitatge social, dissenyat amb valors de funcionalitat, igualtat i racionalitat. Les línies són clares, les formes repetitives i els espais pensats per a la vida obrera digna.\n\n" +
+        "La tipografia DIN (utilitzada en senyalització i normatives industrials) expressa aquests mateixos valors: sobrietat, eficiència, llegibilitat. És la lletra de les estructures clares i directes, com la pròpia Casa Bloc.",
+      provenance: TG020_SOURCE,
+    },
+    coordinates: null,
+    heroMedia: null,
+    editorial: false,
+    specimenMode: null,
+    infocard: {
+      highlightedPhrase: {
+        kind: "synthesis",
+        displayText: "Viure amb dignitat.",
+        attribution: "Síntesi, Sert, Torres Clavé i Subirana",
+        bibliographicContext: null,
+        provenance: {
+          mappingRef: "TG020 §Fitxa 8: Casa Bloc",
+          sourceLocator: "ADGARC_TG020_DIGITAL_CASES_SOURCE_v1.0.md > Fitxa 8 > Frase destacada",
+        },
+      },
+      buildingProse: {
+        displayText:
+          "La Casa Bloc va ser un projecte pioner d'habitatge social, dissenyat amb valors de funcionalitat, igualtat i racionalitat.",
+        provenance: {
+          mappingRef: "TG020 §Fitxa 8: Casa Bloc",
+          sourceLocator: "ADGARC_TG020_DIGITAL_CASES_SOURCE_v1.0.md > Fitxa 8 > Text explicatiu ¶1",
+        },
+      },
+      architectureCopy: {
+        displayText: "Les línies són clares, les formes repetitives i els espais pensats per a la vida obrera digna.",
+        provenance: {
+          mappingRef: "TG020 §Fitxa 8: Casa Bloc",
+          sourceLocator: "ADGARC_TG020_DIGITAL_CASES_SOURCE_v1.0.md > Fitxa 8 > Text explicatiu ¶1",
+        },
+      },
+      typographyCopy: {
+        displayText:
+          "La tipografia DIN (utilitzada en senyalització i normatives industrials) expressa aquests mateixos valors: sobrietat, eficiència, llegibilitat.",
+        provenance: {
+          mappingRef: "TG020 §Fitxa 8: Casa Bloc",
+          sourceLocator: "ADGARC_TG020_DIGITAL_CASES_SOURCE_v1.0.md > Fitxa 8 > Text explicatiu ¶2",
+        },
+      },
+      dialogueCopy: {
+        displayText: "És la lletra de les estructures clares i directes, com la pròpia Casa Bloc.",
+        provenance: {
+          mappingRef: "TG020 §Fitxa 8: Casa Bloc",
+          sourceLocator: "ADGARC_TG020_DIGITAL_CASES_SOURCE_v1.0.md > Fitxa 8 > Text explicatiu ¶2",
+        },
+      },
+    },
+  },
+  {
+    slug: "edifici-telefonica",
+    identity: {
+      name: "Edifici Telefònica",
+      date: { year: 1929, displayLabel: "1929" },
+      architect: "Francesc Nebot",
+      address: null,
+    },
+    experienceType: "digital_only",
+    architecture: { movement: "Art déco", movementStatus: "verified" },
+    typography: {
+      primaryFamily: "Broadway",
+      designer: null,
+      secondaryStatus: "parked",
+    },
+    correlation: {
+      sourceRationale:
+        "L'edifici de la Telefònica és un dels primers gratacels de Barcelona i una icona del 1929. Combina monumentalitat i ornamentació geomètrica pròpia de l'Art Déco, amb una verticalitat destacada.\n\n" +
+        "La tipografia Broadway, amb formes decoratives i sofisticades, reflecteix perfectament l'esperit del període. Amb contrastos exagerats i formes teatralment geomètriques, transmet la mateixa sensació d'elegància urbana i optimisme.",
+      provenance: TG020_SOURCE,
+    },
+    coordinates: null,
+    heroMedia: null,
+    editorial: false,
+    specimenMode: null,
+    infocard: {
+      highlightedPhrase: {
+        kind: "synthesis",
+        displayText: "L'alçada també comunica.",
+        attribution: "Síntesi, Francesc Nebot",
+        bibliographicContext: null,
+        provenance: {
+          mappingRef: "TG020 §Fitxa 9: Edifici Telefònica",
+          sourceLocator: "ADGARC_TG020_DIGITAL_CASES_SOURCE_v1.0.md > Fitxa 9 > Frase destacada",
+        },
+      },
+      buildingProse: {
+        displayText: "L'edifici de la Telefònica és un dels primers gratacels de Barcelona i una icona del 1929.",
+        provenance: {
+          mappingRef: "TG020 §Fitxa 9: Edifici Telefònica",
+          sourceLocator: "ADGARC_TG020_DIGITAL_CASES_SOURCE_v1.0.md > Fitxa 9 > Text explicatiu ¶1",
+        },
+      },
+      architectureCopy: {
+        displayText: "Combina monumentalitat i ornamentació geomètrica pròpia de l'Art Déco, amb una verticalitat destacada.",
+        provenance: {
+          mappingRef: "TG020 §Fitxa 9: Edifici Telefònica",
+          sourceLocator: "ADGARC_TG020_DIGITAL_CASES_SOURCE_v1.0.md > Fitxa 9 > Text explicatiu ¶1",
+        },
+      },
+      typographyCopy: {
+        displayText:
+          "La tipografia Broadway, amb formes decoratives i sofisticades, reflecteix perfectament l'esperit del període.",
+        provenance: {
+          mappingRef: "TG020 §Fitxa 9: Edifici Telefònica",
+          sourceLocator: "ADGARC_TG020_DIGITAL_CASES_SOURCE_v1.0.md > Fitxa 9 > Text explicatiu ¶2",
+        },
+      },
+      dialogueCopy: {
+        displayText:
+          "Amb contrastos exagerats i formes teatralment geomètriques, transmet la mateixa sensació d'elegància urbana i optimisme.",
+        provenance: {
+          mappingRef: "TG020 §Fitxa 9: Edifici Telefònica",
+          sourceLocator: "ADGARC_TG020_DIGITAL_CASES_SOURCE_v1.0.md > Fitxa 9 > Text explicatiu ¶2",
+        },
+      },
+    },
+  },
+  {
+    slug: "caixaforum-casaramona",
+    identity: {
+      name: "CaixaForum / Casaramona",
+      date: { year: 1911, displayLabel: "1911" },
+      architect: "Puig i Cadafalch",
+      address: null,
+    },
+    experienceType: "digital_only",
+    architecture: { movement: "Modernisme industrial", movementStatus: "verified" },
+    typography: {
+      primaryFamily: "Arnold Böcklin",
+      designer: null,
+      secondaryStatus: "parked",
+    },
+    correlation: {
+      sourceRationale:
+        "La fàbrica Casaramona és un exemple insòlit de com el modernisme va entrar al món industrial. La seva arquitectura funcional s'enriqueix amb detalls ornamentals, cobertes de teula i finestres de ferro forjat.\n\n" +
+        "Arnold Böcklin, una tipografia amb formes orgàniques i decoratives, era molt popular a l'època i reflecteix bé l'exuberància modernista adaptada a usos pràctics. És una lletra que juga amb l'artesania i la funcionalitat, com la pròpia fàbrica.",
+      provenance: TG020_SOURCE,
+    },
+    coordinates: null,
+    heroMedia: null,
+    editorial: false,
+    specimenMode: null,
+    infocard: {
+      highlightedPhrase: {
+        kind: "synthesis",
+        displayText: "Indústria amb ànima.",
+        attribution: "Síntesi, Puig i Cadafalch",
+        bibliographicContext: null,
+        provenance: {
+          mappingRef: "TG020 §Fitxa 10: CaixaForum (Casaramona)",
+          sourceLocator: "ADGARC_TG020_DIGITAL_CASES_SOURCE_v1.0.md > Fitxa 10 > Frase destacada",
+        },
+      },
+      buildingProse: {
+        displayText: "La fàbrica Casaramona és un exemple insòlit de com el modernisme va entrar al món industrial.",
+        provenance: {
+          mappingRef: "TG020 §Fitxa 10: CaixaForum (Casaramona)",
+          sourceLocator: "ADGARC_TG020_DIGITAL_CASES_SOURCE_v1.0.md > Fitxa 10 > Text explicatiu ¶1",
+        },
+      },
+      architectureCopy: {
+        displayText:
+          "La seva arquitectura funcional s'enriqueix amb detalls ornamentals, cobertes de teula i finestres de ferro forjat.",
+        provenance: {
+          mappingRef: "TG020 §Fitxa 10: CaixaForum (Casaramona)",
+          sourceLocator: "ADGARC_TG020_DIGITAL_CASES_SOURCE_v1.0.md > Fitxa 10 > Text explicatiu ¶1",
+        },
+      },
+      typographyCopy: {
+        displayText:
+          "Arnold Böcklin, una tipografia amb formes orgàniques i decoratives, era molt popular a l'època i reflecteix bé l'exuberància modernista adaptada a usos pràctics.",
+        provenance: {
+          mappingRef: "TG020 §Fitxa 10: CaixaForum (Casaramona)",
+          sourceLocator: "ADGARC_TG020_DIGITAL_CASES_SOURCE_v1.0.md > Fitxa 10 > Text explicatiu ¶2",
+        },
+      },
+      dialogueCopy: {
+        displayText: "És una lletra que juga amb l'artesania i la funcionalitat, com la pròpia fàbrica.",
+        provenance: {
+          mappingRef: "TG020 §Fitxa 10: CaixaForum (Casaramona)",
+          sourceLocator: "ADGARC_TG020_DIGITAL_CASES_SOURCE_v1.0.md > Fitxa 10 > Text explicatiu ¶2",
+        },
+      },
+    },
+  },
+  {
+    slug: "torre-glories",
+    identity: {
+      name: "Torre Glòries",
+      date: { year: 2005, displayLabel: "2005" },
+      architect: "Jean Nouvel",
+      address: null,
+    },
+    experienceType: "digital_only",
+    architecture: { movement: "Arquitectura biomòrfica / high-tech", movementStatus: "verified" },
+    typography: {
+      primaryFamily: "Gotham Rounded",
+      designer: null,
+      secondaryStatus: "parked",
+    },
+    correlation: {
+      sourceRationale:
+        "La Torre Glòries és una icona del skyline barceloní. Inspirada en formes naturals com un guèiser o una muntanya, la seva silueta orgànica i la façana intel·ligent la converteixen en un edifici viu i dinàmic.\n\n" +
+        "Gotham Rounded, amb cantonades suaus i formes plenes, reflecteix aquesta organicitat i amabilitat tecnològica. És una tipografia moderna, urbana i versàtil que evoca fluïdesa i contemporaneïtat, com la pròpia torre.",
+      provenance: TG020_SOURCE,
+    },
+    coordinates: null,
+    heroMedia: null,
+    editorial: false,
+    specimenMode: null,
+    infocard: {
+      highlightedPhrase: {
+        kind: "synthesis",
+        displayText: "Tecnologia amb forma humana.",
+        attribution: "Síntesi, Jean Nouvel",
+        bibliographicContext: null,
+        provenance: {
+          mappingRef: "TG020 §Fitxa 11: Torre Glòries",
+          sourceLocator: "ADGARC_TG020_DIGITAL_CASES_SOURCE_v1.0.md > Fitxa 11 > Frase destacada",
+        },
+      },
+      buildingProse: {
+        displayText: "La Torre Glòries és una icona del skyline barceloní.",
+        provenance: {
+          mappingRef: "TG020 §Fitxa 11: Torre Glòries",
+          sourceLocator: "ADGARC_TG020_DIGITAL_CASES_SOURCE_v1.0.md > Fitxa 11 > Text explicatiu ¶1",
+        },
+      },
+      architectureCopy: {
+        displayText:
+          "Inspirada en formes naturals com un guèiser o una muntanya, la seva silueta orgànica i la façana intel·ligent la converteixen en un edifici viu i dinàmic.",
+        provenance: {
+          mappingRef: "TG020 §Fitxa 11: Torre Glòries",
+          sourceLocator: "ADGARC_TG020_DIGITAL_CASES_SOURCE_v1.0.md > Fitxa 11 > Text explicatiu ¶1",
+        },
+      },
+      typographyCopy: {
+        displayText:
+          "Gotham Rounded, amb cantonades suaus i formes plenes, reflecteix aquesta organicitat i amabilitat tecnològica.",
+        provenance: {
+          mappingRef: "TG020 §Fitxa 11: Torre Glòries",
+          sourceLocator: "ADGARC_TG020_DIGITAL_CASES_SOURCE_v1.0.md > Fitxa 11 > Text explicatiu ¶2",
+        },
+      },
+      dialogueCopy: {
+        displayText:
+          "És una tipografia moderna, urbana i versàtil que evoca fluïdesa i contemporaneïtat, com la pròpia torre.",
+        provenance: {
+          mappingRef: "TG020 §Fitxa 11: Torre Glòries",
+          sourceLocator: "ADGARC_TG020_DIGITAL_CASES_SOURCE_v1.0.md > Fitxa 11 > Text explicatiu ¶2",
+        },
+      },
+    },
+  },
+  {
+    slug: "biblioteca-jaume-fuster",
+    identity: {
+      name: "Biblioteca Jaume Fuster",
+      date: { year: 2005, displayLabel: "2005" },
+      architect: "Josep Llinàs",
+      address: null,
+    },
+    experienceType: "digital_only",
+    architecture: { movement: "Brutalisme contemporani", movementStatus: "verified" },
+    typography: {
+      primaryFamily: "Druk",
+      designer: null,
+      secondaryStatus: "parked",
+    },
+    correlation: {
+      sourceRationale:
+        "L'edifici trenca amb l'entorn mitjançant volums angulars, façanes massisses i un llenguatge formal radical. És una arquitectura que impacta, amb una forta presència física, gairebé escultòrica.\n\n" +
+        "Druk és una tipografia pesada, extrema i amb molt de caràcter visual. Representa molt bé la contundència formal de l'edifici, amb negretes molt carregades que reclamen atenció, igual que la biblioteca des del seu xamfrà.",
+      provenance: TG020_SOURCE,
+    },
+    coordinates: null,
+    heroMedia: null,
+    editorial: false,
+    specimenMode: null,
+    infocard: {
+      highlightedPhrase: {
+        kind: "synthesis",
+        displayText: "Una biblioteca no és neutra.",
+        attribution: "Síntesi, Josep Llinàs",
+        bibliographicContext: null,
+        provenance: {
+          mappingRef: "TG020 §Fitxa 12: Biblioteca Jaume Fuster",
+          sourceLocator: "ADGARC_TG020_DIGITAL_CASES_SOURCE_v1.0.md > Fitxa 12 > Frase destacada",
+        },
+      },
+      buildingProse: {
+        displayText:
+          "L'edifici trenca amb l'entorn mitjançant volums angulars, façanes massisses i un llenguatge formal radical.",
+        provenance: {
+          mappingRef: "TG020 §Fitxa 12: Biblioteca Jaume Fuster",
+          sourceLocator: "ADGARC_TG020_DIGITAL_CASES_SOURCE_v1.0.md > Fitxa 12 > Text explicatiu ¶1",
+        },
+      },
+      architectureCopy: {
+        displayText: "És una arquitectura que impacta, amb una forta presència física, gairebé escultòrica.",
+        provenance: {
+          mappingRef: "TG020 §Fitxa 12: Biblioteca Jaume Fuster",
+          sourceLocator: "ADGARC_TG020_DIGITAL_CASES_SOURCE_v1.0.md > Fitxa 12 > Text explicatiu ¶1",
+        },
+      },
+      typographyCopy: {
+        displayText: "Druk és una tipografia pesada, extrema i amb molt de caràcter visual.",
+        provenance: {
+          mappingRef: "TG020 §Fitxa 12: Biblioteca Jaume Fuster",
+          sourceLocator: "ADGARC_TG020_DIGITAL_CASES_SOURCE_v1.0.md > Fitxa 12 > Text explicatiu ¶2",
+        },
+      },
+      dialogueCopy: {
+        displayText:
+          "Representa molt bé la contundència formal de l'edifici, amb negretes molt carregades que reclamen atenció, igual que la biblioteca des del seu xamfrà.",
+        provenance: {
+          mappingRef: "TG020 §Fitxa 12: Biblioteca Jaume Fuster",
+          sourceLocator: "ADGARC_TG020_DIGITAL_CASES_SOURCE_v1.0.md > Fitxa 12 > Text explicatiu ¶2",
+        },
+      },
+    },
+  },
+  {
+    slug: "pavello-de-la-republica",
+    identity: {
+      name: "Pavelló de la República",
+      date: { year: 1937, displayLabel: "1937 (reconstruït 1992)" },
+      architect: "Josep Lluís Sert",
+      address: null,
+    },
+    experienceType: "digital_only",
+    architecture: { movement: "Racionalisme funcionalista", movementStatus: "verified" },
+    typography: {
+      primaryFamily: "Neutraface",
+      designer: null,
+      secondaryStatus: "parked",
+    },
+    correlation: {
+      sourceRationale:
+        "Aquest pavelló va ser creat per a l'Exposició Internacional de París de 1937 i s'hi va exposar el Guernica de Picasso. El seu disseny responia a una arquitectura de missatge clar, funcional i ràpida de construir.\n\n" +
+        "Neutraface, inspirada en l'arquitectura modernista californiana de Richard Neutra, és una tipografia elegant i racional, que expressa compromís, netedat i intenció. Com el pavelló, és funcional però amb dignitat.",
+      provenance: TG020_SOURCE,
+    },
+    coordinates: null,
+    heroMedia: null,
+    editorial: false,
+    specimenMode: null,
+    infocard: {
+      highlightedPhrase: {
+        kind: "synthesis",
+        displayText: "Arquitectura al servei d'una causa.",
+        attribution: "Síntesi, Josep Lluís Sert",
+        bibliographicContext: null,
+        provenance: {
+          mappingRef: "TG020 §Fitxa 13: Pavelló de la República",
+          sourceLocator: "ADGARC_TG020_DIGITAL_CASES_SOURCE_v1.0.md > Fitxa 13 > Frase destacada",
+        },
+      },
+      buildingProse: {
+        displayText:
+          "Aquest pavelló va ser creat per a l'Exposició Internacional de París de 1937 i s'hi va exposar el Guernica de Picasso.",
+        provenance: {
+          mappingRef: "TG020 §Fitxa 13: Pavelló de la República",
+          sourceLocator: "ADGARC_TG020_DIGITAL_CASES_SOURCE_v1.0.md > Fitxa 13 > Text explicatiu ¶1",
+        },
+      },
+      architectureCopy: {
+        displayText: "El seu disseny responia a una arquitectura de missatge clar, funcional i ràpida de construir.",
+        provenance: {
+          mappingRef: "TG020 §Fitxa 13: Pavelló de la República",
+          sourceLocator: "ADGARC_TG020_DIGITAL_CASES_SOURCE_v1.0.md > Fitxa 13 > Text explicatiu ¶1",
+        },
+      },
+      typographyCopy: {
+        displayText:
+          "Neutraface, inspirada en l'arquitectura modernista californiana de Richard Neutra, és una tipografia elegant i racional, que expressa compromís, netedat i intenció.",
+        provenance: {
+          mappingRef: "TG020 §Fitxa 13: Pavelló de la República",
+          sourceLocator: "ADGARC_TG020_DIGITAL_CASES_SOURCE_v1.0.md > Fitxa 13 > Text explicatiu ¶2",
+        },
+      },
+      dialogueCopy: {
+        displayText: "Com el pavelló, és funcional però amb dignitat.",
+        provenance: {
+          mappingRef: "TG020 §Fitxa 13: Pavelló de la República",
+          sourceLocator: "ADGARC_TG020_DIGITAL_CASES_SOURCE_v1.0.md > Fitxa 13 > Text explicatiu ¶2",
+        },
+      },
+    },
+  },
+  {
+    slug: "palau-de-la-musica-catalana",
+    identity: {
+      name: "Palau de la Música Catalana",
+      date: { year: 1908, displayLabel: "1908" },
+      architect: "Lluís Domènech i Montaner",
+      address: null,
+    },
+    experienceType: "digital_only",
+    architecture: { movement: "Modernisme decoratiu", movementStatus: "verified" },
+    typography: {
+      primaryFamily: "Mrs. Eaves",
+      designer: null,
+      secondaryStatus: "parked",
+    },
+    correlation: {
+      sourceRationale:
+        "El Palau és una explosió ornamental de llum, color i música en forma arquitectònica. És una obra total, plena de vitralls, ceràmica, ferro forjat i escultura. Cada detall té una funció expressiva i simbòlica.\n\n" +
+        "Mrs. Eaves, una tipografia amb caràcter històric, refinada i amb serif clàssic, evoca l'elegància i la sensibilitat artesanal del modernisme. Té un toc decoratiu i a la vegada literari, ideal per a aquest temple cultural.",
+      provenance: TG020_SOURCE,
+    },
+    coordinates: null,
+    heroMedia: null,
+    editorial: false,
+    specimenMode: null,
+    infocard: {
+      highlightedPhrase: {
+        kind: "synthesis",
+        displayText: "Quan l'ornament canta.",
+        attribution: "Síntesi, Lluís Domènech i Montaner",
+        bibliographicContext: null,
+        provenance: {
+          mappingRef: "TG020 §Fitxa 14: Palau de la Música Catalana",
+          sourceLocator: "ADGARC_TG020_DIGITAL_CASES_SOURCE_v1.0.md > Fitxa 14 > Frase destacada",
+        },
+      },
+      buildingProse: {
+        displayText: "El Palau és una explosió ornamental de llum, color i música en forma arquitectònica.",
+        provenance: {
+          mappingRef: "TG020 §Fitxa 14: Palau de la Música Catalana",
+          sourceLocator: "ADGARC_TG020_DIGITAL_CASES_SOURCE_v1.0.md > Fitxa 14 > Text explicatiu ¶1",
+        },
+      },
+      architectureCopy: {
+        displayText:
+          "És una obra total, plena de vitralls, ceràmica, ferro forjat i escultura. Cada detall té una funció expressiva i simbòlica.",
+        provenance: {
+          mappingRef: "TG020 §Fitxa 14: Palau de la Música Catalana",
+          sourceLocator: "ADGARC_TG020_DIGITAL_CASES_SOURCE_v1.0.md > Fitxa 14 > Text explicatiu ¶1",
+        },
+      },
+      typographyCopy: {
+        displayText:
+          "Mrs. Eaves, una tipografia amb caràcter històric, refinada i amb serif clàssic, evoca l'elegància i la sensibilitat artesanal del modernisme.",
+        provenance: {
+          mappingRef: "TG020 §Fitxa 14: Palau de la Música Catalana",
+          sourceLocator: "ADGARC_TG020_DIGITAL_CASES_SOURCE_v1.0.md > Fitxa 14 > Text explicatiu ¶2",
+        },
+      },
+      dialogueCopy: {
+        displayText: "Té un toc decoratiu i a la vegada literari, ideal per a aquest temple cultural.",
+        provenance: {
+          mappingRef: "TG020 §Fitxa 14: Palau de la Música Catalana",
+          sourceLocator: "ADGARC_TG020_DIGITAL_CASES_SOURCE_v1.0.md > Fitxa 14 > Text explicatiu ¶2",
+        },
+      },
+    },
+  },
+  {
+    slug: "fundacio-joan-miro",
+    identity: {
+      name: "Fundació Joan Miró",
+      date: { year: 1975, displayLabel: "1975" },
+      architect: "Josep Lluís Sert",
+      address: null,
+    },
+    experienceType: "digital_only",
+    architecture: { movement: "Modernisme mediterrani racional", movementStatus: "verified" },
+    typography: {
+      primaryFamily: "Avenir",
+      designer: null,
+      secondaryStatus: "parked",
+    },
+    correlation: {
+      sourceRationale:
+        "La Fundació Miró és una arquitectura que respira: lluminosa, clara, modular, oberta al paisatge i al passeig artístic. Dissenyada per l'amic de Miró, Josep Lluís Sert, crea un diàleg entre estructura i llibertat creativa.\n\n" +
+        "Avenir, com la seva arquitectura, és equilibrada, humana i funcional. És una sans serif racional però càlida, amb proporcions modernes i lògiques, perfecta per expressar aquest equilibri entre contenidor i art.",
+      provenance: TG020_SOURCE,
+    },
+    coordinates: null,
+    heroMedia: null,
+    editorial: false,
+    specimenMode: null,
+    infocard: {
+      highlightedPhrase: {
+        kind: "synthesis",
+        displayText: "L'art necessita espai per respirar.",
+        attribution: "Síntesi, Josep Lluís Sert",
+        bibliographicContext: null,
+        provenance: {
+          mappingRef: "TG020 §Fitxa 15: Fundació Joan Miró",
+          sourceLocator: "ADGARC_TG020_DIGITAL_CASES_SOURCE_v1.0.md > Fitxa 15 > Frase destacada",
+        },
+      },
+      buildingProse: {
+        displayText:
+          "La Fundació Miró és una arquitectura que respira: lluminosa, clara, modular, oberta al paisatge i al passeig artístic.",
+        provenance: {
+          mappingRef: "TG020 §Fitxa 15: Fundació Joan Miró",
+          sourceLocator: "ADGARC_TG020_DIGITAL_CASES_SOURCE_v1.0.md > Fitxa 15 > Text explicatiu ¶1",
+        },
+      },
+      architectureCopy: {
+        displayText:
+          "Dissenyada per l'amic de Miró, Josep Lluís Sert, crea un diàleg entre estructura i llibertat creativa.",
+        provenance: {
+          mappingRef: "TG020 §Fitxa 15: Fundació Joan Miró",
+          sourceLocator: "ADGARC_TG020_DIGITAL_CASES_SOURCE_v1.0.md > Fitxa 15 > Text explicatiu ¶1",
+        },
+      },
+      typographyCopy: {
+        displayText: "Avenir, com la seva arquitectura, és equilibrada, humana i funcional.",
+        provenance: {
+          mappingRef: "TG020 §Fitxa 15: Fundació Joan Miró",
+          sourceLocator: "ADGARC_TG020_DIGITAL_CASES_SOURCE_v1.0.md > Fitxa 15 > Text explicatiu ¶2",
+        },
+      },
+      dialogueCopy: {
+        displayText:
+          "És una sans serif racional però càlida, amb proporcions modernes i lògiques, perfecta per expressar aquest equilibri entre contenidor i art.",
+        provenance: {
+          mappingRef: "TG020 §Fitxa 15: Fundació Joan Miró",
+          sourceLocator: "ADGARC_TG020_DIGITAL_CASES_SOURCE_v1.0.md > Fitxa 15 > Text explicatiu ¶2",
+        },
+      },
+    },
+  },
+  {
+    slug: "hotel-vela-w-barcelona",
+    identity: {
+      name: "Hotel Vela / W Barcelona",
+      date: { year: 2009, displayLabel: "2009" },
+      architect: "Ricardo Bofill",
+      address: null,
+    },
+    experienceType: "digital_only",
+    architecture: { movement: "Arquitectura escultural contemporània", movementStatus: "verified" },
+    typography: {
+      primaryFamily: "Montserrat",
+      designer: null,
+      secondaryStatus: "parked",
+    },
+    correlation: {
+      sourceRationale:
+        "L'Hotel W, conegut popularment com “la vela”, és una silueta moderna i imponent al front marítim de Barcelona. L'edifici destaca pel seu perfil corbat, reflexiu i altament icònic, integrant-se visualment amb el mar.\n\n" +
+        "La tipografia Montserrat, dissenyada a l'Argentina però inspirada en rètols de ciutat i geometries clares, comparteix l'equilibri entre contundència visual i elegància urbana. És ideal per a espais contemporanis i amb una presència marcada.",
+      provenance: TG020_SOURCE,
+    },
+    coordinates: null,
+    heroMedia: null,
+    editorial: false,
+    specimenMode: null,
+    infocard: {
+      highlightedPhrase: {
+        kind: "synthesis",
+        displayText: "Geometria amb vistes al mar.",
+        attribution: "Síntesi, Ricardo Bofill",
+        bibliographicContext: null,
+        provenance: {
+          mappingRef: "TG020 §Fitxa 16: Hotel Vela (W Barcelona)",
+          sourceLocator: "ADGARC_TG020_DIGITAL_CASES_SOURCE_v1.0.md > Fitxa 16 > Frase destacada",
+        },
+      },
+      buildingProse: {
+        displayText:
+          "L'Hotel W, conegut popularment com “la vela”, és una silueta moderna i imponent al front marítim de Barcelona.",
+        provenance: {
+          mappingRef: "TG020 §Fitxa 16: Hotel Vela (W Barcelona)",
+          sourceLocator: "ADGARC_TG020_DIGITAL_CASES_SOURCE_v1.0.md > Fitxa 16 > Text explicatiu ¶1",
+        },
+      },
+      architectureCopy: {
+        displayText:
+          "L'edifici destaca pel seu perfil corbat, reflexiu i altament icònic, integrant-se visualment amb el mar.",
+        provenance: {
+          mappingRef: "TG020 §Fitxa 16: Hotel Vela (W Barcelona)",
+          sourceLocator: "ADGARC_TG020_DIGITAL_CASES_SOURCE_v1.0.md > Fitxa 16 > Text explicatiu ¶1",
+        },
+      },
+      typographyCopy: {
+        displayText:
+          "La tipografia Montserrat, dissenyada a l'Argentina però inspirada en rètols de ciutat i geometries clares, comparteix l'equilibri entre contundència visual i elegància urbana.",
+        provenance: {
+          mappingRef: "TG020 §Fitxa 16: Hotel Vela (W Barcelona)",
+          sourceLocator: "ADGARC_TG020_DIGITAL_CASES_SOURCE_v1.0.md > Fitxa 16 > Text explicatiu ¶2",
+        },
+      },
+      dialogueCopy: {
+        displayText: "És ideal per a espais contemporanis i amb una presència marcada.",
+        provenance: {
+          mappingRef: "TG020 §Fitxa 16: Hotel Vela (W Barcelona)",
+          sourceLocator: "ADGARC_TG020_DIGITAL_CASES_SOURCE_v1.0.md > Fitxa 16 > Text explicatiu ¶2",
+        },
+      },
+    },
+  },
+  {
+    slug: "hospital-de-sant-pau",
+    identity: {
+      name: "Hospital de Sant Pau",
+      date: { year: 1930, displayLabel: "1902 - 1930" },
+      architect: "Lluís Domènech i Montaner",
+      address: null,
+    },
+    experienceType: "digital_only",
+    architecture: { movement: "Modernisme monumental / arquitectura humanista", movementStatus: "verified" },
+    typography: {
+      primaryFamily: "Perpetua",
+      designer: null,
+      secondaryStatus: "parked",
+    },
+    correlation: {
+      sourceRationale:
+        "Aquest conjunt monumental va ser concebut com una ciutat jardí per al benestar físic i espiritual dels pacients. L'arquitectura, rica en detalls i simbologia, combina racionalitat funcional amb una forta càrrega artística i humana.\n\n" +
+        "Perpetua és una tipografia amb base clàssica, sòbria però amb un toc cal·ligràfic que aporta calidesa. Representa la combinació de coneixement, bellesa i humanisme que impregna cada racó de l'Hospital de Sant Pau.",
+      provenance: TG020_SOURCE,
+    },
+    coordinates: null,
+    heroMedia: null,
+    editorial: false,
+    specimenMode: null,
+    infocard: {
+      highlightedPhrase: {
+        kind: "synthesis",
+        displayText: "Arquitectura al servei de la cura.",
+        attribution: "Síntesi, Lluís Domènech i Montaner",
+        bibliographicContext: null,
+        provenance: {
+          mappingRef: "TG020 §Fitxa 17: Hospital de Sant Pau",
+          sourceLocator: "ADGARC_TG020_DIGITAL_CASES_SOURCE_v1.0.md > Fitxa 17 > Frase destacada",
+        },
+      },
+      buildingProse: {
+        displayText:
+          "Aquest conjunt monumental va ser concebut com una ciutat jardí per al benestar físic i espiritual dels pacients.",
+        provenance: {
+          mappingRef: "TG020 §Fitxa 17: Hospital de Sant Pau",
+          sourceLocator: "ADGARC_TG020_DIGITAL_CASES_SOURCE_v1.0.md > Fitxa 17 > Text explicatiu ¶1",
+        },
+      },
+      architectureCopy: {
+        displayText:
+          "L'arquitectura, rica en detalls i simbologia, combina racionalitat funcional amb una forta càrrega artística i humana.",
+        provenance: {
+          mappingRef: "TG020 §Fitxa 17: Hospital de Sant Pau",
+          sourceLocator: "ADGARC_TG020_DIGITAL_CASES_SOURCE_v1.0.md > Fitxa 17 > Text explicatiu ¶1",
+        },
+      },
+      typographyCopy: {
+        displayText:
+          "Perpetua és una tipografia amb base clàssica, sòbria però amb un toc cal·ligràfic que aporta calidesa.",
+        provenance: {
+          mappingRef: "TG020 §Fitxa 17: Hospital de Sant Pau",
+          sourceLocator: "ADGARC_TG020_DIGITAL_CASES_SOURCE_v1.0.md > Fitxa 17 > Text explicatiu ¶2",
+        },
+      },
+      dialogueCopy: {
+        displayText:
+          "Representa la combinació de coneixement, bellesa i humanisme que impregna cada racó de l'Hospital de Sant Pau.",
+        provenance: {
+          mappingRef: "TG020 §Fitxa 17: Hospital de Sant Pau",
+          sourceLocator: "ADGARC_TG020_DIGITAL_CASES_SOURCE_v1.0.md > Fitxa 17 > Text explicatiu ¶2",
+        },
+      },
+    },
+  },
+  {
+    slug: "cementiri-de-montjuic-zona-racionalista",
+    identity: {
+      name: "Cementiri de Montjuïc — zona racionalista",
+      date: { year: null, displayLabel: "~S. XX" },
+      architect: "Leandre Albareda",
+      address: null,
+    },
+    experienceType: "digital_only",
+    architecture: { movement: "Noucentisme / racionalisme clàssic", movementStatus: "verified" },
+    typography: {
+      primaryFamily: "Garamond",
+      designer: null,
+      secondaryStatus: "parked",
+    },
+    correlation: {
+      sourceRationale:
+        "A la zona racionalista del Cementiri de Montjuïc hi trobem una arquitectura serena, ordenada i austera. És una composició que expressa respecte, silenci i transcendència mitjançant proporcions clàssiques i simetria.\n\n" +
+        "Garamond és una tipografia humanista, amb una herència tipogràfica del Renaixement. Té una bellesa serena i un ritme natural, que evoca pau, memòria i elegància atemporal, ideals per a aquest espai de recolliment.",
+      provenance: TG020_SOURCE,
+    },
+    coordinates: null,
+    heroMedia: null,
+    editorial: false,
+    specimenMode: null,
+    infocard: {
+      highlightedPhrase: {
+        kind: "synthesis",
+        displayText: "L'eternitat també té forma.",
+        attribution: "Síntesi, Leandre Albareda",
+        bibliographicContext: null,
+        provenance: {
+          mappingRef: "TG020 §Fitxa 18: Cementiri de Montjuïc (zona racionalista)",
+          sourceLocator: "ADGARC_TG020_DIGITAL_CASES_SOURCE_v1.0.md > Fitxa 18 > Frase destacada",
+        },
+      },
+      buildingProse: {
+        displayText:
+          "A la zona racionalista del Cementiri de Montjuïc hi trobem una arquitectura serena, ordenada i austera.",
+        provenance: {
+          mappingRef: "TG020 §Fitxa 18: Cementiri de Montjuïc (zona racionalista)",
+          sourceLocator: "ADGARC_TG020_DIGITAL_CASES_SOURCE_v1.0.md > Fitxa 18 > Text explicatiu ¶1",
+        },
+      },
+      architectureCopy: {
+        displayText:
+          "És una composició que expressa respecte, silenci i transcendència mitjançant proporcions clàssiques i simetria.",
+        provenance: {
+          mappingRef: "TG020 §Fitxa 18: Cementiri de Montjuïc (zona racionalista)",
+          sourceLocator: "ADGARC_TG020_DIGITAL_CASES_SOURCE_v1.0.md > Fitxa 18 > Text explicatiu ¶1",
+        },
+      },
+      typographyCopy: {
+        displayText: "Garamond és una tipografia humanista, amb una herència tipogràfica del Renaixement.",
+        provenance: {
+          mappingRef: "TG020 §Fitxa 18: Cementiri de Montjuïc (zona racionalista)",
+          sourceLocator: "ADGARC_TG020_DIGITAL_CASES_SOURCE_v1.0.md > Fitxa 18 > Text explicatiu ¶2",
+        },
+      },
+      dialogueCopy: {
+        displayText:
+          "Té una bellesa serena i un ritme natural, que evoca pau, memòria i elegància atemporal, ideals per a aquest espai de recolliment.",
+        provenance: {
+          mappingRef: "TG020 §Fitxa 18: Cementiri de Montjuïc (zona racionalista)",
+          sourceLocator: "ADGARC_TG020_DIGITAL_CASES_SOURCE_v1.0.md > Fitxa 18 > Text explicatiu ¶2",
+        },
+      },
+    },
+  },
+  {
+    slug: "teatre-nacional-de-catalunya",
+    identity: {
+      name: "Teatre Nacional de Catalunya",
+      date: { year: 1996, displayLabel: "1996" },
+      architect: "Ricardo Bofill",
+      address: null,
+    },
+    experienceType: "digital_only",
+    architecture: { movement: "Neoclàssic contemporani", movementStatus: "verified" },
+    typography: {
+      primaryFamily: "Trajan",
+      designer: null,
+      secondaryStatus: "parked",
+    },
+    correlation: {
+      sourceRationale:
+        "El TNC és una reinterpretació contemporània del temple clàssic, amb columnes monumentals, simetria i una escenografia arquitectònica pensada per al drama. És un espai solemne i simbòlic, que vol representar la cultura amb majúscules.\n\n" +
+        "Trajan és una tipografia inspirada en les inscripcions romanes. Majúscules clàssiques amb una autoritat i sobrietat que encaixen perfectament amb l'estètica i funció de l'edifici.",
+      provenance: TG020_SOURCE,
+    },
+    coordinates: null,
+    heroMedia: null,
+    editorial: false,
+    specimenMode: null,
+    infocard: {
+      highlightedPhrase: {
+        kind: "synthesis",
+        displayText: "On la paraula es fa monument.",
+        attribution: "Síntesi, Ricardo Bofill",
+        bibliographicContext: null,
+        provenance: {
+          mappingRef: "TG020 §Fitxa 19: Teatre Nacional de Catalunya",
+          sourceLocator: "ADGARC_TG020_DIGITAL_CASES_SOURCE_v1.0.md > Fitxa 19 > Frase destacada",
+        },
+      },
+      buildingProse: {
+        displayText:
+          "El TNC és una reinterpretació contemporània del temple clàssic, amb columnes monumentals, simetria i una escenografia arquitectònica pensada per al drama.",
+        provenance: {
+          mappingRef: "TG020 §Fitxa 19: Teatre Nacional de Catalunya",
+          sourceLocator: "ADGARC_TG020_DIGITAL_CASES_SOURCE_v1.0.md > Fitxa 19 > Text explicatiu ¶1",
+        },
+      },
+      architectureCopy: {
+        displayText: "És un espai solemne i simbòlic, que vol representar la cultura amb majúscules.",
+        provenance: {
+          mappingRef: "TG020 §Fitxa 19: Teatre Nacional de Catalunya",
+          sourceLocator: "ADGARC_TG020_DIGITAL_CASES_SOURCE_v1.0.md > Fitxa 19 > Text explicatiu ¶1",
+        },
+      },
+      typographyCopy: {
+        displayText: "Trajan és una tipografia inspirada en les inscripcions romanes.",
+        provenance: {
+          mappingRef: "TG020 §Fitxa 19: Teatre Nacional de Catalunya",
+          sourceLocator: "ADGARC_TG020_DIGITAL_CASES_SOURCE_v1.0.md > Fitxa 19 > Text explicatiu ¶2",
+        },
+      },
+      dialogueCopy: {
+        displayText:
+          "Majúscules clàssiques amb una autoritat i sobrietat que encaixen perfectament amb l'estètica i funció de l'edifici.",
+        provenance: {
+          mappingRef: "TG020 §Fitxa 19: Teatre Nacional de Catalunya",
+          sourceLocator: "ADGARC_TG020_DIGITAL_CASES_SOURCE_v1.0.md > Fitxa 19 > Text explicatiu ¶2",
+        },
+      },
+    },
+  },
+  {
+    slug: "edifici-meridiana",
+    identity: {
+      name: "Edifici Meridiana",
+      date: { year: null, displayLabel: "Anys 60" },
+      architect: "MBM Arquitectes",
+      address: null,
+    },
+    experienceType: "digital_only",
+    architecture: { movement: "Racionalisme urbà de postguerra", movementStatus: "verified" },
+    typography: {
+      primaryFamily: "Akzidenz Grotesk",
+      designer: null,
+      secondaryStatus: "parked",
+    },
+    correlation: {
+      sourceRationale:
+        "L'edifici Meridiana forma part d'una arquitectura funcional i social dissenyada per respondre a les necessitats d'habitatge del creixement urbà dels anys 60. Sense ornaments, amb una clara jerarquia estructural i formes repetitives, és exemple d'eficiència arquitectònica.\n\n" +
+        "Akzidenz Grotesk comparteix aquests valors: és una tipografia directa, sòbria i llegible, que fuig de l'expressivitat per centrar-se en la claredat. Utilitzada massivament en senyalètica i disseny institucional, reflecteix el mateix esperit pràctic i funcional de l'edifici.",
+      provenance: TG020_SOURCE,
+    },
+    coordinates: null,
+    heroMedia: null,
+    editorial: false,
+    specimenMode: null,
+    infocard: {
+      highlightedPhrase: {
+        kind: "synthesis",
+        displayText: "Arquitectura per viure.",
+        attribution: "Síntesi, MBM Arquitectes",
+        bibliographicContext: null,
+        provenance: {
+          mappingRef: "TG020 §Fitxa 2: Edifici Meridiana",
+          sourceLocator: "ADGARC_TG020_DIGITAL_CASES_SOURCE_v1.0.md > Fitxa 2 > Frase destacada",
+        },
+      },
+      buildingProse: {
+        displayText:
+          "L'edifici Meridiana forma part d'una arquitectura funcional i social dissenyada per respondre a les necessitats d'habitatge del creixement urbà dels anys 60.",
+        provenance: {
+          mappingRef: "TG020 §Fitxa 2: Edifici Meridiana",
+          sourceLocator: "ADGARC_TG020_DIGITAL_CASES_SOURCE_v1.0.md > Fitxa 2 > Text explicatiu ¶1",
+        },
+      },
+      architectureCopy: {
+        displayText:
+          "Sense ornaments, amb una clara jerarquia estructural i formes repetitives, és exemple d'eficiència arquitectònica.",
+        provenance: {
+          mappingRef: "TG020 §Fitxa 2: Edifici Meridiana",
+          sourceLocator: "ADGARC_TG020_DIGITAL_CASES_SOURCE_v1.0.md > Fitxa 2 > Text explicatiu ¶1",
+        },
+      },
+      typographyCopy: {
+        displayText:
+          "Akzidenz Grotesk comparteix aquests valors: és una tipografia directa, sòbria i llegible, que fuig de l'expressivitat per centrar-se en la claredat.",
+        provenance: {
+          mappingRef: "TG020 §Fitxa 2: Edifici Meridiana",
+          sourceLocator: "ADGARC_TG020_DIGITAL_CASES_SOURCE_v1.0.md > Fitxa 2 > Text explicatiu ¶2",
+        },
+      },
+      dialogueCopy: {
+        displayText:
+          "Utilitzada massivament en senyalètica i disseny institucional, reflecteix el mateix esperit pràctic i funcional de l'edifici.",
+        provenance: {
+          mappingRef: "TG020 §Fitxa 2: Edifici Meridiana",
+          sourceLocator: "ADGARC_TG020_DIGITAL_CASES_SOURCE_v1.0.md > Fitxa 2 > Text explicatiu ¶2",
         },
       },
     },

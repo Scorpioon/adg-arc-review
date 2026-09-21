@@ -18,15 +18,6 @@ interface PassportPaneProps {
   header?: ReactNode;
 }
 
-// TG011 Pass C (ADGARC-FB-043 / DEC-010 §D4): the Passport rail is literally
-// 1-20. Positions 1-10 are the physical+digital stops in the order
-// data/cases.ts already gives them; 11-20 are the digital-only positions
-// whose source identities do not exist yet. Both numbers are rail geometry
-// only — the passport *denominator* stays derived from the real physical set
-// inside usePassport, never from either of these constants.
-const RAIL_POSITIONS = 20;
-const PHYSICAL_RAIL_POSITIONS = 10;
-
 // How long a circle-initiated smooth scroll is allowed to own the focus
 // indicator. Without it the carousel scroll handler below would recompute the
 // current stop on every intermediate frame of the animation, walking the
@@ -47,14 +38,20 @@ const PROGRAMMATIC_SCROLL_MS = 700;
 // and it can never stamp.
 function PassportStopRail({
   passport,
-  physicalCases,
+  cases,
+  physicalCount,
   focusedOrdinal,
   onFocusStop,
   onReload,
   reloadButtonRef,
 }: {
   passport: PassportState;
-  physicalCases: CaseRecord[];
+  // TG020: the full ordered case set (physical, then digital) — the rail no
+  // longer has a fixed 1-20 shape or reserved positions past the physical
+  // set. Every ordinal 1..cases.length now resolves to a real case; the
+  // total is derived here, never hard-coded (Phase 2 may change it again).
+  cases: CaseRecord[];
+  physicalCount: number;
   focusedOrdinal: number;
   onFocusStop: (ordinal: number) => void;
   onReload: () => void;
@@ -73,51 +70,44 @@ function PassportStopRail({
       <div
         className="passport-stop-rail__track"
         role="group"
-        aria-label={t("passport.railGroupLabel")}
+        aria-label={t("passport.railGroupLabel", { total: cases.length })}
       >
-        {Array.from({ length: RAIL_POSITIONS }, (_, i) => {
+        {cases.map((stop, i) => {
           const ordinal = i + 1;
-          // Positions past the real physical set have no resolved identity:
-          // no case, no name, no image, no slug, no coordinate. FB-043's
-          // source discipline and DEC-010 §D4 forbid inventing one, so the
-          // slot is rendered honestly as reserved rather than filled.
-          const stop = ordinal <= PHYSICAL_RAIL_POSITIONS ? physicalCases[i] : undefined;
-          const isVisited = stop ? passport.visited.has(stop.slug) : false;
+          const isVisited = passport.visited.has(stop.slug);
+          const isPhysical = stop.experienceType === "physical_digital";
 
           return (
-            <Fragment key={ordinal}>
-              {/* FB-043: the catalog boundary after 10. Presentation only —
-                  it separates physical stops from digital-only positions and
-                  has no bearing on the stamping denominator. */}
-              {ordinal === PHYSICAL_RAIL_POSITIONS + 1 && (
+            <Fragment key={stop.slug}>
+              {/* FB-043: the catalog boundary after the physical set.
+                  Presentation only — it separates physical stops from
+                  digital-only positions and has no bearing on the stamping
+                  denominator. */}
+              {ordinal === physicalCount + 1 && (
                 <span className="passport-stop-rail__divider" aria-hidden="true" />
               )}
               <PassportStopCircle
                 ordinal={ordinal}
                 visited={isVisited}
                 current={focusedOrdinal === ordinal}
-                disabled={!stop}
-                bold={ordinal <= PHYSICAL_RAIL_POSITIONS}
-                accessibleLabel={
-                  stop
-                    ? t("passport.stopStatus", {
-                        ordinal,
-                        name: stop.identity.name,
-                        status: isVisited ? t("passport.stampObtained") : t("passport.stampPending"),
-                      })
-                    : t("passport.stopReserved", { ordinal })
-                }
-                onActivate={stop ? onFocusStop : undefined}
+                disabled={false}
+                bold={isPhysical}
+                accessibleLabel={t("passport.stopStatus", {
+                  ordinal,
+                  name: stop.identity.name,
+                  status: isVisited ? t("passport.stampObtained") : t("passport.stampPending"),
+                })}
+                onActivate={onFocusStop}
               />
             </Fragment>
           );
         })}
         {/* TG018 Pass B (operator decision, correction matrix §B / evidence
             13_passaport_reset_circle_reference.png): reset is its own
-            separated action after the 20 building positions, never position
-            21 — its own divider, then a circle-scale control reusing the
-            existing settings-actions reset/confirm flow below rather than
-            duplicating it. */}
+            separated action after the building positions, never the final
+            ordinal — its own divider, then a circle-scale control reusing
+            the existing settings-actions reset/confirm flow below rather
+            than duplicating it. */}
         <span className="passport-stop-rail__divider" aria-hidden="true" />
         <button
           type="button"
@@ -281,7 +271,8 @@ export default function PassportPane({ passport, cases, onSelectCase, header }: 
         {header}
         <PassportStopRail
           passport={passport}
-          physicalCases={physicalCases}
+          cases={cases}
+          physicalCount={physicalCases.length}
           focusedOrdinal={focusedOrdinal}
           onFocusStop={focusStop}
           onReload={() => setConfirmingReset(true)}
@@ -310,48 +301,19 @@ export default function PassportPane({ passport, cases, onSelectCase, header }: 
           width, which is what stops the card block from overflowing the fixed
           shell — see .passport-carousel__card in global.css.
 
-          TG018 Pass B (correction matrix §B): the track now spans all 20
-          rail positions, not just the 10 real ones — desktop's 5x4 grid
-          needs exactly 20 slots, and mobile keeps scrolling the same
-          honestly-reserved 11-20 placeholders the rail already shows,
-          rather than the two surfaces disagreeing on how many positions
-          exist. Reserved cards carry no name/image/status, are not
-          clickable, and never receive invented content (FB-043 / DEC-010
-          §D4 — same discipline as PassportStopRail above). */}
+          TG020: the track spans the full dynamic case set — every position
+          now resolves to a real case (no reserved 11-20 placeholders remain,
+          and the total is never hard-coded — see the passport-stop-rail
+          divider comment above and the desktop 5-column/auto-row CSS in
+          global.css, which already grows past any fixed row count). */}
       <ul
         className="passport-carousel"
         aria-label={t("passport.carouselLabel")}
         ref={carouselRef}
         onScroll={syncFocusFromScroll}
       >
-        {Array.from({ length: RAIL_POSITIONS }, (_, i) => {
+        {cases.map((c, i) => {
           const ordinal = i + 1;
-          const c = ordinal <= PHYSICAL_RAIL_POSITIONS ? physicalCases[i] : undefined;
-
-          if (!c) {
-            return (
-              <li key={`reserved-${ordinal}`} className="passport-carousel__item">
-                <div
-                  className="passport-carousel__card"
-                  data-reserved="true"
-                  role="group"
-                  aria-label={t("passport.stopReserved", { ordinal })}
-                >
-                  <span className="passport-carousel__media" aria-hidden="true">
-                    <span className="passport-carousel__media-empty">
-                      {t("passport.cardReserved")}
-                    </span>
-                  </span>
-                  <span className="passport-carousel__body">
-                    <span className="passport-carousel__ordinal">
-                      {String(ordinal).padStart(2, "0")}
-                    </span>
-                  </span>
-                </div>
-              </li>
-            );
-          }
-
           const isVisited = passport.visited.has(c.slug);
           return (
             <li

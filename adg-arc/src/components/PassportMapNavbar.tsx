@@ -15,12 +15,11 @@ interface PassportMapNavbarProps {
 
 // ADGARC-FB-046 / ADGARC-DEC-010 §11.2, §11.6: replaces the dropped S5B
 // `PassportMapOverlay` rectangular rail with a windowed circle-navigation
-// control. Same catalog shape as PassportPane's own PassportStopRail
-// (`RAIL_POSITIONS`/`PHYSICAL_RAIL_POSITIONS` = 1-20 with 1-10 resolved),
-// but this surface paginates a fixed-size visible window instead of
-// scrolling the full rail, per §11.6.
-const RAIL_POSITIONS = 20;
-const PHYSICAL_RAIL_POSITIONS = 10;
+// control. Same catalog shape as PassportPane's own PassportStopRail — the
+// full ordered case set, physical then digital, every ordinal resolving to
+// a real case (TG020: no more fixed 1-20 / reserved-position split) — but
+// this surface paginates a fixed-size visible window instead of scrolling
+// the full rail, per §11.6.
 
 // TG018 correction matrix §A: compact Passport-scale chrome, so the visible
 // window still tops out at 5 — kept as a sibling constant here rather than
@@ -52,7 +51,10 @@ export default function PassportMapNavbar({
   onSelectCase,
 }: PassportMapNavbarProps) {
   const t = useT();
-  const physicalCases = cases.filter((c) => c.experienceType === "physical_digital");
+  // TG020: total rail positions is the full ordered case set — never a
+  // hard-coded 20/30, so Phase 2 additions/removals resize this rail for
+  // free.
+  const totalPositions = cases.length;
 
   const [visibleCount, setVisibleCount] = useState(computeVisibleCount);
 
@@ -69,7 +71,7 @@ export default function PassportMapNavbar({
   // auto-tracks the current selection (DEC-010 §11 — pagination only,
   // never touches `onSelectCase`, passport stamping, or visited state).
   const { windowStart, atStart, atEnd, goPrevious, goNext } = useWindowedIndex(
-    RAIL_POSITIONS,
+    totalPositions,
     visibleCount
   );
 
@@ -87,39 +89,33 @@ export default function PassportMapNavbar({
       <div
         className="passport-map-navbar__window"
         role="group"
-        aria-label={t("passport.railGroupLabel")}
+        aria-label={t("passport.railGroupLabel", { total: totalPositions })}
       >
         {Array.from({ length: visibleCount }, (_, i) => {
-          const ordinal = windowStart + i + 1;
-          // Positions past the real physical set have no resolved identity
-          // (FB-043 source discipline / DEC-010 §D4) — same reserved-slot
-          // honesty as PassportStopRail, never an invented case.
-          const stop = ordinal <= PHYSICAL_RAIL_POSITIONS ? physicalCases[ordinal - 1] : undefined;
-          const isVisited = stop ? passport.visited.has(stop.slug) : false;
+          const index = windowStart + i;
+          const ordinal = index + 1;
+          const stop = cases[index];
+          const isVisited = passport.visited.has(stop.slug);
           // "Current selection" here is the map's actual selected case
           // (App-owned `selectedSlug`), not a local carousel-focus value —
           // this control is map navigation/status chrome, not a second
           // focus authority (DEC-010 §11.3: stroke carries selection only).
-          const isCurrent = stop ? stop.slug === selectedSlug : false;
+          const isCurrent = stop.slug === selectedSlug;
 
           return (
             <PassportStopCircle
-              key={ordinal}
+              key={stop.slug}
               ordinal={ordinal}
               visited={isVisited}
               current={isCurrent}
-              disabled={!stop}
-              bold={ordinal <= PHYSICAL_RAIL_POSITIONS}
-              accessibleLabel={
-                stop
-                  ? t("passport.stopStatus", {
-                      ordinal,
-                      name: stop.identity.name,
-                      status: isVisited ? t("passport.stampObtained") : t("passport.stampPending"),
-                    })
-                  : t("passport.stopReserved", { ordinal })
-              }
-              onActivate={stop ? () => onSelectCase(stop.slug) : undefined}
+              disabled={false}
+              bold={stop.experienceType === "physical_digital"}
+              accessibleLabel={t("passport.stopStatus", {
+                ordinal,
+                name: stop.identity.name,
+                status: isVisited ? t("passport.stampObtained") : t("passport.stampPending"),
+              })}
+              onActivate={() => onSelectCase(stop.slug)}
             />
           );
         })}

@@ -227,7 +227,7 @@ export default function InfocardDossier({
         // "architecture-movement" page below.
         return (
           <InfocardFactsPage
-            year={activeCase.identity.year}
+            dateLabel={activeCase.identity.date.displayLabel}
             architect={activeCase.identity.architect}
             address={activeCase.identity.address ?? null}
             labels={{
