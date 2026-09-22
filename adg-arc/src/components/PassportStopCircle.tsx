@@ -27,6 +27,15 @@ interface PassportStopCircleProps {
   // The full accessible name, composed by the caller from the i18n catalog —
   // this primitive never builds copy of its own.
   accessibleLabel: string;
+  // TG020-R3 (FB-063/FB-076): PassportMapNavbar's continuous track now
+  // renders every stop, clipped visually by an `overflow: hidden` viewport
+  // rather than only mounting the visible slice — this keeps an
+  // off-viewport circle out of the tab order and away from assistive tech
+  // announcement without unmounting/remounting it (which is exactly the
+  // per-circle animation churn FB-063 removes). PassportStopRail never
+  // clips its own track, so it always passes `true` (the default) and this
+  // prop is a no-op there.
+  inWindow?: boolean;
   onActivate?: (ordinal: number) => void;
 }
 
@@ -37,6 +46,7 @@ export default function PassportStopCircle({
   disabled,
   bold,
   accessibleLabel,
+  inWindow = true,
   onActivate,
 }: PassportStopCircleProps) {
   return (
@@ -49,6 +59,8 @@ export default function PassportStopCircle({
       data-reserved={disabled ? "true" : "false"}
       disabled={disabled}
       aria-current={current && !disabled ? "true" : undefined}
+      aria-hidden={inWindow ? undefined : "true"}
+      tabIndex={inWindow ? undefined : -1}
       onClick={() => onActivate?.(ordinal)}
     >
       <span className="passport-stop-circle__ordinal" aria-hidden="true">

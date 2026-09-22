@@ -143,6 +143,10 @@
      further from the former 40px. */
   --circle-map-diameter: 28px;
   --pill-nav-width: 8rem;
+  /* TG020-R3 (FB-064): the shared Explora/chapter-pill visual height — one
+     token so the two controls can never drift apart in height, radius,
+     border or typographic centering. */
+  --pill-height: 26px;
   --pill-corner: 999px;
   --panel-corner: 0;
 
@@ -266,13 +270,34 @@ body,
   outline-offset: 2px;
 }
 
-/* TG006A corrective pass: one coherent bottom-left navigation dock —
-   D-pad (pan + home/reset) plus adjacent zoom and rotation stacks. Replaces
-   the native NavigationControl entirely (removed, not just relocated),
-   since top-right competes with the open desktop CaseSheet. Top-left stays
-   free for the future TG006B application menu. Positioned above the
-   AttributionControl (also relocated to bottom-left) with enough clearance
-   that the two do not overlap. */
+/* TG020-R3 (FB-062) — THE canonical navigation-arrow glyph. One typographic
+   "←"/"→" (NavArrowGlyph.tsx), explicit font-family/weight/size/line-height
+   so it can never fall back to a control's own inherited/UA-default glyph
+   styling — used identically by the map-top navbar, the dossier's lower
+   navbar (both page-flow arrows and the passport-stamp step's), Explora and
+   every Passport/menu back control (.app-menu__back). No second arrow shape
+   exists anywhere in the product; this is deliberately not an SVG. */
+.nav-arrow-glyph {
+  font-family: var(--font-ui);
+  font-weight: 700;
+  font-size: 1.15rem;
+  line-height: 1;
+}
+
+/* TG006A corrective pass: replaces the native NavigationControl entirely
+   (removed, not just relocated), since top-right competes with the open
+   desktop CaseSheet. Top-left stays free for the application menu.
+   Positioned above the AttributionControl with enough clearance that the
+   two never overlap (TG020-R3/FB-073 moved attribution to bottom-right, so
+   this clearance is now a comfortable margin rather than a hard
+   requirement).
+   TG020-R3 (FB-074, corrected): the pan D-pad is gone — this is one
+   coherent vertical stack of canonical circular controls (Home, Zoom in,
+   Zoom out, Rotate left, Rotate right), and — per the R3 correction — all
+   five render at *every* device tier; a `map-controls--<mode>` modifier
+   (below) only tightens gap/stack-offset on narrower tiers, it never drops
+   a control. Replaces the former 3x3 D-pad grid plus separately-stacked
+   zoom/rotate grids and the reduced-inventory tablet/mobile branches. */
 .map-controls {
   position: absolute;
   /* TG010 S4: the 40px clearance over MapLibre's own bottom-left
@@ -282,48 +307,27 @@ body,
   left: max(16px, env(safe-area-inset-left));
   z-index: var(--z-map-chrome);
   display: flex;
+  flex-direction: column;
   align-items: center;
   gap: 6px;
 }
 
-.map-controls__pad {
-  display: grid;
-  grid-template-columns: repeat(3, 32px);
-  grid-template-rows: repeat(3, 32px);
-  gap: 2px;
-}
-
-.map-controls__zoom,
-.map-controls__rotate {
-  display: grid;
-  grid-template-columns: 32px;
-  grid-template-rows: repeat(2, 32px);
-  gap: 2px;
-}
-
-/* TG006I Scope A (ADGARC-FB-003 real-device extension): tablet/mobile
-   render a subset of the desktop dock's buttons (see MapControls.tsx's
-   mode branching) — these modifiers only change the outer flex layout,
-   since .map-controls__btn / .map-controls__zoom's own sizing is already
-   shared and correct for every mode. */
+/* TG020-R3 (FB-074, corrected): narrower tiers get a tighter stack offset
+   (gap) only — never fewer buttons. */
 .map-controls--tablet,
 .map-controls--mobile {
-  flex-direction: column;
-  align-items: flex-start;
-  gap: 8px;
+  gap: 4px;
 }
 
 .map-controls__btn {
   appearance: none;
   padding: 0;
-  /* TG010 S4 (ADGARC-FB-017 / DEC-007 §11) — real bug, not just sizing
-     taste: every button's box used to come *entirely* from its grid parent
-     (.map-controls__pad / __zoom / __rotate). The mobile inventory renders
-     only the reset button, which has no grid parent (see MapControls.tsx's
-     `mode === "mobile"` branch), so on a phone it collapsed to its 16px
-     icon plus borders — roughly an 18px tap target. These intrinsic sizes
-     make every mode's button self-sufficient; the compact/coarse block
-     further down enlarges both the box and the glyph inside it. */
+  /* TG010 S4 (ADGARC-FB-017 / DEC-007 §11): every button carries its own
+     intrinsic box (never relying on a grid/flex parent to size it), so
+     every mode's button — down to mobile's lone reset button — is
+     self-sufficient rather than collapsing to its 16px icon plus borders.
+     The compact/coarse block further down enlarges both the box and the
+     glyph inside it. */
   min-width: 32px;
   min-height: 32px;
   /* map.mapControls.border role — map chrome sits directly on the map. */
@@ -353,31 +357,6 @@ body,
 .map-controls__btn:disabled {
   opacity: 0.4;
   cursor: default;
-}
-
-.map-controls__btn--up {
-  grid-column: 2;
-  grid-row: 1;
-}
-
-.map-controls__btn--left {
-  grid-column: 1;
-  grid-row: 2;
-}
-
-.map-controls__btn--reset {
-  grid-column: 2;
-  grid-row: 2;
-}
-
-.map-controls__btn--right {
-  grid-column: 3;
-  grid-row: 2;
-}
-
-.map-controls__btn--down {
-  grid-column: 2;
-  grid-row: 3;
 }
 
 /* TG006E corrective pass §2: persistent top-left toggle for the centered
@@ -486,6 +465,21 @@ body,
   box-shadow: 0 20px 60px rgba(20, 12, 6, 0.35);
 }
 
+/* TG020-R3 (FB-067): the root five-row list is the one state allowed to hug
+   its own content instead of always claiming the full fixed frame above —
+   `height: auto` capped by the same `max-height` the fixed frame used as its
+   `height`, so five rows + footer that fit need no scrollbar, and a
+   genuinely short viewport still gets the identical cap plus
+   `.editorial-shell__body`'s own inner scroll fallback. Scoped to
+   `[data-root="true"]` (set in AppMenuModal.tsx only while no destination is
+   active) so this never touches Passport/Settings/etc., whose own internal
+   layouts still depend on the stable fixed frame above. */
+.app-menu[data-root="true"] {
+  height: auto;
+  max-height: min(720px, calc(100vh - 96px));
+  max-height: min(720px, calc(100dvh - 96px));
+}
+
 /* TG010 Final Experience P1 (ADGARC-DEC-010 §3-4): the shared editorial-
    shell chrome (see EditorialShell.tsx) — a canonical yellow topbar
    carrying the title and the [X] close control, reused as-is by every
@@ -553,7 +547,12 @@ body,
      read off the mockup image — the written 2026-09-14 spacing rule is
      normative over that image and is not to be re-inferred from it.
      TG020-R1 (FB-059): `center`, not `baseline` — the index is now a fixed-
-     diameter circle badge, not inline text sharing the label's baseline. */
+     diameter circle badge, not inline text sharing the label's baseline.
+     TG020-R3 (FB-068): row content now sits closer to its own top hairline
+     than to the next row's — top inset (0.6rem) is half the bottom inset
+     (1.2rem), rather than the former symmetric 1.1rem/1.1rem, which is also
+     what lets five rows + the footer fit without a scrollbar on ordinary
+     desktop viewport heights (see `.app-menu[data-root="true"]` above). */
   display: flex;
   align-items: center;
   gap: 8px;
@@ -564,11 +563,18 @@ body,
   color: inherit;
   text-align: left;
   cursor: pointer;
-  padding: 1.1rem 0;
+  padding: 0.6rem 0 1.2rem;
 }
 
-.app-menu__row:hover {
-  background: rgba(90, 42, 18, 0.06);
+/* TG020-R3 (FB-069): the rejected grey-fill hover is gone — Regular -> Bold
+   on the label (below) is the only hover feedback now. Keyboard focus keeps
+   the global non-grey `:focus-visible` ring untouched by this rule. */
+.app-menu__row .app-menu__row-label {
+  font-weight: 400;
+}
+
+.app-menu__row:hover .app-menu__row-label {
+  font-weight: 700;
 }
 
 /* TG020-R1 (FB-059): the root menu's "01".."05" indices render inside true
@@ -617,7 +623,11 @@ body,
    active tint therefore read as a stray gray rectangle. Rebuilt as a
    circular control in the same design language as the other nav circles
    (dossier page-nav pip / Passport rail) — same diameter token — so the
-   same rgba hover/active tint now paints a circular badge, not a rectangle. */
+   same rgba hover/active tint now paints a circular badge, not a rectangle.
+   TG020-R3 (FB-072): stroke corrected from the pale hairline to the same
+   canonical-ink stroke every other nav circle/arrow control uses — this is
+   the shared back control for every destination header (Passport included),
+   so the black stroke now applies everywhere it renders, not Passport only. */
 .app-menu__back {
   appearance: none;
   position: relative;
@@ -628,7 +638,7 @@ body,
   width: var(--circle-nav-diameter);
   height: var(--circle-nav-diameter);
   border-radius: 50%;
-  border: 1px solid var(--hairline);
+  border: 1px solid var(--canonical-ink);
   background: var(--surface);
   color: inherit;
   font: inherit;
@@ -881,32 +891,54 @@ body,
   border: 1px solid rgba(90, 42, 18, 0.18);
   border-radius: var(--pill-corner);
   box-shadow: 0 8px 24px rgba(40, 24, 12, 0.16);
+  /* TG020-R3 (FB-063): circle-to-circle gap, factored out so the track's own
+     step formula below can never drift from what the track actually renders
+     at — same per-breakpoint override pattern `.infocard-dossier` already
+     uses for `--circle-nav-diameter` (component-scoped custom property, not
+     :root). */
+  --map-nav-gap: 6px;
 }
 
-.passport-map-navbar__window {
+/* TG020-R3 (FB-063): replaces the former windowed-slice rendering (a fresh
+   `visibleCount`-sized set of circles, remounted with new React keys on
+   every arrow click, each playing its own mount-in animation) with one
+   continuous track. PassportMapNavbar.tsx now renders every case once,
+   in source order, with stable keys — arrow clicks only ever change
+   `windowStart`, which this component reads back as the `--window-start`
+   custom property below to slide the whole track horizontally. Previous and
+   next therefore move in opposite directions by construction (the sign of
+   the translateX delta), and circles read as positions on one rail rather
+   than freshly-mounted elements. The viewport clips to exactly
+   `--visible-count` circles; `prefers-reduced-motion` zeroes the transition
+   via the existing blanket rule at the end of this file. */
+.passport-map-navbar__viewport {
+  overflow: hidden;
+  width: calc(
+    var(--visible-count) * var(--circle-map-diameter) +
+      (var(--visible-count) - 1) * var(--map-nav-gap)
+  );
+}
+
+.passport-map-navbar__track {
   display: flex;
   align-items: center;
-  gap: 6px;
+  gap: var(--map-nav-gap);
+  transition: transform var(--motion-duration) var(--motion-easing);
+  transform: translateX(
+    calc(-1 * var(--window-start) * (var(--circle-map-diameter) + var(--map-nav-gap)))
+  );
 }
 
-/* TG018 correction matrix §A: the circle/arrow diameter is compacted from
-   its former 55px down to the Passport-scale token — narrower windows still
-   reduce `visibleCount` (see PassportMapNavbar.tsx) rather than shrinking
-   this further. Descendant size override, same pattern as the pane's own
-   44px touch-floor override below. Each circle also gets a brief mount
-   transition (`--motion-duration`/`--motion-easing`): the window's arrow
-   click remounts a fresh set of ordinals (new React keys), so a plain
-   opacity/transform-in on mount reads as the "subtle movement" the
-   correction calls for without any JS animation code; the blanket
-   `prefers-reduced-motion` rule at the end of this file already neutralizes
-   it for visitors who ask for less motion. */
-.passport-map-navbar__window .passport-stop-circle {
+/* TG018 correction matrix §A: the circle diameter is compacted from its
+   former 55px down to the Passport-scale token. Descendant size override,
+   same pattern as the pane's own 44px touch-floor override below. */
+.passport-map-navbar__track .passport-stop-circle {
+  flex: none;
   width: var(--circle-map-diameter);
   height: var(--circle-map-diameter);
-  animation: passport-window-shift-in var(--motion-duration) var(--motion-easing);
 }
 
-.passport-map-navbar__window .passport-stop-circle__ordinal {
+.passport-map-navbar__track .passport-stop-circle__ordinal {
   font-size: 0.8rem;
 }
 
@@ -947,17 +979,6 @@ body,
   cursor: default;
 }
 
-@keyframes passport-window-shift-in {
-  from {
-    opacity: 0;
-    transform: translateY(2px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
-}
-
 /* Below 768px/480px only the bar's own padding/gap yield further — the
    compacted circle/arrow diameter itself does not shrink again at these
    tiers; visibleCount itself drops to 3 then 2 in PassportMapNavbar.tsx at
@@ -969,10 +990,7 @@ body,
     /* Horizontal-only, as above — the fixed 36px height (equal to the
        menu-control) is not a per-breakpoint value. */
     padding: 0 10px;
-  }
-
-  .passport-map-navbar__window {
-    gap: 5px;
+    --map-nav-gap: 5px;
   }
 }
 
@@ -1058,8 +1076,14 @@ body,
 .passport-pane__sticky {
   position: sticky;
   top: 0;
-  z-index: 1;
+  /* TG020-R3 (FB-071): raised a step above the carousel below (still default
+     stacking otherwise) and given the canonical black lower hairline the R3
+     authority calls for — the rail field is now an unambiguous, fully
+     opaque boundary; scrolled card content can never visually leak above or
+     behind it. */
+  z-index: 2;
   background: var(--surface);
+  border-bottom: 1px solid var(--canonical-ink);
 }
 
 /* TG011 Pass C (ADGARC-FB-043 / DEC-010 §11.3): the Pasaporte pane's literal
@@ -1090,6 +1114,12 @@ body,
   display: flex;
   align-items: center;
   gap: 4px;
+  /* TG020-R3 (FB-070): intrinsic width — the track terminates right after
+     Reset (its last child) rather than any ambient tail — while `max-width`
+     preserves the existing `overflow-x: auto` scroll for the genuine case
+     the full ordinal count is wider than the panel. */
+  width: fit-content;
+  max-width: 100%;
   margin: 0 -5px;
   padding: 5px;
   overflow-x: auto;
@@ -2187,17 +2217,6 @@ body,
     height: 22px;
   }
 
-  .map-controls__pad {
-    grid-template-columns: repeat(3, 44px);
-    grid-template-rows: repeat(3, 44px);
-  }
-
-  .map-controls__zoom,
-  .map-controls__rotate {
-    grid-template-columns: 44px;
-    grid-template-rows: repeat(2, 44px);
-  }
-
   .app-menu__row,
   .settings-actions__btn,
   .dev-tools__actions .settings-actions__btn,
@@ -2333,15 +2352,21 @@ body,
    which is exactly what the evidence rules out. `--pill-nav-width` is sized
    for the longest live label ("Arquitectura", 12 characters); `white-space:
    nowrap` plus that fixed width is what keeps every shorter label centered
-   in the same box rather than shrinking it. */
+   in the same box rather than shrinking it.
+   TG020-R3 (FB-064): compacted to the shared `--pill-height` (26px) —
+   vertical padding dropped to 0 since the fixed height plus `align-items:
+   center` already centers the label; only horizontal padding remains, to
+   keep the label off the border. Non-interactive `<span>`, so no touch
+   target to preserve here (see `.infocard-dossier__explore` below for the
+   interactive twin, which does need one). */
 .infocard-dossier__nav-pill {
   flex: none;
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  min-height: 32px;
+  height: var(--pill-height);
   width: var(--pill-nav-width);
-  padding: 0.3rem 0.5rem;
+  padding: 0 0.5rem;
   border: 1px solid var(--canonical-ink);
   border-radius: var(--pill-corner);
   background: var(--surface);
@@ -2447,12 +2472,16 @@ body,
   flex-direction: column;
 }
 
-/* TG020-R1 (FB-049): exactly the chapter/status pill's own control height,
-   border weight, corner radius and vertical text alignment
-   (`.infocard-dossier__nav-pill` below) — Explora no longer carries a
-   separate CTA geometry (44px min-height, larger padding). A pseudo-element
-   hit area restores the touch floor `min-height: 32px` gives up, the same
-   technique `.app-menu__back` already uses for its own compact circle. */
+/* TG020-R1 (FB-049) / TG020-R3 (FB-064): exactly the chapter/status pill's
+   own control height (`--pill-height`, shared token above), border weight,
+   corner radius and vertical text alignment (`.infocard-dossier__nav-pill`
+   above) — Explora carries no separate CTA geometry. Padding is horizontal
+   only, same as the pill: the fixed height plus `align-items: center`
+   already centers the label, so no vertical padding is needed beyond that.
+   A pseudo-element hit area (below) restores the 44px touch floor this
+   compact box gives up — same technique `.app-menu__back` uses for its own
+   compact circle — without enlarging the box itself or the surrounding
+   `.infocard-dossier__nav` row. */
 .infocard-dossier__explore {
   appearance: none;
   position: relative;
@@ -2461,15 +2490,15 @@ body,
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  min-height: 32px;
-  border: var(--stroke-hairline) solid var(--canonical-ink);
+  height: var(--pill-height);
+  border: 1px solid var(--canonical-ink);
   border-radius: var(--pill-corner);
   background: var(--surface);
   color: var(--canonical-ink);
   font: inherit;
   font-size: var(--type-nav-pill);
   font-weight: 700;
-  padding: 0.3rem 1.1rem;
+  padding: 0 1.1rem;
   cursor: pointer;
 }
 
@@ -2535,11 +2564,12 @@ body,
   cursor: default;
 }
 
-/* TG018 Pass C / correction matrix §G (replaces the former fixed
-   5-chapter `.infocard-dossier__chapters`/`__chapter-pip`): a moving window
-   over the real page count (`InfocardDossier.tsx`'s `navWindowStart`),
-   dots closer together, all the same size — spacing/sizing unchanged from
-   the prior chapter pips, only what they number and how they fill has. */
+/* TG020-R3 (FB-065/FB-066): back to a fixed five-chapter set — TG018's own
+   moving window over the raw page/subpage count is retired (it was what
+   made the first real chapter present as "2" once the cover/Explora
+   consumed index 1; see CHAPTER_OF_PAGE in InfocardDossier.tsx). Geometry
+   (gap/sizing) is unchanged from that era, only what the five dots number
+   and when they activate has. */
 .infocard-dossier__page-window {
   display: flex;
   align-items: center;
@@ -2579,6 +2609,15 @@ body,
   border-width: 2px;
   font-weight: 700;
   transform: scale(1.05);
+}
+
+/* Defensive only — every case's descriptor list always covers all five
+   chapters (see CHAPTER_OF_PAGE / chapterStartIndex in InfocardDossier.tsx),
+   so a chapter circle with no resolvable target page should not occur in
+   practice. */
+.infocard-dossier__page-pip:disabled {
+  opacity: 0.4;
+  cursor: default;
 }
 
 /* Pass F1 §6 — passport-stamp step: post-chapter, outside the numbered

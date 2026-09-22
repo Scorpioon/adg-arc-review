@@ -118,11 +118,12 @@ export const es = {
   "caseSheet.fact.address": "Dirección",
   "caseSheet.movementPrefix": "Movimiento:",
   "caseSheet.movementTbdInline": "Pendiente — no consta en el material fuente",
-  // TG018 Pass C (correction matrix §G): accessible name for one page-number
-  // pip in the dossier's internal numeric nav — replaces the retired
-  // per-chapter aria-label now that the nav indexes real pages, not a fixed
-  // five-chapter set.
-  "caseSheet.pageOrdinal": "Página %{index} de %{total}",
+  // TG020-R3 (FB-065/FB-066, chapter-nav accessibility correction): accessible
+  // name for one of the five canonical chapter circles (see CHAPTER_OF_PAGE
+  // in InfocardDossier.tsx). Replaces the retired TG018 `caseSheet.
+  // pageOrdinal` key, which named a raw page/subpage index — no longer what
+  // these circles are, and no longer referenced anywhere.
+  "caseSheet.chapterOrdinal": "Capítulo %{index} de %{total}",
 
   // TG010 S4 (ADGARC-FB-024): Casos carousel.
   "cases.carouselLabel": "Casos de la colección",

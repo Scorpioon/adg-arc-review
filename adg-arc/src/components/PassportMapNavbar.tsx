@@ -1,8 +1,9 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, type CSSProperties } from "react";
 import type { CaseRecord } from "../data/cases";
 import type { PassportState } from "../hooks/usePassport";
 import { useWindowedIndex } from "../hooks/useWindowedIndex";
 import { useT } from "../i18n/context";
+import NavArrowGlyph from "./NavArrowGlyph";
 import PassportStopCircle from "./PassportStopCircle";
 
 interface PassportMapNavbarProps {
@@ -75,14 +76,22 @@ export default function PassportMapNavbar({
     visibleCount
   );
 
+  // TG020-R3 (FB-063): every stop renders once, in one continuous flex
+  // track — never a windowed slice that remounts fresh elements (and a
+  // fresh per-circle mount animation) on every arrow click. The viewport
+  // clips to exactly `visibleCount` circles and the track slides under it
+  // via `transform: translateX(...)`, so `windowStart` moving up or down
+  // produces one continuous horizontal slide in the matching direction —
+  // "positions on a rail," not freshly-mounted elements. Both custom
+  // properties are read by the CSS transform/width formulas in global.css
+  // (`.passport-map-navbar__track`/`__viewport`, built from the same
+  // `--circle-map-diameter`/`--map-nav-gap` tokens), so the step size can
+  // never drift from the circle's own rendered size.
+  const trackStyle = { "--window-start": windowStart } as CSSProperties;
+  const viewportStyle = { "--visible-count": visibleCount } as CSSProperties;
+
   return (
     <nav className="passport-map-navbar" aria-label={t("passport.mapNavLabel")}>
-      {/* TG020-R1 (FB-048/FB-060): a plain centered ←/→ glyph, not the
-          MapControls-style pan-arrow SVG icon this used to render — the
-          canonical circular-arrow grammar (true circle, white fill, thin
-          black border, one glyph) is otherwise only `.infocard-dossier__nav-
-          arrow`'s, and the feedback is explicit that no surface may carry an
-          alternative arrow shape. Same markup pattern as that control. */}
       <button
         type="button"
         className="passport-map-navbar__arrow"
@@ -90,41 +99,44 @@ export default function PassportMapNavbar({
         disabled={atStart}
         aria-label={t("passport.mapNavPrevious")}
       >
-        <span aria-hidden="true">&#8592;</span>
+        <NavArrowGlyph direction="previous" />
       </button>
-      <div
-        className="passport-map-navbar__window"
-        role="group"
-        aria-label={t("passport.railGroupLabel", { total: totalPositions })}
-      >
-        {Array.from({ length: visibleCount }, (_, i) => {
-          const index = windowStart + i;
-          const ordinal = index + 1;
-          const stop = cases[index];
-          const isVisited = passport.visited.has(stop.slug);
-          // "Current selection" here is the map's actual selected case
-          // (App-owned `selectedSlug`), not a local carousel-focus value —
-          // this control is map navigation/status chrome, not a second
-          // focus authority (DEC-010 §11.3: stroke carries selection only).
-          const isCurrent = stop.slug === selectedSlug;
+      <div className="passport-map-navbar__viewport" style={viewportStyle}>
+        <div
+          className="passport-map-navbar__track"
+          style={trackStyle}
+          role="group"
+          aria-label={t("passport.railGroupLabel", { total: totalPositions })}
+        >
+          {cases.map((stop, index) => {
+            const ordinal = index + 1;
+            const isVisited = passport.visited.has(stop.slug);
+            const isInWindow = index >= windowStart && index < windowStart + visibleCount;
+            // "Current selection" here is the map's actual selected case
+            // (App-owned `selectedSlug`), not a local carousel-focus value —
+            // this control is map navigation/status chrome, not a second
+            // focus authority (DEC-010 §11.3: stroke carries selection only).
+            const isCurrent = stop.slug === selectedSlug;
 
-          return (
-            <PassportStopCircle
-              key={stop.slug}
-              ordinal={ordinal}
-              visited={isVisited}
-              current={isCurrent}
-              disabled={false}
-              bold={stop.experienceType === "physical_digital"}
-              accessibleLabel={t("passport.stopStatus", {
-                ordinal,
-                name: stop.identity.name,
-                status: isVisited ? t("passport.stampObtained") : t("passport.stampPending"),
-              })}
-              onActivate={() => onSelectCase(stop.slug)}
-            />
-          );
-        })}
+            return (
+              <PassportStopCircle
+                key={stop.slug}
+                ordinal={ordinal}
+                visited={isVisited}
+                current={isCurrent}
+                disabled={false}
+                bold={stop.experienceType === "physical_digital"}
+                inWindow={isInWindow}
+                accessibleLabel={t("passport.stopStatus", {
+                  ordinal,
+                  name: stop.identity.name,
+                  status: isVisited ? t("passport.stampObtained") : t("passport.stampPending"),
+                })}
+                onActivate={() => onSelectCase(stop.slug)}
+              />
+            );
+          })}
+        </div>
       </div>
       <button
         type="button"
@@ -133,7 +145,7 @@ export default function PassportMapNavbar({
         disabled={atEnd}
         aria-label={t("passport.mapNavNext")}
       >
-        <span aria-hidden="true">&#8594;</span>
+        <NavArrowGlyph direction="next" />
       </button>
     </nav>
   );

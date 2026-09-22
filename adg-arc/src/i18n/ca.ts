@@ -9,4 +9,12 @@ import type { TranslationKey } from "./es";
 // back key-by-key to the `es` catalog for any key missing here, so an empty
 // catalog is a safe, non-crashing starting point for future full
 // translation, never a runtime hazard.
-export const ca: Partial<Record<TranslationKey, string>> = {};
+export const ca: Partial<Record<TranslationKey, string>> = {
+  // TG020-R3 (chapter-nav accessibility correction): a single explicit
+  // exception to the "empty until a full catalog is authored" rule above —
+  // the operator supplied this string directly. `t()` still falls back to
+  // `es` for every other key, and the locale itself stays "disabled" in
+  // locales.ts (unreachable in the running app), so this carries no
+  // activation risk.
+  "caseSheet.chapterOrdinal": "Capítol %{index} de %{total}",
+};

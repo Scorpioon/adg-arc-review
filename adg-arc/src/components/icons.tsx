@@ -28,30 +28,6 @@ function IconBase({ children, style }: { children: ReactNode; style?: CSSPropert
   );
 }
 
-// Single canonical up-arrow path, reused for all four pan directions via
-// rotation — avoids four near-duplicate path definitions.
-function ArrowIcon({ rotation }: { rotation: number }) {
-  return (
-    <IconBase style={{ transform: `rotate(${rotation}deg)` }}>
-      <path d="M12 19V6" />
-      <path d="M6.5 11.5 12 6l5.5 5.5" />
-    </IconBase>
-  );
-}
-
-export function PanUpIcon() {
-  return <ArrowIcon rotation={0} />;
-}
-export function PanRightIcon() {
-  return <ArrowIcon rotation={90} />;
-}
-export function PanDownIcon() {
-  return <ArrowIcon rotation={180} />;
-}
-export function PanLeftIcon() {
-  return <ArrowIcon rotation={270} />;
-}
-
 export function HomeIcon() {
   return (
     <IconBase>
@@ -95,10 +71,16 @@ export function RotateCwIcon() {
   return <RotateIcon mirrored={true} />;
 }
 
-export function MenuIcon() {
+// TG020-R3 (FB-075): replaces the map trigger's former hamburger (MenuIcon —
+// no longer used anywhere, removed rather than left orphaned) with a
+// canonical information glyph: circle outline, a short stem and a dot, the
+// same stroke-based single-language every other icon in this file uses.
+export function InfoIcon() {
   return (
     <IconBase>
-      <path d="M4 7h16M4 12h16M4 17h16" />
+      <circle cx="12" cy="12" r="9" />
+      <line x1="12" y1="11" x2="12" y2="16" />
+      <line x1="12" y1="7.5" x2="12" y2="7.51" />
     </IconBase>
   );
 }

@@ -7,8 +7,9 @@ import { useLocale } from "../i18n/context";
 import type { TranslationKey } from "../i18n/es";
 import DevTools, { type DevToolsProps } from "./DevTools";
 import EditorialShell from "./EditorialShell";
+import NavArrowGlyph from "./NavArrowGlyph";
 import PassportPane from "./PassportPane";
-import { MenuIcon } from "./icons";
+import { InfoIcon } from "./icons";
 
 export type MenuDestination = "info" | "about" | "settings" | "devtools" | "passport";
 
@@ -95,7 +96,10 @@ export default function AppMenuModal({
         aria-label={open ? t("menu.trigger.close") : t("menu.trigger.open")}
         onClick={onToggle}
       >
-        <MenuIcon />
+        {/* TG020-R3 (FB-075): information glyph replaces the hamburger — same
+            trigger, same open/close application-menu behavior, same
+            accessible name pair above. */}
+        <InfoIcon />
       </button>
 
       {open && (
@@ -198,7 +202,7 @@ function AppMenuDialog({
   const destinationHeader = activeNavItem ? (
     <div className="app-menu__destination-header">
       <button type="button" className="app-menu__back" onClick={backToRoot} aria-label={t("menu.back")}>
-        <span aria-hidden="true">←</span>
+        <NavArrowGlyph direction="previous" />
       </button>
       <span className="app-menu__row-index">{padOrdinal(activeIndex + 1)}</span>
       <span className="app-menu__row-label">{t(activeNavItem.labelKey)}</span>
@@ -229,6 +233,11 @@ function AppMenuDialog({
         id="app-menu-panel"
         ref={dialogRef}
         className="app-menu"
+        // TG020-R3 (FB-067): scopes the content-sized/no-scrollbar-when-it-
+        // fits geometry (`.app-menu[data-root="true"]` in global.css) to the
+        // root five-row list only — every destination (Passport included)
+        // keeps the fixed 720px frame its own internal layout depends on.
+        data-root={activeNavItem ? undefined : "true"}
         role="dialog"
         aria-modal="true"
         aria-label={t("menu.dialogLabel")}

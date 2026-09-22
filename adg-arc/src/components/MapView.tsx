@@ -725,7 +725,11 @@ const MapView = forwardRef<MapViewHandle, MapViewProps>(function MapView(
         // removed entirely (not merely hidden) because that corner competes
         // with the open desktop CaseSheet. Zoom and rotation are now covered
         // by the custom MapControls dock (bottom-left) instead.
-        map.addControl(new maplibregl.AttributionControl({ compact: true }), "bottom-left");
+        // TG020-R3 (FB-073): moved off bottom-left (which the custom
+        // MapControls dock also occupies) to bottom-right, compact mode
+        // kept — required OpenFreeMap/OpenMapTiles/OpenStreetMap attribution
+        // is still rendered on/with the map, never removed to Credits alone.
+        map.addControl(new maplibregl.AttributionControl({ compact: true }), "bottom-right");
 
         map.once("load", () => {
           // MapLibre's "load" fires once the style and its initial
@@ -961,10 +965,6 @@ const MapView = forwardRef<MapViewHandle, MapViewProps>(function MapView(
     mapRef.current?.easeTo({ ...homeView(cases), duration: reducedMotion ? 0 : RESET_EASE_MS });
   };
 
-  const handlePan = (dx: number, dy: number) => {
-    mapRef.current?.panBy([dx, dy], { duration: reducedMotion ? 0 : 300 });
-  };
-
   const handleZoomIn = () => {
     mapRef.current?.zoomIn({ duration: reducedMotion ? 0 : 300 });
   };
@@ -1029,7 +1029,6 @@ const MapView = forwardRef<MapViewHandle, MapViewProps>(function MapView(
       <MapControls
         mode={deviceClass}
         disabled={!mapReady}
-        onPan={handlePan}
         onZoomIn={handleZoomIn}
         onZoomOut={handleZoomOut}
         onRotate={handleRotate}
