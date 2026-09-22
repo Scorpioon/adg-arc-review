@@ -307,12 +307,9 @@ export default function InfocardDossier({
           />
         );
       case "specimen":
-        return (
-          <InfocardSpecimenPage
-            specimenMode={activeCase.specimenMode}
-            emptyLabel={t("caseSheet.specimenEmpty")}
-          />
-        );
+        // TG020-R2 specimen clean-slate: a deliberately vacant, case-
+        // independent canvas — no props, see InfocardPages.tsx.
+        return <InfocardSpecimenPage />;
       default:
         return null;
     }

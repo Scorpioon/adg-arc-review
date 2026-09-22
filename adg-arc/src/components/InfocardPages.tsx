@@ -3,9 +3,7 @@ import type {
   CaseHeroMedia,
   InfocardEditorialCopy,
   InfocardHighlightedPhrase,
-  SpecimenMode,
 } from "../data/cases";
-import DhubSpecimen from "./DhubSpecimen";
 
 // TG012 Pass B — presentational primitives for the final Infocard dossier.
 // Every component here receives resolved props; none read CaseRecord or own
@@ -150,19 +148,10 @@ export function InfocardProsePage({ heading, copy, meta, className }: InfocardPr
   );
 }
 
-export interface InfocardSpecimenPageProps {
-  specimenMode: SpecimenMode;
-  emptyLabel: string;
-}
-
-export function InfocardSpecimenPage({ specimenMode, emptyLabel }: InfocardSpecimenPageProps) {
-  return (
-    <section className="infocard-page infocard-page--specimen">
-      {specimenMode === "dhub" ? (
-        <DhubSpecimen />
-      ) : (
-        <p className="infocard-page__module-empty">{emptyLabel}</p>
-      )}
-    </section>
-  );
+// A deliberately vacant, data-independent canvas: no `CaseRecord` input, no
+// case-specific branching, no visible placeholder copy. Exists only to keep
+// chapter 05 "Especimen" present in the dossier's page/chapter shell and
+// pagination.
+export function InfocardSpecimenPage() {
+  return <section className="infocard-page infocard-page--specimen" />;
 }

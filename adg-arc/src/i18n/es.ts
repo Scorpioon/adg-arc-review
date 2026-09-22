@@ -60,7 +60,7 @@ export const es = {
   "info.p1":
     "ADG-ARC explora relaciones entre arquitectura y tipografía en Barcelona, emparejando cada edificio con una tipografía elegida por su resonancia con él.",
   "info.p2":
-    "El mapa es la forma principal de explorar la colección: desplázate, haz zoom y selecciona cualquiera de los 10 casos actuales, o explóralos desde el menú Casos.",
+    "El mapa es la forma principal de explorar la colección: desplázate, haz zoom y selecciona cualquiera de los 10 casos físicos de la ruta con código QR, además de 10 casos adicionales solo digitales, o explóralos desde el menú Casos.",
   "info.note":
     "Esta es una versión funcional de revisión. El diseño visual, los textos y el contenido son aún provisionales.",
 
@@ -118,7 +118,6 @@ export const es = {
   "caseSheet.fact.address": "Dirección",
   "caseSheet.movementPrefix": "Movimiento:",
   "caseSheet.movementTbdInline": "Pendiente — no consta en el material fuente",
-  "caseSheet.specimenEmpty": "Todavía no hay espécimen para este caso.",
   // TG018 Pass C (correction matrix §G): accessible name for one page-number
   // pip in the dossier's internal numeric nav — replaces the retired
   // per-chapter aria-label now that the nav indexes real pages, not a fixed

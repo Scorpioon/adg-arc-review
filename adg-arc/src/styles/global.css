@@ -247,68 +247,6 @@ body,
   background: rgba(90, 42, 18, 0.45);
 }
 
-.dhub-specimen {
-  margin-top: 0.35rem;
-  padding: 1.1rem 0.9rem;
-  border-radius: 10px;
-  background: rgba(90, 42, 18, 0.05);
-  overflow: hidden;
-}
-
-.dhub-specimen__row {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 0.15rem;
-  font-family: "SFMono-Regular", Consolas, "Liberation Mono", Menlo, monospace;
-  font-size: 1.1rem;
-  letter-spacing: 0.02em;
-}
-
-.dhub-specimen__glyph {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  width: 1.6em;
-  height: 1.6em;
-  border: 1px solid rgba(90, 42, 18, 0.22);
-  border-radius: 2px;
-  transform: translateY(calc(var(--i) * 0.6px));
-  opacity: 0;
-  animation: dhub-specimen-enter 0.5s ease forwards;
-  animation-delay: calc(var(--i) * 45ms);
-}
-
-/* Angled-interruption rhythm: a restrained alternating skew, not a
-   fabricated per-index calc — keeps the cantilever-like read without
-   relying on CSS calc()/floor() modulo support. */
-.dhub-specimen__glyph:nth-child(3n + 2) {
-  transform: translateY(calc(var(--i) * 0.6px)) skewX(-4deg);
-}
-
-.dhub-specimen__glyph:nth-child(3n) {
-  transform: translateY(calc(var(--i) * 0.6px)) skewX(4deg);
-}
-
-.dhub-specimen__plane {
-  margin-top: 0.85rem;
-  height: 2px;
-  background: linear-gradient(90deg, rgba(198, 90, 36, 0.65), rgba(198, 90, 36, 0));
-  transform-origin: left center;
-  transform: skewY(-1.2deg);
-}
-
-/* Only opacity is animated — the resting transform (offset/skew, set by
-   the rules above) is a static property so the `forwards` fill-mode can't
-   clobber it back to an un-offset state once the entrance finishes. */
-@keyframes dhub-specimen-enter {
-  from {
-    opacity: 0;
-  }
-  to {
-    opacity: 1;
-  }
-}
-
 :focus-visible {
   /* TG006G Scope E — one focus-visible treatment everywhere (was a bare
      `currentColor`-derived outline, plus one component-local duplicate on
@@ -2919,11 +2857,10 @@ body,
   margin: 0;
   font-size: clamp(1.8rem, 6vw, 2.6rem);
   font-weight: 700;
-  /* TG020-R1 (FB-052): a long typeface name (e.g. "Horizontype Monospaced")
-     wrapping onto two lines at this display size was reading as two
-     separate headings rather than one compact multiline one — the browser
-     default line-height at this font-size leaves too much interline gap for
-     a display treatment. */
+  /* TG020-R1 (FB-052): a long typeface name wrapping onto two lines at this
+     display size was reading as two separate headings rather than one
+     compact multiline one — the browser default line-height at this
+     font-size leaves too much interline gap for a display treatment. */
   line-height: 0.95;
   /* TG018 Pass D: a long/unbroken typeface family name must never be the
      one thing that forces horizontal dossier overflow. */
@@ -3043,12 +2980,6 @@ body,
 .infocard-page--specimen {
   flex: 1;
   justify-content: center;
-}
-
-.infocard-page__module-empty {
-  margin: 0;
-  font-style: italic;
-  opacity: 0.75;
 }
 
 /* Desktop: a right-side panel compatible with the later map split-view
