@@ -1,4 +1,4 @@
-import { HomeIcon, RotateCcwIcon, RotateCwIcon, ZoomInIcon, ZoomOutIcon } from "./icons";
+import { CompassIcon, RotateCcwIcon, RotateCwIcon, ZoomInIcon, ZoomOutIcon } from "./icons";
 import { useT } from "../i18n/context";
 import type { DeviceClass } from "../hooks/useViewportClass";
 
@@ -43,7 +43,7 @@ export default function MapControls({
         disabled={disabled}
         onClick={onReset}
       >
-        <HomeIcon />
+        <CompassIcon />
       </button>
       <button
         type="button"

@@ -31,6 +31,24 @@ const PROTOTYPE_COORDINATE: SourceId = "product:tg004-prototype-coordinate";
 const TG020_SOURCE: SourceId = "source:tg020-digital-cases";
 const PDF_SOURCE: SourceId = "source:p2totems-final-physical";
 
+// TG023 (ADGARC-FB-006 case-media integration): single build-time base-path
+// authority for promoted physical-case hero images, matching the pattern
+// deepLink.ts already establishes for case URLs — never a hand-written
+// root-relative "/media/..." literal, so the production /adg-arc/ subpath
+// build stays correct. Public copies live under
+// adg-arc/public/media/cases/physical/, byte-identical to their approved
+// source under work_materials/images 1-10/ (see
+// _wrkops/reports/adg_arc_tg023_case_media_01_10_integration.report.md).
+const PHYSICAL_MEDIA_BASE = `${import.meta.env.BASE_URL}media/cases/physical/`;
+
+// TG033 (ADGARC-FB-104): same base-path authority pattern, for the second
+// ten active cases (ordinals 11-20, all `digital_only`). Public copies live
+// under adg-arc/public/media/cases/digital/, byte-identical to their
+// approved source under work_materials/images 11-20/ (TG032 intake report,
+// Prompt 071 ordinal-11 corrective) — see
+// _wrkops/reports/adg_arc_tg033_dossier_media_typography_integration.report.md.
+const DIGITAL_MEDIA_BASE = `${import.meta.env.BASE_URL}media/cases/digital/`;
+
 // TG020: evolves the former bare `year: number` into a machine/display pair
 // so a fuzzy or ranged source date can be shown honestly without inventing a
 // precise year. `year` stays the sortable/machine value (the most recent
@@ -47,10 +65,30 @@ export interface CaseDate {
 
 export interface CaseIdentity {
   name: string;
+  // TG028 (ADGARC-FB-107): optional deterministic title line break(s) —
+  // a general mechanism available to any of the 20 cases, populated only
+  // where the full name reads ambiguously left to automatic wrapping (e.g.
+  // "Biblioteca Gabriel" / "García Márquez"), never a per-case CSS hack.
+  // Falls back to the plain `name` when absent.
+  displayNameLines?: string[];
   sourceName?: string;
   date: CaseDate;
   architect: string;
   address?: string | null;
+  // ADG-ARC FB-109 (TG029, Companion corrective R3/R4): the verified
+  // Catalan display-canon form of `address`. Kept as a separate field so
+  // `address` always stays the untouched recovered/source-evidence value —
+  // display normalization never overwrites source evidence (see
+  // CANONICAL_EDITORIAL_SOURCE_LOCALE below). Populated only where an
+  // authoritative source (municipal or official-institution) verified the
+  // exact street-type wording and proper-noun form; absent (render falls
+  // back to `address`) wherever verification was inconclusive or
+  // conflicting — never guessed. See `addressSourceNote`.
+  addressDisplay?: string | null;
+  // Free-text citation of the authoritative source that justified
+  // `addressDisplay` — same convention as `CaseCoordinates.provenance` /
+  // `CaseHeroMedia.provenance`. Present only alongside `addressDisplay`.
+  addressSourceNote?: string;
 }
 
 export interface CaseArchitecture {
@@ -82,16 +120,35 @@ export interface CaseTypography {
   year?: number | null;
 }
 
+// ADG-ARC FB-111 (TG029, Companion ruling R1): the canonical editorial
+// source language for the case corpus — the language archival/source text
+// (e.g. `CaseCorrelation.sourceRationale` below, transcribed from the
+// spreadsheet's Catalan `Justificació` column) is written in and is never
+// overwritten by a derived translation/display value. This is a SEPARATE
+// authority from the active RUNTIME UI locale (`DEFAULT_LOCALE` in
+// `i18n/locales.ts`, which stays "es" per the already-shipped ADGARC-FB-010
+// decision and is not changed by this constant) — locking source language
+// does not require activating that language in the UI locale selector.
+export const CANONICAL_EDITORIAL_SOURCE_LOCALE = "ca" as const;
+
+// FB-109 / FB-111 "all 20 active cases" scope is the existing `activeCases`
+// selector below (cases minus `HIDDEN_CASE_SLUGS`) — not a second,
+// duplicated list. See Companion ruling R2.
+
 export interface CaseCorrelation {
-  // Concise, interface-readable Spanish adaptation of the source argument
+  // Concise, interface-readable Spanish (`es`) adaptation of the canonical
+  // (`ca`, see CANONICAL_EDITORIAL_SOURCE_LOCALE) source argument
   // (`Justificació`) — conservative paraphrase/shortening only, no new
-  // facts or criticism. Populated for all 10 cases as of TG007; DhUB's
+  // facts or criticism. A derived display value: it must never be treated
+  // as, or allowed to silently become, a competing source authority over
+  // `sourceRationale`. Populated for all 10 cases as of TG007; DhUB's
   // (TG005) predates the Spanish-display-copy convention and was kept
   // as-is rather than rewritten. See TG007 handoff §"El diálogo".
   rationale?: string;
   // Verbatim architecture<->typography justification transcribed from the
-  // spreadsheet's `Justificació` column, kept separate from any adapted
-  // `rationale` per handoff §14.
+  // spreadsheet's `Justificació` column — this IS the FB-111 canonical
+  // editorial source (`ca`) for the pairing rationale, kept separate from
+  // any adapted `rationale` per handoff §14.
   sourceRationale: string;
   provenance: SourceId;
 }
@@ -134,15 +191,32 @@ export interface CaseCoordinates {
 // are set to `physical_digital` below, and no `digital_only` case exists yet.
 export type ExperienceType = "physical_digital" | "digital_only";
 
-// TG006C durable media contract (ADGARC-FB-006). No case currently has a
-// verified local asset with sufficient provenance/rights evidence — every
-// record below sets `heroMedia: null` deliberately rather than omitting the
-// field or inventing a path/credit/license. An image embedded in an
-// archival PDF/source document is not, by itself, authorized media.
+// TG006C durable media contract (ADGARC-FB-006), extended TG023 (case-media
+// integration): physical cases 01-10 now carry a verified local asset with
+// recovered provenance/rights evidence — source images and
+// `images credits.txt` under `work_materials/images 1-10/`, plus the TG023
+// handoff's explicit Case 02 / Case 10 authorization where the credits file
+// itself is silent or non-CC. See
+// _wrkops/reports/adg_arc_tg023_case_media_01_10_integration.report.md for
+// the full 10-row case -> source -> credit -> rights mapping. Every other
+// record keeps `heroMedia: null` deliberately rather than omitting the field
+// or inventing a path/credit/license. An image embedded in an archival
+// PDF/source document is not, by itself, authorized media.
+export interface CaseHeroCredit {
+  label: string;
+  // Nullable: a credit may be named without an independently verifiable
+  // link — never fabricated when absent.
+  url?: string | null;
+}
+
 export interface CaseHeroMedia {
   src: string;
   alt: string;
-  credit?: string | null;
+  // One or more structured, independently linkable credits (TG023: replaces
+  // the prior single optional `credit` string — GreenH@use's authorization
+  // requires two independently clickable credits, never collapsed into one
+  // string).
+  credits: CaseHeroCredit[];
   provenance: string;
   rightsStatus: string;
 }
@@ -222,6 +296,11 @@ export const cases: CaseRecord[] = [
       name: "Cases dels Cargols",
       date: { year: 1895, displayLabel: "1895" },
       architect: "Carles Bosch i Negre",
+      // FB-109 (TG029): already the Catalan canon form (confirmed by
+      // poblesdecatalunya.cat's "Tamarit, 89 and Entença, 2") — no
+      // `addressDisplay` needed. No street-type word ("Carrer d'") is
+      // added: the recovered source value never carried one, and FB-109
+      // forbids inventing missing components.
       address: "Entença, 2",
     },
     experienceType: "physical_digital",
@@ -249,7 +328,18 @@ export const cases: CaseRecord[] = [
       status: "verified_external_building",
       precision: "building",
     },
-    heroMedia: null,
+    heroMedia: {
+      src: `${PHYSICAL_MEDIA_BASE}casa-caracoles.jpg`,
+      alt: "Cases dels Cargols",
+      credits: [
+        {
+          label: "Kent Wang, CC BY 4.0, via Wikimedia Commons",
+          url: "https://commons.wikimedia.org/wiki/File:Cases_dels_Cargols_03.jpg",
+        },
+      ],
+      provenance: "Wikimedia Commons — File:Cases_dels_Cargols_03.jpg",
+      rightsStatus: "CC BY 4.0",
+    },
     editorial: false,
     infocard: {
       highlightedPhrase: {
@@ -315,6 +405,9 @@ export const cases: CaseRecord[] = [
       date: { year: 1931, displayLabel: "1931" },
       architect: "Germà Rodríguez Arias",
       address: "Vía Augusta 61",
+      addressDisplay: "Via Augusta, 61",
+      addressSourceNote:
+        "Building number 61 already independently confirmed in this record's own coordinates.provenance (Wikimedia heritage data) as distinct from La Casa de la Arquitectura's '62' — not re-opened here. 'Via' (no accent) is the Catalan spelling, confirmed by Arquitectura Catalana, Docomomo Ibérico and Viquipèdia entries for this building.",
     },
     experienceType: "physical_digital",
     architecture: { movement: "Racionalisme (GATPAC)", movementStatus: "verified" },
@@ -341,7 +434,24 @@ export const cases: CaseRecord[] = [
       status: "verified_external_building",
       precision: "building",
     },
-    heroMedia: null,
+    heroMedia: {
+      src: `${PHYSICAL_MEDIA_BASE}casa-rodriguez-arias.jpg`,
+      alt: "Casa Rodríguez Arias",
+      credits: [
+        {
+          label: "Pere López, CC BY-SA 3.0, via Wikimedia Commons",
+          url: "https://commons.wikimedia.org/wiki/File:Casa_Rodr%C3%ADguez_Arias.jpg",
+        },
+      ],
+      // TG023 handoff §Case 02: `images credits.txt` carries only the bare
+      // source file URL for this image (no inline attribution HTML like
+      // every other entry) — the credit/license above is the operator's
+      // explicit handoff authorization, not something recovered from the
+      // credits file itself.
+      provenance:
+        "Wikimedia Commons — File:Casa_Rodríguez_Arias.jpg (credit/license per TG023 handoff §Case 02 explicit authorization)",
+      rightsStatus: "CC BY-SA 3.0",
+    },
     editorial: false,
     infocard: {
       highlightedPhrase: {
@@ -407,6 +517,9 @@ export const cases: CaseRecord[] = [
       date: { year: 1955, displayLabel: "1955" },
       architect: "José Antonio Coderch, Manuel Valls",
       address: "Paseo Juan de Borbón 43",
+      addressDisplay: "Passeig de Joan de Borbó, 42-43",
+      addressSourceNote:
+        "Catalan municipal toponym is 'Passeig de Joan de Borbó' (the person-name element changes, not just the street-type word — verified via barcelona.cat and ca.wikipedia.org, both independently confirmed by this record's own pre-existing coordinates.provenance: 'Inventrip Barcelona ... Pg Joan Borbó 42-43; independently confirmed by Arquitectura Catalana at Pg. Joan de Borbó 43'). Number range 42-43 reflects that same already-recorded evidence, not a new claim.",
     },
     experienceType: "physical_digital",
     architecture: {
@@ -436,7 +549,19 @@ export const cases: CaseRecord[] = [
       status: "verified_external_building",
       precision: "building",
     },
-    heroMedia: null,
+    heroMedia: {
+      src: `${PHYSICAL_MEDIA_BASE}casa-de-la-marina.jpg`,
+      alt: "009 Habitatges Barceloneta, pg. Joan de Borbó",
+      credits: [
+        {
+          label: "Enfo, CC BY-SA 3.0, via Wikimedia Commons",
+          url: "https://commons.wikimedia.org/wiki/File:009_Habitatges_Barceloneta,_pg._Joan_de_Borb%C3%B3.jpg",
+        },
+      ],
+      provenance:
+        "Wikimedia Commons — File:009_Habitatges_Barceloneta,_pg._Joan_de_Borbó.jpg",
+      rightsStatus: "CC BY-SA 3.0",
+    },
     editorial: false,
     infocard: {
       highlightedPhrase: {
@@ -502,6 +627,9 @@ export const cases: CaseRecord[] = [
       date: { year: 1970, displayLabel: "1970" },
       architect: "José Antonio Coderch",
       address: "Passeig Manuel Girona",
+      addressDisplay: "Passeig de Manuel Girona",
+      addressSourceNote:
+        "'Passeig de Manuel Girona' (with 'de') confirmed by the official Barcelona city guide (guia.barcelona.cat) listing for this same ensemble. No building number is added here: this record's own coordinates.provenance already documents conflicting numbers across sources (La Casa de la Arquitectura's 63 vs. the parking facility's 77) for what it calls 'an ensemble, not a single-doorway centroid' — unresolved, not guessed.",
     },
     experienceType: "physical_digital",
     // TG012 §21.2: accepted final editorial movement label, superseding the
@@ -529,7 +657,19 @@ export const cases: CaseRecord[] = [
       status: "verified_external_building",
       precision: "architectural ensemble",
     },
-    heroMedia: null,
+    heroMedia: {
+      src: `${PHYSICAL_MEDIA_BASE}cocheras-de-sarria.jpg`,
+      alt: "Grup d'habitatges de les cotxeres de Sarrià - 20200828 164140",
+      credits: [
+        {
+          label: "Pere López Brosa, CC BY-SA 3.0, via Wikimedia Commons",
+          url: "https://commons.wikimedia.org/wiki/File:Grup_d%27habitatges_de_les_cotxeres_de_Sarri%C3%A0_-_20200828_164140.jpg",
+        },
+      ],
+      provenance:
+        "Wikimedia Commons — File:Grup_d'habitatges_de_les_cotxeres_de_Sarrià_-_20200828_164140.jpg",
+      rightsStatus: "CC BY-SA 3.0",
+    },
     editorial: false,
     infocard: {
       highlightedPhrase: {
@@ -603,6 +743,16 @@ export const cases: CaseRecord[] = [
       date: { year: 1925, displayLabel: "1925" },
       architect: "Bruce Graham",
       address: "Villa Olímpica",
+      // Spelling-only normalization of the neighborhood name (Villa -> Vila).
+      // Not upgraded to the hotel's verified precise street address (Carrer
+      // de la Marina, 19-21, 08005 — confirmed via the official Barcelona
+      // city guide and the hotel's own site): the recovered source value
+      // names an area, not a street, and FB-109 normalizes display
+      // conventions rather than replacing what kind of fact is recorded.
+      // Flagged in the TG029 report as a deferred upgrade opportunity.
+      addressDisplay: "Vila Olímpica",
+      addressSourceNote:
+        "'Vila Olímpica' (not 'Villa') is the Catalan spelling of this Barcelona neighborhood — confirmed by the official Barcelona city guide (guia.barcelona.cat) listing for Hotel Arts.",
     },
     experienceType: "physical_digital",
     architecture: {
@@ -631,7 +781,19 @@ export const cases: CaseRecord[] = [
       status: "verified_external_building",
       precision: "building",
     },
-    heroMedia: null,
+    heroMedia: {
+      src: `${PHYSICAL_MEDIA_BASE}hotel-arts.jpg`,
+      alt: "028 Hotel Arts (Barcelona), des del c. Salvador Espriu",
+      credits: [
+        {
+          label: "Enric, CC BY-SA 4.0, via Wikimedia Commons",
+          url: "https://commons.wikimedia.org/wiki/File:028_Hotel_Arts_(Barcelona),_des_del_c._Salvador_Espriu.jpg",
+        },
+      ],
+      provenance:
+        "Wikimedia Commons — File:028_Hotel_Arts_(Barcelona),_des_del_c._Salvador_Espriu.jpg",
+      rightsStatus: "CC BY-SA 4.0",
+    },
     editorial: false,
     infocard: {
       highlightedPhrase: {
@@ -698,6 +860,14 @@ export const cases: CaseRecord[] = [
       date: { year: 1988, displayLabel: "1988" },
       architect: "Rafael Moneo, Manuel S. Morales",
       address: "Avenida Diagonal 577",
+      // Street-type word only (Avenida -> Avinguda); the 577 vs. 557
+      // discrepancy this record's own coordinates.provenance already
+      // documents was previously and deliberately decided ("the recovered
+      // source address is preserved unchanged") — that decision is honored
+      // again here rather than silently corrected to 557.
+      addressDisplay: "Avinguda Diagonal, 577",
+      addressSourceNote:
+        "'Avinguda' is the Catalan road-type word (municipal address guidance uses lower-case road-type forms such as 'avinguda Diagonal'); building number left exactly as the recovered source value per the existing, already-recorded 577/557 provenance discrepancy.",
     },
     experienceType: "physical_digital",
     // TG020-R2: PDF prints the movement as "POST_MODERNISME" (graphic
@@ -729,7 +899,19 @@ export const cases: CaseRecord[] = [
       status: "verified_external_building",
       precision: "architectural ensemble",
     },
-    heroMedia: null,
+    heroMedia: {
+      src: `${PHYSICAL_MEDIA_BASE}illa-diagonal.jpg`,
+      alt: "Barcelona - L’illa Diagonal (Avinguda Diagonal, 579-585) 1",
+      credits: [
+        {
+          label: "Zarateman, CC0, via Wikimedia Commons",
+          url: "https://commons.wikimedia.org/wiki/File:Barcelona_-_L%E2%80%99illa_Diagonal_(Avinguda_Diagonal,_579-585)_1.jpg",
+        },
+      ],
+      provenance:
+        "Wikimedia Commons — File:Barcelona_-_L’illa_Diagonal_(Avinguda_Diagonal,_579-585)_1.jpg",
+      rightsStatus: "CC0",
+    },
     editorial: false,
     infocard: {
       highlightedPhrase: {
@@ -795,6 +977,9 @@ export const cases: CaseRecord[] = [
       date: { year: 2014, displayLabel: "2014" },
       architect: "MBM Arquitectes",
       address: "Plaça de les Glòries Catalanes, 38, 08018 Barcelona",
+      addressDisplay: "Plaça de les Glòries Catalanes, 37-38, 08018 Barcelona",
+      addressSourceNote:
+        "Street name/postal code/city already matched the Catalan canon; the 37-38 building-number range is confirmed by the Ajuntament de Barcelona's own centrescivics listing for Disseny Hub Barcelona, independently corroborated by spain.info's Museu del Disseny de Barcelona entry.",
     },
     experienceType: "physical_digital",
     // TG012 §21.2: accepted final editorial movement label, superseding the
@@ -839,7 +1024,19 @@ export const cases: CaseRecord[] = [
       status: "verified_official",
       precision: "institution/building",
     },
-    heroMedia: null,
+    heroMedia: {
+      src: `${PHYSICAL_MEDIA_BASE}dhub.jpg`,
+      alt: "Barcelona - Disseny Hub Barcelona, Museu del Disseny de Barcelona 7",
+      credits: [
+        {
+          label: "Zarateman, CC0, via Wikimedia Commons",
+          url: "https://commons.wikimedia.org/wiki/File:Barcelona_-_Disseny_Hub_Barcelona,_Museu_del_Disseny_de_Barcelona_7.jpg",
+        },
+      ],
+      provenance:
+        "Wikimedia Commons — File:Barcelona_-_Disseny_Hub_Barcelona,_Museu_del_Disseny_de_Barcelona_7.jpg",
+      rightsStatus: "CC0",
+    },
     editorial: true,
     infocard: {
       highlightedPhrase: {
@@ -909,6 +1106,12 @@ export const cases: CaseRecord[] = [
       // deliberately kept out of the product as unverified enrichment). This
       // exact string is the operator's own explicit, one-off authorization —
       // the only content mutation TG019 authorizes in this file.
+      // FB-109 (TG029): no `addressDisplay` is added here. The street
+      // wording is already Catalan canon, and municipal/institutional
+      // sources checked for this task disagree on the building number
+      // (this value: 85-89; La Casa de la Arquitectura: 85; the official
+      // Barcelona city guide: 87) — rewriting an operator-authorized string
+      // over a conflicting, unverified number is exactly what R4 forbids.
       address: "Carrer de la Constitució, 85-89, 08014",
     },
     experienceType: "physical_digital",
@@ -938,7 +1141,19 @@ export const cases: CaseRecord[] = [
       status: "verified_external_building",
       precision: "building",
     },
-    heroMedia: null,
+    heroMedia: {
+      src: `${PHYSICAL_MEDIA_BASE}la-borda.jpg`,
+      alt: "La Borda housing cooperative building in Barcelona - rear facade, whole building",
+      credits: [
+        {
+          label: "VELKEJ LED, CC BY-SA 4.0, via Wikimedia Commons",
+          url: "https://commons.wikimedia.org/wiki/File:La_Borda_building_-_rear_facade,_whole_building.jpg",
+        },
+      ],
+      provenance:
+        "Wikimedia Commons — File:La_Borda_building_-_rear_facade,_whole_building.jpg",
+      rightsStatus: "CC BY-SA 4.0",
+    },
     editorial: false,
     infocard: {
       highlightedPhrase: {
@@ -1003,12 +1218,22 @@ export const cases: CaseRecord[] = [
     slug: "biblioteca-ggm",
     identity: {
       name: "Biblioteca Gabriel García Márquez",
+      // TG028 (ADGARC-FB-107 close condition, case 09 reference).
+      displayNameLines: ["Biblioteca Gabriel", "García Márquez"],
       sourceName: "Biblioteca Grabiel Garcia Marquez",
       // TG012 §21.2: accepted final editorial year, superseding the prior
       // recovered-source value.
       date: { year: 2022, displayLabel: "2022" },
       architect: "SUMA Arquitectura",
       address: "C/ del Treball, 219",
+      // Abbreviation expanded only (C/ -> Carrer); postal code/city not
+      // added even though verified sources include "08020 Barcelona" —
+      // the recovered source value never carried a postal code, and R4
+      // ("do not add missing postal codes merely for visual consistency")
+      // governs here.
+      addressDisplay: "Carrer del Treball, 219",
+      addressSourceNote:
+        "'Carrer del Treball, 219' confirmed by the library's own institutional listing (Diputació de Barcelona, diba.cat) and independently corroborated by La Casa de la Arquitectura's catalog entry for this same building.",
     },
     experienceType: "physical_digital",
     // TG012 §21.2: accepted final editorial movement label, superseding the
@@ -1047,7 +1272,19 @@ export const cases: CaseRecord[] = [
       status: "verified_external_building",
       precision: "building",
     },
-    heroMedia: null,
+    heroMedia: {
+      src: `${PHYSICAL_MEDIA_BASE}biblioteca-ggm.jpg`,
+      alt: "Biblioteca Gabriel García Márquez (Sant Martí, BCN - 2022)",
+      credits: [
+        {
+          label: "Toniher, CC BY-SA 4.0, via Wikimedia Commons",
+          url: "https://commons.wikimedia.org/wiki/File:Biblioteca_Gabriel_Garc%C3%ADa_M%C3%A1rquez_(Sant_Mart%C3%AD,_BCN_-_2022).jpg",
+        },
+      ],
+      provenance:
+        "Wikimedia Commons — File:Biblioteca_Gabriel_García_Márquez_(Sant_Martí,_BCN_-_2022).jpg",
+      rightsStatus: "CC BY-SA 4.0",
+    },
     editorial: false,
     infocard: {
       highlightedPhrase: {
@@ -1118,6 +1355,16 @@ export const cases: CaseRecord[] = [
       date: { year: 2025, displayLabel: "2025" },
       architect: "Peris+Toral Arquitectes",
       address: "carrer Veneçuela 100,106 c/de l'Agricultura 92",
+      // Capitalization/abbreviation only (carrer -> Carrer, c/de -> Carrer
+      // de). Building numbers are deliberately UNTOUCHED: independent
+      // sources conflict materially (Premis FAD/this record's own source
+      // value: Veneçuela 100,106 / Agricultura 92; other public sources:
+      // Veneçuela 96-106; BCNROC, the Ajuntament's own open-data
+      // repository: Agricultura 237-257) with no single source clearly
+      // authoritative for this specific building within the block — R4 "if
+      // neither is available, preserve the source value ... do not guess"
+      // applies. Unresolved; flagged in the TG029 report.
+      addressDisplay: "Carrer Veneçuela 100,106 Carrer de l'Agricultura 92",
     },
     experienceType: "physical_digital",
     // TG012 §21.2: accepted final editorial movement label, superseding the
@@ -1155,7 +1402,25 @@ export const cases: CaseRecord[] = [
       status: "provisional_external_street",
       precision: "street",
     },
-    heroMedia: null,
+    // TG023 handoff §Case 10: project-specific operator authorization, not
+    // Creative Commons or public domain — the project has agreement with the
+    // architects to use the photograph provided the required credits and
+    // links are shown, and both mandatory linked credits below must always
+    // render together.
+    heroMedia: {
+      src: `${PHYSICAL_MEDIA_BASE}green-use-22.jpg`,
+      alt: "GreenH@use, Barcelona — façana",
+      credits: [
+        { label: "© José Hevia", url: "https://josehevia.es" },
+        {
+          label: "Peris+Toral",
+          url: "https://peristoral.com/proyectos/greenhuse-140-social-housing-22-bcn",
+        },
+      ],
+      provenance:
+        "Photograph © José Hevia; architecture Peris+Toral Arquitectes. Operator-authorized project-specific permission (ADGARC-FB-006 / TG023 handoff §Case 10) — not Creative Commons or public domain.",
+      rightsStatus: "project-specific",
+    },
     editorial: false,
     infocard: {
       highlightedPhrase: {
@@ -1246,7 +1511,21 @@ export const cases: CaseRecord[] = [
       provenance: TG020_SOURCE,
     },
     coordinates: null,
-    heroMedia: null,
+    // TG033 (ADGARC-FB-104), TG032 source-intake mapping, Prompt 071
+    // ordinal-11 corrective (renamed source file, SHA-256-verified
+    // unchanged).
+    heroMedia: {
+      src: `${DIGITAL_MEDIA_BASE}pavello-mies-van-der-rohe.jpg`,
+      alt: "The Barcelona Pavilion, Barcelona, 2010",
+      credits: [
+        {
+          label: "Ashley Pomeroy at English Wikipedia, CC BY 3.0, via Wikimedia Commons",
+          url: "https://commons.wikimedia.org/wiki/File:The_Barcelona_Pavilion,_Barcelona,_2010.jpg",
+        },
+      ],
+      provenance: "Wikimedia Commons — File:The_Barcelona_Pavilion,_Barcelona,_2010.jpg",
+      rightsStatus: "CC BY 3.0",
+    },
     editorial: false,
     infocard: {
       highlightedPhrase: {
@@ -1317,7 +1596,19 @@ export const cases: CaseRecord[] = [
       provenance: TG020_SOURCE,
     },
     coordinates: null,
-    heroMedia: null,
+    // TG033 (ADGARC-FB-104), TG032 source-intake mapping.
+    heroMedia: {
+      src: `${DIGITAL_MEDIA_BASE}walden-7.jpg`,
+      alt: "Sant Just Desvern - Walden 7 (14)",
+      credits: [
+        {
+          label: "Zarateman, CC0, via Wikimedia Commons",
+          url: "https://commons.wikimedia.org/wiki/File:Sant_Just_Desvern_-_Walden_7_(14).jpg",
+        },
+      ],
+      provenance: "Wikimedia Commons — File:Sant_Just_Desvern_-_Walden_7_(14).jpg",
+      rightsStatus: "CC0",
+    },
     editorial: false,
     infocard: {
       highlightedPhrase: {
@@ -1386,7 +1677,19 @@ export const cases: CaseRecord[] = [
       provenance: TG020_SOURCE,
     },
     coordinates: null,
-    heroMedia: null,
+    // TG033 (ADGARC-FB-104), TG032 source-intake mapping.
+    heroMedia: {
+      src: `${DIGITAL_MEDIA_BASE}la-pedrera-casa-mila.jpg`,
+      alt: "Casa Milà, Barcelona, Spain",
+      credits: [
+        {
+          label: "Thomas Ledl, CC BY-SA 4.0, via Wikimedia Commons",
+          url: "https://commons.wikimedia.org/wiki/File:Casa_Mil%C3%A0,_general_view.jpg",
+        },
+      ],
+      provenance: "Wikimedia Commons — File:Casa_Milà,_general_view.jpg",
+      rightsStatus: "CC BY-SA 4.0",
+    },
     editorial: false,
     infocard: {
       highlightedPhrase: {
@@ -1455,7 +1758,19 @@ export const cases: CaseRecord[] = [
       provenance: TG020_SOURCE,
     },
     coordinates: null,
-    heroMedia: null,
+    // TG033 (ADGARC-FB-104), TG032 source-intake mapping.
+    heroMedia: {
+      src: `${DIGITAL_MEDIA_BASE}torre-de-collserola.jpg`,
+      alt: "Torre de Collserola, Barcelona - panoramio",
+      credits: [
+        {
+          label: "Oleksandr Samoylyk, CC BY-SA 3.0, via Wikimedia Commons",
+          url: "https://commons.wikimedia.org/wiki/File:Torre_de_Collserola,_Barcelona_-_panoramio.jpg",
+        },
+      ],
+      provenance: "Wikimedia Commons — File:Torre_de_Collserola,_Barcelona_-_panoramio.jpg",
+      rightsStatus: "CC BY-SA 3.0",
+    },
     editorial: false,
     infocard: {
       highlightedPhrase: {
@@ -1524,7 +1839,19 @@ export const cases: CaseRecord[] = [
       provenance: TG020_SOURCE,
     },
     coordinates: null,
-    heroMedia: null,
+    // TG033 (ADGARC-FB-104), TG032 source-intake mapping.
+    heroMedia: {
+      src: `${DIGITAL_MEDIA_BASE}mercat-de-santa-caterina.jpg`,
+      alt: "Mercat de Santa Caterina - 20241105 171011",
+      credits: [
+        {
+          label: "Pere López Brosa, CC BY-SA 4.0, via Wikimedia Commons",
+          url: "https://commons.wikimedia.org/wiki/File:Mercat_de_Santa_Caterina_-_20241105_171011.jpg",
+        },
+      ],
+      provenance: "Wikimedia Commons — File:Mercat_de_Santa_Caterina_-_20241105_171011.jpg",
+      rightsStatus: "CC BY-SA 4.0",
+    },
     editorial: false,
     infocard: {
       highlightedPhrase: {
@@ -1592,7 +1919,19 @@ export const cases: CaseRecord[] = [
       provenance: TG020_SOURCE,
     },
     coordinates: null,
-    heroMedia: null,
+    // TG033 (ADGARC-FB-104), TG032 source-intake mapping.
+    heroMedia: {
+      src: `${DIGITAL_MEDIA_BASE}macba.jpg`,
+      alt: "2001-12-Museu-d-Art-Contemporani-de-Barcelona-1",
+      credits: [
+        {
+          label: "Gunnar Klack, CC BY-SA 4.0, via Wikimedia Commons",
+          url: "https://commons.wikimedia.org/wiki/File:2001-12-Museu-d-Art-Contemporani-de-Barcelona-1.jpg",
+        },
+      ],
+      provenance: "Wikimedia Commons — File:2001-12-Museu-d-Art-Contemporani-de-Barcelona-1.jpg",
+      rightsStatus: "CC BY-SA 4.0",
+    },
     editorial: false,
     infocard: {
       highlightedPhrase: {
@@ -1660,7 +1999,19 @@ export const cases: CaseRecord[] = [
       provenance: TG020_SOURCE,
     },
     coordinates: null,
-    heroMedia: null,
+    // TG033 (ADGARC-FB-104), TG032 source-intake mapping.
+    heroMedia: {
+      src: `${DIGITAL_MEDIA_BASE}casa-planells.jpg`,
+      alt: "Casa Planells (2)",
+      credits: [
+        {
+          label: "Victoriano Javier Tornel García from Barcelona, España, CC BY-SA 2.0, via Wikimedia Commons",
+          url: "https://commons.wikimedia.org/wiki/File:Casa_Planells_(2).jpg",
+        },
+      ],
+      provenance: "Wikimedia Commons — File:Casa_Planells_(2).jpg",
+      rightsStatus: "CC BY-SA 2.0",
+    },
     editorial: false,
     infocard: {
       highlightedPhrase: {
@@ -1727,7 +2078,19 @@ export const cases: CaseRecord[] = [
       provenance: TG020_SOURCE,
     },
     coordinates: null,
-    heroMedia: null,
+    // TG033 (ADGARC-FB-104), TG032 source-intake mapping.
+    heroMedia: {
+      src: `${DIGITAL_MEDIA_BASE}media-tic.jpg`,
+      alt: "Barcelona - Cibernàrium-Edificio MediaTIC 7",
+      credits: [
+        {
+          label: "Zarateman, CC0, via Wikimedia Commons",
+          url: "https://commons.wikimedia.org/wiki/File:Barcelona_-_Cibern%C3%A0rium-Edificio_MediaTIC_7.jpg",
+        },
+      ],
+      provenance: "Wikimedia Commons — File:Barcelona_-_Cibernàrium-Edificio_MediaTIC_7.jpg",
+      rightsStatus: "CC0",
+    },
     editorial: false,
     infocard: {
       highlightedPhrase: {
@@ -1794,7 +2157,19 @@ export const cases: CaseRecord[] = [
       provenance: TG020_SOURCE,
     },
     coordinates: null,
-    heroMedia: null,
+    // TG033 (ADGARC-FB-104), TG032 source-intake mapping.
+    heroMedia: {
+      src: `${DIGITAL_MEDIA_BASE}casa-bloc.jpg`,
+      alt: "363 Casa Bloc, pg. Torras i Bages 85-105 (Barcelona), façana dels jardins interiors",
+      credits: [
+        {
+          label: "Enric, CC BY-SA 4.0, via Wikimedia Commons",
+          url: "https://commons.wikimedia.org/wiki/File:363_Casa_Bloc,_pg._Torras_i_Bages_85-105_(Barcelona),_fa%C3%A7ana_dels_jardins_interiors.jpg",
+        },
+      ],
+      provenance: "Wikimedia Commons — File:363_Casa_Bloc,_pg._Torras_i_Bages_85-105_(Barcelona),_façana_dels_jardins_interiors.jpg",
+      rightsStatus: "CC BY-SA 4.0",
+    },
     editorial: false,
     infocard: {
       highlightedPhrase: {
@@ -1861,7 +2236,19 @@ export const cases: CaseRecord[] = [
       provenance: TG020_SOURCE,
     },
     coordinates: null,
-    heroMedia: null,
+    // TG033 (ADGARC-FB-104), TG032 source-intake mapping.
+    heroMedia: {
+      src: `${DIGITAL_MEDIA_BASE}edifici-telefonica.jpg`,
+      alt: "13 Edifici Telefònica, av. Portal de l'Àngel - pl. Catalunya (Barcelona)",
+      credits: [
+        {
+          label: "Enric, CC BY-SA 4.0, via Wikimedia Commons",
+          url: "https://commons.wikimedia.org/wiki/File:13_Edifici_Telef%C3%B2nica,_av._Portal_de_l%27%C3%80ngel_-_pl._Catalunya_(Barcelona).jpg",
+        },
+      ],
+      provenance: "Wikimedia Commons — File:13_Edifici_Telefònica,_av._Portal_de_l'Àngel_-_pl._Catalunya_(Barcelona).jpg",
+      rightsStatus: "CC BY-SA 4.0",
+    },
     editorial: false,
     infocard: {
       highlightedPhrase: {
@@ -2690,3 +3077,62 @@ export const HIDDEN_CASE_SLUGS: ReadonlySet<string> = new Set([
 // direct `?case=<slug>` deep link to a hidden case still opens its dossier;
 // only listing/rail/ordinal surfaces are scoped to `activeCases`.
 export const activeCases: CaseRecord[] = cases.filter((c) => !HIDDEN_CASE_SLUGS.has(c.slug));
+
+// TG033 (ADGARC-FB-115): the ten typography specimen SVGs, resolved to
+// public asset paths via the OPERATOR-locked letter->slug mapping
+// (ADGARC-DEC-011 §D3 / ADGARC_FB_115_typography_specimen_integration.md,
+// cross-confirmed by the TG032 source-intake report). This mapping is
+// authority — never re-inferred from filenames or glyph geometry. A lookup
+// table keyed by slug (rather than a `specimenMedia` field threaded through
+// all 31 `cases` records) keeps this addition local to the ten cases it
+// actually applies to: specimens exist only for the ten physical cases
+// carrying an authored totem typeface, never for any digital-only record.
+export interface CaseSpecimenMedia {
+  src: string;
+  alt: string;
+}
+
+const SPECIMEN_MEDIA_BASE = `${import.meta.env.BASE_URL}media/specimens/`;
+
+export const SPECIMEN_MEDIA: Readonly<Record<string, CaseSpecimenMedia>> = {
+  "casa-caracoles": {
+    src: `${SPECIMEN_MEDIA_BASE}casa-caracoles-a.svg`,
+    alt: "Especimen tipogràfic — lletra A/a, Glucosa (Cases dels Cargols)",
+  },
+  "casa-rodriguez-arias": {
+    src: `${SPECIMEN_MEDIA_BASE}casa-rodriguez-arias-s.svg`,
+    alt: "Especimen tipogràfic — lletra S/s, Arboria (Casa Rodríguez Arias)",
+  },
+  "illa-diagonal": {
+    src: `${SPECIMEN_MEDIA_BASE}illa-diagonal-r.svg`,
+    alt: "Especimen tipogràfic — lletra R/r, Tochana (L'Illa Diagonal)",
+  },
+  dhub: {
+    src: `${SPECIMEN_MEDIA_BASE}dhub-g.svg`,
+    alt: "Especimen tipogràfic — lletra G/g, ASM (DHub Barcelona)",
+  },
+  "casa-de-la-marina": {
+    src: `${SPECIMEN_MEDIA_BASE}casa-de-la-marina-y.svg`,
+    alt: "Especimen tipogràfic — lletra Y/y, AT Haüss (Casa de la Marina)",
+  },
+  "cocheras-de-sarria": {
+    src: `${SPECIMEN_MEDIA_BASE}cocheras-de-sarria-x.svg`,
+    alt: "Especimen tipogràfic — lletra X/x, Aribau Grotesk (Cotxeres de Sarrià)",
+  },
+  "la-borda": {
+    src: `${SPECIMEN_MEDIA_BASE}la-borda-e.svg`,
+    alt: "Especimen tipogràfic — lletra E/e, Geogrotesque Stencil (La Borda)",
+  },
+  "biblioteca-ggm": {
+    src: `${SPECIMEN_MEDIA_BASE}biblioteca-ggm-d.svg`,
+    alt: "Especimen tipogràfic — lletra D/d, Sisters (Biblioteca Gabriel García Márquez)",
+  },
+  "hotel-arts": {
+    src: `${SPECIMEN_MEDIA_BASE}hotel-arts-l.svg`,
+    alt: "Especimen tipogràfic — lletra L/l, Mecano (Hotel Arts)",
+  },
+  "green-use-22": {
+    src: `${SPECIMEN_MEDIA_BASE}green-use-22-q.svg`,
+    alt: "Especimen tipogràfic — lletra Q/q, Bulevar (GREENH@USE)",
+  },
+};

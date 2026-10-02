@@ -1,9 +1,9 @@
 import { useEffect, useRef, type RefObject } from "react";
-import type { CaseRecord } from "../data/cases";
+import type { CaseHeroMedia, CaseRecord } from "../data/cases";
 import { DEVTOOLS_ENABLED } from "../config/devtools";
 import { useDialogA11y } from "../hooks/useDialogA11y";
 import type { PassportState } from "../hooks/usePassport";
-import { useLocale } from "../i18n/context";
+import { useLocale, useT } from "../i18n/context";
 import type { TranslationKey } from "../i18n/es";
 import DevTools, { type DevToolsProps } from "./DevTools";
 import EditorialShell from "./EditorialShell";
@@ -11,7 +11,7 @@ import NavArrowGlyph from "./NavArrowGlyph";
 import PassportPane from "./PassportPane";
 import { InfoIcon } from "./icons";
 
-export type MenuDestination = "info" | "about" | "settings" | "devtools" | "passport";
+export type MenuDestination = "info" | "about" | "settings" | "devtools" | "passport" | "credits";
 
 const NAV_ITEMS: Array<{ id: MenuDestination; labelKey: TranslationKey }> = [
   { id: "passport", labelKey: "nav.passport" },
@@ -19,14 +19,86 @@ const NAV_ITEMS: Array<{ id: MenuDestination; labelKey: TranslationKey }> = [
   { id: "about", labelKey: "nav.about" },
   { id: "settings", labelKey: "nav.settings" },
   { id: "devtools", labelKey: "nav.devtools" },
+  // TG023 corrective (ADGARC-FB-105, prompt 057): sixth root-menu row,
+  // appended after the original five rather than reordering them — the
+  // operator decision that authorizes it is explicit about preserving their
+  // identity/order.
+  { id: "credits", labelKey: "nav.credits" },
 ];
+
+// TG023 corrective (ADGARC-FB-105, prompt 057): the `Crèdits` destination.
+// Reads the same `heroMedia` structured authority InfocardHeroCredit
+// (InfocardPages.tsx) already consumes for the dossier cover — never a
+// second, duplicated attribution dataset. One `.app-modal__section` per case
+// that carries `heroMedia`, reusing the existing About-destination section
+// chrome rather than inventing a new visual language; cases with no
+// `heroMedia` are simply absent (the same honest-omission discipline
+// `heroMedia: null` already enforces elsewhere) rather than listed empty.
+function CreditsPane({ cases }: { cases: CaseRecord[] }) {
+  const t = useT();
+  const withMedia = cases.filter(
+    (c): c is CaseRecord & { heroMedia: CaseHeroMedia } => c.heroMedia !== null
+  );
+
+  return (
+    <>
+      {withMedia.map((c) => {
+        const media = c.heroMedia;
+        return (
+          <section key={c.slug} className="app-modal__section">
+            <h3>{c.identity.name}</h3>
+            <dl className="credits-pane__meta">
+              <div className="credits-pane__row">
+                <dt>{t("credits.creditLabel")}</dt>
+                <dd>
+                  {media.credits.map((credit, index) => (
+                    <span key={credit.label}>
+                      {index > 0 && <span aria-hidden="true"> · </span>}
+                      {credit.url ? (
+                        <a href={credit.url} target="_blank" rel="noopener noreferrer">
+                          {credit.label}
+                        </a>
+                      ) : (
+                        credit.label
+                      )}
+                    </span>
+                  ))}
+                </dd>
+              </div>
+              <div className="credits-pane__row">
+                <dt>{t("credits.rightsLabel")}</dt>
+                <dd>{media.rightsStatus}</dd>
+              </div>
+              <div className="credits-pane__row">
+                <dt>{t("credits.provenanceLabel")}</dt>
+                <dd>{media.provenance}</dd>
+              </div>
+            </dl>
+          </section>
+        );
+      })}
+    </>
+  );
+}
 
 // TG010 Final Experience P1 (ADGARC-DEC-010 §2-4): the canonical partner
 // credits shown on the root menu's footer band, transcribed verbatim from
 // ADGARC_FINAL_MOCKUP_01_main_menu.png. Proper-noun partner identities, not
 // UI chrome — kept here rather than in the i18n catalog, the same scoping
 // boundary es.ts's own header comment already draws for case/source content.
-const PARTNER_PILLS = ["ADG", "AJTMNT de Barna", "CONGRÉS Arquitectura"];
+//
+// TG030 corrective (ADGARC-FB-041, prompt 067): the three OPERATOR-confirmed
+// source marks replace the former honest text-pill placeholders. Filenames
+// are the stable product-facing copies under public/media/partners/ (see
+// the paired report for source-file -> slot traceability); `alt` reuses each
+// existing slot identity rather than any filename, per the OPERATOR's
+// accessibility instruction.
+const PARTNER_LOGO_BASE = `${import.meta.env.BASE_URL}media/partners/`;
+const PARTNER_LOGOS = [
+  { src: `${PARTNER_LOGO_BASE}adg.svg`, alt: "ADG" },
+  { src: `${PARTNER_LOGO_BASE}ajuntament-barcelona.png`, alt: "Ajuntament de Barcelona" },
+  { src: `${PARTNER_LOGO_BASE}congres-arquitectura.svg`, alt: "CONGRÉS Arquitectura" },
+];
 
 function padOrdinal(n: number): string {
   return String(n).padStart(2, "0");
@@ -195,10 +267,14 @@ function AppMenuDialog({
     onSelectDestination(null);
   };
 
-  // TG019 Pass D: one back-header element, referenced both from its usual
-  // spot above every other destination's body and, for Passport only,
-  // passed down as PassportPane's `header` prop — never two copies of this
-  // markup to keep in sync.
+  // TG019 Pass D: one back-header element, never two copies of this markup
+  // to keep in sync.
+  // TG022 P1 (R4 audit §7 rows 1-3 / FB-097): it now has exactly one
+  // destination — EditorialShell's `destinationHeader` slot — for all five
+  // destinations alike. The TG019 Pass D split (rendered inside the body for
+  // four of them, handed to PassportPane as `header` for Passport) was two
+  // ownership mechanisms for one band; that is what N-03 and FB-097 were
+  // reacting to, and it is removed here rather than re-tuned.
   const destinationHeader = activeNavItem ? (
     <div className="app-menu__destination-header">
       <button type="button" className="app-menu__back" onClick={backToRoot} aria-label={t("menu.back")}>
@@ -246,23 +322,35 @@ function AppMenuDialog({
             constant project title at every depth, exactly as both canonical
             mockups render it (01 root, 02 Passaport). The destination's own
             identity moved into the `← ordinal label` header below, so it is
-            stated once rather than duplicated in two places at once. */}
+            stated once rather than duplicated in two places at once.
+
+            TG022 P1 (ADGARC-FB-097): that header now travels through the
+            shell's own `destinationHeader` slot — one slot, one element, all
+            five destinations (Passaport, Informació, Acerca de, Ajustes, Dev
+            Settings). The root menu (no destination active) passes nothing
+            and keeps its own separate layout, unchanged. */}
         <EditorialShell
           title={t("menu.rootTitle")}
           onClose={onClose}
           closeLabel={t("menu.close")}
           closeButtonRef={closeButtonRef}
+          destinationHeader={activeNavItem ? destinationHeader : undefined}
           footer={
             activeNavItem ? undefined : (
               <footer className="app-menu__footer">
-                {/* ADGARC-FB-041: placement slots for partner logos that do
-                    not exist in the source materials yet. Honest text
-                    placeholders — no asset is invented, sourced or ingested
-                    to fill them. */}
-                {PARTNER_PILLS.map((name) => (
-                  <span key={name} className="app-menu__partner-pill">
-                    {name}
-                  </span>
+                {/* TG030 corrective (ADGARC-FB-041, prompt 067): the three
+                    OPERATOR-confirmed marks, rendered as one shared logo-box
+                    system (global.css `.app-menu__partner-logo`) rather than
+                    three hand-tuned sizes — equal allocated height, each
+                    asset's own aspect ratio preserved via object-fit:
+                    contain. */}
+                {PARTNER_LOGOS.map((logo) => (
+                  <img
+                    key={logo.src}
+                    className="app-menu__partner-logo"
+                    src={logo.src}
+                    alt={logo.alt}
+                  />
                 ))}
               </footer>
             )
@@ -292,13 +380,11 @@ function AppMenuDialog({
               one header for every internal destination — Passaport,
               Información, Acerca de, Ajustes and Dev Settings alike — rather
               than a per-destination variant. The ordinal is the row's menu
-              ordinal and carries no route, stop or sequence meaning. */}
-          {/* TG019 Pass D (operator feedback §13): for the Passport
-              destination only, this header is not rendered here — it is
-              handed to PassportPane as `header` so it can sit inside the
-              same sticky wrapper as the numbered rail/reset control (one
-              sticky region, not two). Every other destination is unchanged. */}
-          {activeNavItem && active !== "passport" && destinationHeader}
+              ordinal and carries no route, stop or sequence meaning.
+              TG022 P1: that header is no longer rendered here, inside the
+              scrollable body, nor routed around this spot for Passport. It is
+              passed to `EditorialShell` above and rendered outside the body,
+              so it cannot scroll away on any destination. */}
 
           {active === "info" && (
             <>
@@ -369,13 +455,10 @@ function AppMenuDialog({
           )}
 
           {active === "passport" && (
-            <PassportPane
-              passport={passport}
-              cases={cases}
-              onSelectCase={onSelectCase}
-              header={destinationHeader}
-            />
+            <PassportPane passport={passport} cases={cases} onSelectCase={onSelectCase} />
           )}
+
+          {active === "credits" && <CreditsPane cases={cases} />}
 
           {/* TG011 Pass B (ADGARC-FB-045 / DEC-010 §11.5): row 05 is now a
               total function over the gate rather than a single gated

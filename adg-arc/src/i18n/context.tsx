@@ -1,4 +1,4 @@
-import { createContext, useContext, useMemo, useState, type ReactNode } from "react";
+import { createContext, useContext, useEffect, useMemo, useState, type ReactNode } from "react";
 import { es, type TranslationKey } from "./es";
 import { ca } from "./ca";
 import { en } from "./en";
@@ -47,6 +47,13 @@ const LocaleContext = createContext<LocaleContextValue | null>(null);
 
 export function LocaleProvider({ children }: { children: ReactNode }) {
   const [locale, setLocaleState] = useState<LocaleCode>(() => readStoredLocale());
+
+  // P7-D2 (ADG-ARC TG029): document language ownership follows the active
+  // locale instead of the static `lang="es"` markup in index.html — that
+  // markup is now only the pre-hydration fallback for the default locale.
+  useEffect(() => {
+    document.documentElement.lang = locale;
+  }, [locale]);
 
   const setLocale = (code: LocaleCode) => {
     if (!isActivatableLocale(code)) return;

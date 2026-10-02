@@ -92,3 +92,46 @@ export function CloseIcon() {
     </IconBase>
   );
 }
+
+// TG022 P8 (FB-095, P8-D2): compass/north-orientation reset semantic,
+// replacing the map controls' former house glyph (HomeIcon, still exported
+// below for its other consumers) — an outer compass ring with a vertical
+// north/south needle, visually distinct from RotateCcwIcon/RotateCwIcon's
+// arc-and-arrowhead language and from the Pan* arrow family.
+export function CompassIcon() {
+  return (
+    <IconBase>
+      <circle cx="12" cy="12" r="8" />
+      <path d="M12 5.5 14.25 12 12 18.5 9.75 12 12 5.5Z" />
+    </IconBase>
+  );
+}
+
+// TG022 P6 (FB-078/FB-092): the canonical pan-arrow family, recovered
+// byte-identical from Git history (commits 523761a / 1fdc388) — one
+// stroke path expressed purely through rotation, replacing the literal
+// left-arrow/right-arrow text glyph NavArrowGlyph used to render directly.
+function ArrowIcon({ rotation }: { rotation: number }) {
+  return (
+    <IconBase style={{ transform: `rotate(${rotation}deg)` }}>
+      <path d="M12 19V6" />
+      <path d="M6.5 11.5 12 6l5.5 5.5" />
+    </IconBase>
+  );
+}
+
+export function PanUpIcon() {
+  return <ArrowIcon rotation={0} />;
+}
+
+export function PanRightIcon() {
+  return <ArrowIcon rotation={90} />;
+}
+
+export function PanDownIcon() {
+  return <ArrowIcon rotation={180} />;
+}
+
+export function PanLeftIcon() {
+  return <ArrowIcon rotation={270} />;
+}

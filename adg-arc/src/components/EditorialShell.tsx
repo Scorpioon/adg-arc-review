@@ -6,6 +6,16 @@ interface EditorialShellProps {
   closeLabel: string;
   closeButtonRef: RefObject<HTMLButtonElement>;
   children: ReactNode;
+  // TG022 P1 (R4 audit §8.1 / FB-097): an optional non-scrolling band between
+  // the topbar and the scrollable body — the mirror image of the `footer`
+  // slot below, and the same kind of thing: a slot, not a product concept.
+  // The shell neither knows nor cares that the application menu puts its
+  // `← ordinal label` destination header here, and it never special-cases any
+  // particular destination; a consumer that passes nothing (the root menu,
+  // the dossier) gets exactly the previous composition. Deliberately NOT
+  // sticky — a band that must stay put is a `flex: none` sibling of the
+  // scroller, never a sticky layer inside it (R4 audit §8.2 rule 2).
+  destinationHeader?: ReactNode;
   // TG011 Pass A (ADGARC-FB-040): an optional non-scrolling band pinned to
   // the bottom of the shell, below the scrollable body. A slot rather than a
   // product concept: the shell neither knows nor cares that the application
@@ -26,6 +36,7 @@ export default function EditorialShell({
   closeLabel,
   closeButtonRef,
   children,
+  destinationHeader,
   footer,
 }: EditorialShellProps) {
   return (
@@ -42,6 +53,10 @@ export default function EditorialShell({
           <span aria-hidden="true">[X]</span>
         </button>
       </header>
+      {/* Outside .editorial-shell__body on purpose, exactly like `footer`
+          below: the body keeps flex:1 and owns the scroll, this stays
+          flex:none directly beneath the topbar. */}
+      {destinationHeader}
       <div className="editorial-shell__body" aria-live="polite">
         {children}
       </div>

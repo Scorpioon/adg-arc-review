@@ -114,9 +114,44 @@
      value dramatically outscaling the label. */
   --type-body: 0.95rem;
   --type-body-line: 1.1875;
-  --type-fact-label: 1.05rem;
-  --type-fact-value: 1.15rem;
   --type-nav-pill: 0.85rem;
+  /* TG028 (ADGARC-FB-110): the Fitxa (Facts) label/value pair and the
+     Moviment label/value pair were two drifted one-off treatments of the
+     same data-row role — converged onto one shared pair of tokens, values
+     taken from the Moviment side per the feedback's own "use the Moviment
+     data style" direction. Replaces the former `--type-fact-label`/
+     `--type-fact-value` (1.05rem/1.15rem) and the literal clamp()s
+     `.infocard-page--architecture`'s meta-label/value carried inline. */
+  --type-data-label: clamp(1.1rem, 3vw, 1.35rem);
+  --type-data-value: clamp(1.4rem, 1.65rem, 1.9rem);
+  /* TG028 (ADGARC-FB-110): shared display-text treatment for the literal
+     quote and the typeface-name display, converging two independently
+     tuned display sizes onto one. Semantic distinction (quote = italic)
+     stays on `.infocard-page__quote` itself, not in this token.
+     TG033 Prompt 075 corrective (ADGARC-FB-117 §B): no longer consumed by
+     `.infocard-page__quote`/`.infocard-page__meta-typeface` — see
+     `--type-emphasis-display` below, the new one shared token for those
+     plus the architecture-movement value. Left defined (along with
+     `--type-display-line`, still consumed by both for line-height) rather
+     than deleted — no other rule references `--type-display` itself after
+     this pass. */
+  --type-display: clamp(1.8rem, 6vw, 2.6rem);
+  --type-display-line: 0.95;
+  /* TG033 Prompt 075 corrective (ADGARC-FB-117 §B): one shared display-size
+     token for the three surfaces runtime review identified as needing
+     visual parity — the literal-quote headline, the typography page's
+     typeface-name title, and the architecture-movement value (the
+     explicitly named visual reference, e.g. "Nueva Bauhaus Europea").
+     Deliberately the exact value `--type-data-value` already resolves to
+     (not a new number) so the reference surface's own rendered size is
+     unchanged by this token's introduction — only the quote/typeface-title
+     surfaces move to match it. Kept as its own named token (not a direct
+     `var(--type-data-value)` reference from the quote/typeface-title rules)
+     so this display-size relationship stays its own explicit source of
+     truth, independent of `--type-data-value`'s unrelated other consumer
+     (`.infocard-page__fact dd`, the Facts page's year/architect/address
+     values) ever changing for Facts-specific reasons. */
+  --type-emphasis-display: clamp(1.4rem, 1.65rem, 1.9rem);
 
   /* Spacing scale — compact chrome only; existing editorial body copy
      spacing (.editorial-shell__body etc.) is untouched. */
@@ -124,16 +159,20 @@
   --space-xs: 0.5rem;
   --space-sm: 0.75rem;
 
-  /* Numbered-circle / pill geometry. `--circle-nav-diameter` is the existing
-     Passport-rail/dossier-page-nav circle size (unchanged);
-     `--circle-map-diameter` is the map navbar's own circle, compacted down
-     from its former 55px toward this same Passport scale (matrix §A:
-     "compact Passport-scale visual language"). `--pill-nav-width` is fixed
-     so the footer section pill never resizes across labels (matrix §H).
-     `--pill-corner`/`--panel-corner` name the two corner-radius grammars
-     already in use across the app (round chrome vs. square panels) rather
-     than repeating the literal 999px/0 at each call site. */
-  --circle-nav-diameter: 2rem;
+  /* Shared control-height geometry (TG022 P5, D3): `--control-height` is the
+     one base custom property every numbered-circle, arrow-circle and pill
+     control resolves through — renamed from `--circle-nav-diameter` and
+     consolidated with the former `--pill-height`, so the two families can no
+     longer drift apart (FB-085/FB-086). `--circle-map-diameter` is the map
+     navbar's own, separate circle, compacted down from its former 55px
+     toward this same Passport scale (matrix §A: "compact Passport-scale
+     visual language") — it is not a `--control-height` consumer.
+     `--pill-nav-width` is fixed so the footer section pill never resizes
+     across labels (matrix §H). `--pill-corner`/`--panel-corner` name the two
+     corner-radius grammars already in use across the app (round chrome vs.
+     square panels) rather than repeating the literal 999px/0 at each call
+     site. */
+  --control-height: 32px;
   /* TG019 Pass A (operator feedback §9): the map-top navbar's overall height
      must equal the existing menu-control height (`.app-menu-trigger`,
      36px, border-box). `.passport-map-navbar` fixes its own height at 36px
@@ -143,10 +182,6 @@
      further from the former 40px. */
   --circle-map-diameter: 28px;
   --pill-nav-width: 8rem;
-  /* TG020-R3 (FB-064): the shared Explora/chapter-pill visual height — one
-     token so the two controls can never drift apart in height, radius,
-     border or typographic centering. */
-  --pill-height: 26px;
   --pill-corner: 999px;
   --panel-corner: 0;
 
@@ -160,8 +195,15 @@
      the value `.infocard-page__fact` already used per-row, reused now for
      the added top rule above the first Fitxa row. */
   --header-topbar-padding-y: 0.6rem;
+  /* TG022 P7 (FB-091 §21.5/§21.11): retargeted from the alpha literal
+     `rgba(0, 0, 0, 0.3)` onto the canonical solid ink — this token's three
+     live consumers (`.infocard-page__facts`, `.infocard-page__fact`,
+     `.infocard-page--architecture .infocard-page__meta`) are all inside the
+     P7 divider write surface (enumerated before this change), so retargeting
+     here converges all three onto treatment 5's already-canonical
+     `--canonical-ink` solid language in one place instead of three. */
   --separator-width: 1px;
-  --separator-color: rgba(0, 0, 0, 0.3);
+  --separator-color: var(--canonical-ink);
 
   /* Motion duration/easing — subtle window-shift transitions on the map and
      dossier numeric navs. `prefers-reduced-motion` is not re-declared per
@@ -223,31 +265,41 @@ body,
    and the scroll affordance itself are both preserved; only the browser's
    default chrome is restyled. `scrollbar-width`/`scrollbar-color` cover
    Firefox; the `::-webkit-scrollbar*` pseudo-elements cover
-   Chromium/WebKit. Does not touch the main document scrollbar. */
+   Chromium/WebKit. Does not touch the main document scrollbar.
+   TG022 P4-OWN: `.passport-pane__viewport` joins all five lists. Passport's
+   vertical scrolling moved off `.editorial-shell__body` onto that new box,
+   which would otherwise have taken it straight out of this treatment and
+   rendered a default UA scrollbar on the one panel this pass touches. Values
+   are the existing ones, unchanged — only the selector lists grew. */
 .app-modal__body,
-.editorial-shell__body {
+.editorial-shell__body,
+.passport-pane__viewport {
   scrollbar-width: thin;
   scrollbar-color: rgba(90, 42, 18, 0.35) transparent;
 }
 
 .app-modal__body::-webkit-scrollbar,
-.editorial-shell__body::-webkit-scrollbar {
+.editorial-shell__body::-webkit-scrollbar,
+.passport-pane__viewport::-webkit-scrollbar {
   width: 8px;
 }
 
 .app-modal__body::-webkit-scrollbar-track,
-.editorial-shell__body::-webkit-scrollbar-track {
+.editorial-shell__body::-webkit-scrollbar-track,
+.passport-pane__viewport::-webkit-scrollbar-track {
   background: transparent;
 }
 
 .app-modal__body::-webkit-scrollbar-thumb,
-.editorial-shell__body::-webkit-scrollbar-thumb {
+.editorial-shell__body::-webkit-scrollbar-thumb,
+.passport-pane__viewport::-webkit-scrollbar-thumb {
   background: rgba(90, 42, 18, 0.3);
   border-radius: 999px;
 }
 
 .app-modal__body::-webkit-scrollbar-thumb:hover,
-.editorial-shell__body::-webkit-scrollbar-thumb:hover {
+.editorial-shell__body::-webkit-scrollbar-thumb:hover,
+.passport-pane__viewport::-webkit-scrollbar-thumb:hover {
   background: rgba(90, 42, 18, 0.45);
 }
 
@@ -268,20 +320,6 @@ body,
      sets `outline: none`. */
   outline: 2px solid var(--canonical-ink);
   outline-offset: 2px;
-}
-
-/* TG020-R3 (FB-062) — THE canonical navigation-arrow glyph. One typographic
-   "←"/"→" (NavArrowGlyph.tsx), explicit font-family/weight/size/line-height
-   so it can never fall back to a control's own inherited/UA-default glyph
-   styling — used identically by the map-top navbar, the dossier's lower
-   navbar (both page-flow arrows and the passport-stamp step's), Explora and
-   every Passport/menu back control (.app-menu__back). No second arrow shape
-   exists anywhere in the product; this is deliberately not an SVG. */
-.nav-arrow-glyph {
-  font-family: var(--font-ui);
-  font-weight: 700;
-  font-size: 1.15rem;
-  line-height: 1;
 }
 
 /* TG006A corrective pass: replaces the native NavigationControl entirely
@@ -327,12 +365,15 @@ body,
      every mode's button — down to mobile's lone reset button — is
      self-sufficient rather than collapsing to its 16px icon plus borders.
      The compact/coarse block further down enlarges both the box and the
-     glyph inside it. */
-  min-width: 32px;
-  min-height: 32px;
+     glyph inside it. TG022 P8 (FB-094, P8-D1): fixed width/height, not a
+     min-* floor, so the box can no longer grow past a true circle; the
+     radius below is now 50% instead of a rounded square. Border language is
+     unchanged (P8-D1: kept, not converged to canonical-ink). */
+  width: 32px;
+  height: 32px;
   /* map.mapControls.border role — map chrome sits directly on the map. */
   border: 1px solid color-mix(in srgb, var(--map-ink) 25%, transparent);
-  border-radius: 6px;
+  border-radius: 50%;
   background: var(--surface);
   color: var(--ink);
   box-shadow: 0 2px 8px rgba(40, 24, 12, 0.1);
@@ -443,13 +484,19 @@ body,
      inset: 0;`) — scopes that overlay to the menu panel rather than the
      full viewport, "inside the Passport surface" per the correction. */
   position: relative;
-  width: min(920px, 100%);
+  width: min(1040px, 100%);
   /* TG006G Scope A: a fixed `height` (not `max-height`) so the desktop
      application-menu frame is stable across every destination — switching
      panes never resizes/recenters the outer frame, and a short pane (e.g.
      Settings) never collapses it. Each pane's own overflow-y:auto is what
      absorbs content taller than this. S4: `dvh` for the same
-     dynamic-toolbar reason as the backdrop above. */
+     dynamic-toolbar reason as the backdrop above.
+     TG022 P4d (FB-099): this pair is now the SOLE app-menu outer-height owner
+     — same viewport, same outer height across the root menu and all five
+     destinations alike. The root-only `height: auto` + `max-height` block that
+     used to follow this rule (TG020-R3 / FB-067, "root may hug its content")
+     is superseded and removed; no root- or destination-specific height
+     replaces it. Values below are unchanged. */
   height: min(720px, calc(100vh - 96px));
   height: min(720px, calc(100dvh - 96px));
   display: flex;
@@ -463,21 +510,6 @@ body,
   border-radius: 0;
   border: 1px solid var(--canonical-ink);
   box-shadow: 0 20px 60px rgba(20, 12, 6, 0.35);
-}
-
-/* TG020-R3 (FB-067): the root five-row list is the one state allowed to hug
-   its own content instead of always claiming the full fixed frame above —
-   `height: auto` capped by the same `max-height` the fixed frame used as its
-   `height`, so five rows + footer that fit need no scrollbar, and a
-   genuinely short viewport still gets the identical cap plus
-   `.editorial-shell__body`'s own inner scroll fallback. Scoped to
-   `[data-root="true"]` (set in AppMenuModal.tsx only while no destination is
-   active) so this never touches Passport/Settings/etc., whose own internal
-   layouts still depend on the stable fixed frame above. */
-.app-menu[data-root="true"] {
-  height: auto;
-  max-height: min(720px, calc(100vh - 96px));
-  max-height: min(720px, calc(100dvh - 96px));
 }
 
 /* TG010 Final Experience P1 (ADGARC-DEC-010 §3-4): the shared editorial-
@@ -577,8 +609,22 @@ body,
   font-weight: 700;
 }
 
+/* TG022 P5 (FB-096/N-05): the index follows the same row-hover state as the
+   label above — mirrors that exact cascade shape so the two can never carry
+   two different interaction treatments. The bare `.app-menu__row-index` rule
+   below stays unconditionally 700 for the destination-header usage, which
+   renders outside `.app-menu__row` and is structurally unreachable by these
+   two rules. */
+.app-menu__row .app-menu__row-index {
+  font-weight: 400;
+}
+
+.app-menu__row:hover .app-menu__row-index {
+  font-weight: 700;
+}
+
 /* TG020-R1 (FB-059): the root menu's "01".."05" indices render inside true
-   circles now, sharing `--circle-nav-diameter` and the same 1px canonical-
+   circles now, sharing `--control-height` and the same 1px canonical-
    ink outline as the dossier's own case-ordinal badge
    (`.infocard-dossier__ordinal`) — "visually relate to the rest of the
    product's numbered navigation controls," not free-standing text. One class
@@ -590,8 +636,8 @@ body,
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  width: var(--circle-nav-diameter);
-  height: var(--circle-nav-diameter);
+  width: var(--control-height);
+  height: var(--control-height);
   border-radius: 50%;
   border: 1px solid var(--canonical-ink);
   font-size: 0.95rem;
@@ -610,13 +656,134 @@ body,
    root row's hairline, vertical rhythm and type scale (mockup 02), so a
    destination reads as the row it was opened from rather than as a
    different kind of surface. The root menu itself carries no back arrow;
-   the shared [X] in the yellow topbar still closes the whole menu. */
+   the shared [X] in the yellow topbar still closes the whole menu.
+
+   TG022 P1 (ADGARC-FB-097 / N-03; R4 audit §4.2, §7 row 4, §8.1): the band is
+   no longer `.editorial-shell__body`'s first child. It is a `flex: none`
+   sibling directly under the topbar, so it cannot scroll away on any of the
+   five destinations — and it is a plain flow item, never `position: sticky`
+   (R4 audit §8.2 rule 2: a fixed band is never inside its own scroller).
+
+   Three consequences of leaving the body, each owned here rather than
+   inherited from a scroll offset:
+
+   1. Horizontal inset — `1.35rem`, the body's own horizontal padding at this
+      tier, so the back circle stays optically aligned with the body content
+      below it exactly as it was at the R3 baseline. (Mirrored at ≤767px in
+      the compact block below, where the body's padding is `1rem`.)
+   2. Top breathing room — `margin-top: 1rem`, the exact inset the body's
+      `padding-top` used to supply above this band at R3. R4A dropped it and
+      left the header flush under the topbar; this is the whole of N-03. It
+      is a margin rather than extra padding so the band keeps the `1.1rem`
+      internal rhythm it shares with the root row above.
+   3. One rule per edge — the former `border-top: 1px solid var(--hairline)`
+      is removed. It used to separate this band from body content above it;
+      it now lands immediately beneath `.editorial-shell__topbar`'s own
+      `border-bottom: 1px solid var(--canonical-ink)`, doubling that edge.
+      The topbar's rule is the single canonical boundary there.
+
+   TG022 P4e (FB-102): the shared destination top filet is this band's own
+   `border-bottom`, and it is exactly one declaration for all five internal
+   destinations. Point 3 above is unaffected — it removed a `border-top` that
+   would have doubled the topbar's rule; nothing below this band carries a top
+   border, so this edge is still owned once. Because P1 made this the single
+   shared header element rendered through one EditorialShell slot, the filet is
+   automatically consistent across every destination, automatically absent at
+   root (the element is not rendered there), automatically full-width — the
+   border box is the panel's inner width, band to band, not the body's inset
+   content width — and automatically non-scrolling, since the band is a
+   `flex: none` sibling of the scroller.
+   The bottom padding resolves to 1rem / 16px (was 1.1rem / 17.6px), which is
+   the operator's header-content -> filet distance. Top padding, horizontal
+   inset, margin-top, flex ownership, gap and back-control geometry are
+   unchanged at both tiers. */
 .app-menu__destination-header {
+  flex: none;
   display: flex;
   align-items: center;
   gap: 8px;
-  border-top: 1px solid var(--hairline);
-  padding: 1.1rem 0;
+  margin-top: 1rem;
+  padding: 1.1rem 1.35rem 1rem;
+  border-bottom: 1px solid var(--canonical-ink);
+}
+
+/* TG022 P4e-R2 (D-11) — THE PASSPORT UPPER FILET. Passport alone, and only
+   because no Passport box can paint it: `.passport-pane` is a descendant of
+   `.editorial-shell__body`, which is a LATER sibling of this header, so a
+   descendant of a later sibling has no layout position above this row. The
+   header is therefore the only possible owner, and the work is scoping plus
+   geometry rather than relocation.
+
+   The operator's locked Passport order is
+   UPPER FILET -> PASSAPORT -> CIRCLES -> LOWER FILET -> CARDS,
+   so Passport suppresses the shared FB-102 `border-bottom` above and paints an
+   inset rule ABOVE its row instead. The other four internal destinations
+   (Informació, About, Settings, Dev Settings) keep that shared full-width
+   border-bottom untouched — FB-102's "not Passport-only" authority stands — and
+   root carries neither, since this element is not rendered there.
+
+   Why a pseudo-element and not `border-top`: a border always spans its box's
+   full border-box edge, so it would touch both outer app-menu borders. The
+   locked geometry requires the rule to begin after the back control and end at
+   the right internal content inset, which only an absolutely positioned box can
+   express. This is the file's first PAINTING pseudo-element (`:786` and `:2819`
+   are hit areas that paint nothing); the precedent at `:2625` retired a
+   decorative `::before` in favour of a real border, and its condition — that a
+   border can express the rule — is not met here.
+
+   D-11 vertical authority, with every term in the chain named:
+     upper filet -> Passaport row = padding-top 1rem                      = 16px
+     Passaport row -> circles     = padding-bottom 0
+                                    + band padding-top 7px
+                                    + track padding-top 5px               = 12px
+   `padding-bottom: 0` is what puts the header's own inset out of that leg and
+   lets the validated P4e-R1 7px + the untouchable 5px focus guard own it — the
+   same convention as the two legs below (5 + 7 = 12 to the lower filet, 8 + 4
+   = 12 to the cards), both of which are untouched here.
+
+   `position: relative` is the pseudo-element's containing block and is inert
+   otherwise. `.app-menu__back` already carries its own `position: relative` for
+   its coarse hit area and is unaffected.
+
+   Scoped with `:has()` on the common ancestor because CSS has no previous-
+   sibling combinator and this header precedes the body that holds
+   `.passport-pane`; `.app-menu:has(.passport-pane)` is true only while the
+   Passport destination is active (AppMenuModal.tsx). Same idiom, and the same
+   graceful degradation, as the Passport body override at `:1190` and the
+   dossier's at `:2572`: an engine without `:has()` keeps the shared lower
+   border and grows no upper filet — the uncorrected composition, never a
+   broken one.
+
+   One rule serves both tiers with no media query: `left`/`right` resolve
+   against the padding box, so each tier's own horizontal inset (1.35rem
+   desktop, 1rem compact) is already absorbed and only the diameter and the gap
+   remain — neither of which is tier-dependent (the only
+   `--control-height` override in this file is `.infocard-dossier`'s at
+   ≤380px, which never reaches `.app-menu`). The pre-header `margin-top` keeps
+   its existing per-tier authority, untouched. */
+.app-menu:has(.passport-pane) .app-menu__destination-header {
+  position: relative;
+  border-bottom: none;
+  padding-top: 1rem;
+  padding-bottom: 0;
+}
+
+/* `left` starts the filet flush with the `01` ordinal circle's left edge: the
+   back control occupies [0, 32] and the gap [32, 40]. The `8px` term is coupled
+   BY HAND to this header's own `gap: 8px` above — if that gap ever changes, this
+   start position drifts off the ordinal circle. Deliberately NOT promoted to a
+   token in this patch (P4e-R2 scope), so the coupling is stated here instead.
+   `right: 0` is the padding-box right edge — the same x the Passport lower filet
+   ends at, so the two Passport filets share a right boundary and neither touches
+   an outer menu border. */
+.app-menu:has(.passport-pane) .app-menu__destination-header::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 1.35rem;
+  right: 1.35rem;
+  height: 1px;
+  background: var(--canonical-ink);
 }
 
 /* TG019 Pass A (operator feedback §2): was a plain text glyph whose hover/
@@ -635,8 +802,8 @@ body,
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  width: var(--circle-nav-diameter);
-  height: var(--circle-nav-diameter);
+  width: var(--control-height);
+  height: var(--control-height);
   border-radius: 50%;
   border: 1px solid var(--canonical-ink);
   background: var(--surface);
@@ -697,15 +864,24 @@ body,
   background: var(--canonical-yellow);
 }
 
-.app-menu__partner-pill {
-  border: 1px solid var(--canonical-ink);
-  border-radius: 999px;
-  padding: 0.4rem 0.9rem;
-  background: var(--surface);
-  color: var(--canonical-ink);
-  font-size: 0.78rem;
-  font-weight: 600;
-  white-space: nowrap;
+/* TG030 corrective (ADGARC-FB-041, prompt 067): one shared logo-box contract
+   for the three OPERATOR-confirmed partner marks, replacing the former
+   `.app-menu__partner-pill` text chrome. `--partner-logo-height` is derived
+   from that former pill's own rendered height (0.78rem text + 0.4rem
+   vertical padding + 1px border ≈ 30px) so the footer band's vertical
+   footprint does not change. Each logo keeps its own intrinsic aspect ratio
+   (`object-fit: contain`, `width: auto`) inside that fixed height rather
+   than being individually hand-sized — `max-width`/`min-width: 0` keep a
+   wide source mark from overflowing its slot on narrow widths instead of
+   breaking the footer's `flex-wrap`. */
+.app-menu__partner-logo {
+  --partner-logo-height: 30px;
+  height: var(--partner-logo-height);
+  width: auto;
+  max-width: 100%;
+  min-width: 0;
+  object-fit: contain;
+  display: block;
 }
 
 /* TG011 Pass B (ADGARC-FB-045 / DEC-010 §11.5): the Dev Settings safe
@@ -748,6 +924,26 @@ body,
 
   .editorial-shell__body {
     padding: 0.9rem 1rem 1.25rem;
+  }
+
+  /* TG022 P1: the destination-header band is a sibling of the body now, so
+     the compact tier's inset no longer reaches it by inheritance — it is
+     restated here at exactly the body's own compact values (`0.9rem` top,
+     `1rem` horizontal). Same R3-equivalent composition as the desktop rule
+     above, at this tier's numbers; not a new breakpoint decision.
+     TG022 P4e (FB-102): the bottom component takes the same 1rem / 16px the
+     desktop rule now uses — header content -> filet is one distance at every
+     tier — while this tier keeps its own `1rem` horizontal inset and its own
+     `0.9rem` margin-top. The filet itself is declared once on the base rule
+     above and is deliberately not restated here. */
+  .app-menu__destination-header {
+    margin-top: 0.9rem;
+    padding: 1.1rem 1rem 1rem;
+  }
+
+  .app-menu:has(.passport-pane) .app-menu__destination-header::before {
+    left: 1rem;
+    right: 1rem;
   }
 }
 
@@ -845,6 +1041,36 @@ body,
   opacity: 0.7;
 }
 
+/* TG023 corrective (ADGARC-FB-105, prompt 057): the `Crèdits` destination's
+   per-case meta rows (AppMenuModal.tsx's `CreditsPane`) — reuses the
+   `.app-modal__section`/`h3` case-heading chrome above and adds only the
+   label/value row layout itself, matching `.app-modal__body`'s own font
+   size/line-height rather than declaring new ones. */
+.credits-pane__meta {
+  margin: 0;
+}
+
+.credits-pane__row {
+  display: flex;
+  gap: 0.5rem;
+  margin: 0.15rem 0;
+}
+
+.credits-pane__row dt {
+  flex: none;
+  width: 8rem;
+  font-weight: 600;
+}
+
+.credits-pane__row dd {
+  margin: 0;
+}
+
+.credits-pane__row a {
+  color: inherit;
+  text-decoration: underline;
+}
+
 /* TG016 (ADGARC-FB-046 / ADGARC-DEC-010 §11.2, §11.6): map-top windowed
    circle-navigation control, replacing the dropped S5B PassportMapOverlay
    and its `.passport-rail*` rectangular-cell family entirely (sole consumer
@@ -873,20 +1099,19 @@ body,
   z-index: var(--z-map-chrome);
   display: flex;
   align-items: center;
-  /* TG019 Pass A (operator feedback §9): originally a bare 36px literal
-     chosen to equal `.app-menu-trigger`'s own 36px height. TG020-R1
-     (FB-047): "bar padding derived from that diameter" — expressed as a
-     formula over the circle/arrow diameter and a vertical padding token
-     instead, so the relationship is load-bearing code rather than a
-     coincidence two independent literals have to be kept in sync by hand.
-     28px + 2*4px still equals 36px, so the menu-trigger parity holds too. */
-  height: calc(var(--circle-map-diameter) + 2 * var(--space-2xs));
+  /* TG022 P8 (FB-093, P8-D3): the former derived height (circle diameter +
+     2 * vertical-padding-token, tuned only to equal .app-menu-trigger's 36px)
+     and horizontal-only padding were two different outer-inset mechanisms
+     that could not produce equal margins by construction. Height is no
+     longer declared here at all — symmetric padding on every side is now the
+     sole outer-inset mechanism, and the bar's natural content height (the
+     28px circle plus top+bottom padding) is what determines its box. */
   /* TG018 correction matrix §A: "compact Passport-scale visual language" —
      gap/padding cut substantially from the former 48px/16px so the bar reads
      as compact chrome, not a dominant fixture; the map stays visually
      primary underneath it. */
   gap: var(--space-sm);
-  padding: 0 var(--space-sm);
+  padding: var(--space-sm);
   background: var(--surface);
   border: 1px solid rgba(90, 42, 18, 0.18);
   border-radius: var(--pill-corner);
@@ -894,7 +1119,7 @@ body,
   /* TG020-R3 (FB-063): circle-to-circle gap, factored out so the track's own
      step formula below can never drift from what the track actually renders
      at — same per-breakpoint override pattern `.infocard-dossier` already
-     uses for `--circle-nav-diameter` (component-scoped custom property, not
+     uses for `--control-height` (component-scoped custom property, not
      :root). */
   --map-nav-gap: 6px;
 }
@@ -987,9 +1212,9 @@ body,
 @media (max-width: 767px) {
   .passport-map-navbar {
     gap: var(--space-xs);
-    /* Horizontal-only, as above — the fixed 36px height (equal to the
-       menu-control) is not a per-breakpoint value. */
-    padding: 0 10px;
+    /* TG022 P8 (FB-093, P8-D3): symmetric, as above — no per-breakpoint
+       height, the bar's natural content height composes from this padding. */
+    padding: 10px;
     --map-nav-gap: 5px;
   }
 }
@@ -1000,7 +1225,7 @@ body,
 @media (max-width: 480px), (pointer: coarse) {
   .passport-map-navbar {
     gap: var(--space-2xs);
-    padding: 0 var(--space-xs);
+    padding: var(--space-xs);
   }
 }
 
@@ -1038,52 +1263,222 @@ body,
    safely: an engine without :has() support simply keeps the previous block
    layout and the previous body scroll — the uncorrected composition, never a
    broken one. */
+/* TG022 P4e (FB-101 vertical): Passport-mode `padding-top: 0`. The generic
+   body top inset (`1rem` desktop / `0.9rem` compact) was an unrelated owner
+   contributing an inherited distance between the destination header and the
+   Passport stop circles — exactly the "distances inherited accidentally from
+   unrelated padding owners" the finding names. Zeroing it here hands that leg
+   to `.passport-pane__band`'s own `padding-top` below, so one Passport box owns
+   it. Only the top component changes: the horizontal and bottom insets still
+   come from `.editorial-shell__body`'s own shorthand at each tier, and the
+   other four destinations keep that shorthand untouched — this rule matches
+   Passport alone. Specificity 0,2,0 (the `:has()` argument contributes its
+   own), so it also wins over the `@media (max-width: 767px)` body rule's 0,1,0
+   without restating anything at that tier. */
+/* TG022 P4f-R2 (D-18): `overflow-y: clip` for Passport alone — the Passport rail
+   plus its lower filet are a NON-SCROLLING subheader, and they were scrolling
+   because this body, an ANCESTOR of the band, was the surface that scrolled.
+   D-6a is SUPERSEDED (Part 2 Session 22 §6): its recorded fallback — the whole
+   Passport surface scrolling as a unit on a pathologically short viewport — IS
+   the defect. Removing the scroll from the ancestor is what turns a threshold
+   into a topology guarantee; the trigger itself (the viewport's `min-height`
+   floor) is removed below, and together they leave `.passport-pane__viewport`
+   the SOLE Passport vertical content-scroll owner.
+   `clip`, deliberately NOT `hidden`. A `hidden` box is still a scroll
+   container: it shows no scrollbar and refuses user input, but the UA scrolls
+   it to reveal a focused descendant, so a Tab into a card or into Reset could
+   still translate the band out of view with no affordance to bring it back —
+   the same defect with its evidence removed. `clip` is not a scroll container
+   at all. It is also the safer pairing on the other axis: per CSS Overflow a
+   scrolling value on one axis computes `visible` on the other to `auto`, so
+   `hidden` here would quietly keep `overflow-x: auto`, while `clip` and
+   `visible` coexist and neither scrolls.
+   Same selector, same 0,2,0 specificity, same `:has()` degradation story as
+   above — an engine without `:has()` keeps today's composition, uncorrected,
+   never broken. The other four destinations keep the body's `overflow-y: auto`
+   untouched. */
 .editorial-shell__body:has(> .passport-pane) {
   display: flex;
   flex-direction: column;
+  padding-top: 0;
+  overflow-y: clip;
 }
 
+/* TG022 P4e (FB-101 horizontal / D-8): the Passport-local scrollbar-gutter
+   reserve, declared once on the pane and spent by the band below. P4-OWN made
+   `.passport-pane__viewport` the vertical scroll owner and gave it the
+   product's classic 8px scrollbar (`::-webkit-scrollbar { width: 8px }`
+   above), which is taken out of that box's CONTENT width. The band has no
+   scrollbar, so the two content boxes — proven identical by P4-OWN's
+   obligation-3 arithmetic, which did not yet have a scrollbar to account for —
+   now differ by exactly that 8px, and the rail/Reset field overruns the card
+   field on the right by the same amount. The correction stays owner-based: the
+   band reserves the gutter it does not have, and the viewport is told to keep
+   the gutter it does (`scrollbar-gutter: stable`), so the reserve is
+   unconditional rather than dependent on whether the grid happens to overflow.
+   A component-scoped custom property rather than two literals, the same
+   pattern `.infocard-dossier` and `.passport-map-navbar` already use, so the
+   two sides can never drift apart.
+   Deadline trade, stated rather than hidden: Chromium/WebKit classic-scrollbar
+   geometry makes this exact; Firefox's `scrollbar-width: thin` is
+   engine-sized; overlay-scrollbar platforms consume 0 and will over-reserve by
+   the token. The alternative — leaving the 8px mismatch everywhere — is the
+   mirror trade and is worse on the operator's own engine. */
+/* TG022 P4a (FB-083, owner A): suppresses only the default WebKit/Blink
+   touch tap-highlight, which this surface never opted out of. Set on the
+   Passport root so every interactive descendant (cards, stop rail, Reset)
+   inherits it without a duplicated declaration. Owner B — the
+   product-authored `.passport-carousel__card:active` press feedback below —
+   and every `:focus-visible` ring are a separate mechanism and are
+   untouched by this line. */
 .passport-pane {
   flex: 1 1 auto;
   min-height: 0;
   display: flex;
   flex-direction: column;
+  --passport-scrollbar-gutter: 8px;
+  -webkit-tap-highlight-color: transparent;
 }
 
-/* Every part of the pane but the carousel keeps its natural height; the
-   carousel is the single flexible row. Its min-height is a floor, not a
-   target — on a viewport too short even for that (a phone held in landscape,
-   say) the shell body's own scrollbar comes back rather than the cards being
-   clipped or scrolled out of reach. */
+/* Every part of the pane but the content viewport keeps its natural height;
+   the viewport is the single flexible row.
+   TG022 P4-OWN: this pair is re-pointed one box outward, from the carousel to
+   the viewport that now wraps it — otherwise the generic `> *` rule would
+   give the viewport `flex: none`, which is exactly wrong. Only the owner
+   moved.
+   TG022 P4f-R2 (D-18): the viewport's `min-height` was `8rem`, a floor that
+   existed for the outer-body fallback D-6a preserved — and that pair is the
+   whole mechanism of the subheader defect. It is the TRIGGER: an explicit
+   min-height on the pane's ONLY flexible item can never be shrunk below, so
+   the pane could not resolve shorter than band + status + 128px, the body it
+   lives in overflowed, and because that body is an ancestor of the band its
+   scroll translated the subheader. `min-height: 0` removes the trigger and the
+   body's `overflow-y: clip` above removes the scroller. D-6a's OBJECTIVE
+   survives under the right owner: with the floor gone the viewport shrinks
+   continuously and its OWN `overflow-y: auto` keeps every card reachable at any
+   non-zero height, with the band fixed. A min-height binds only once space is
+   already below it, so nothing changes at ordinary heights. Below
+   `body content < band + status` the body now CLIPS the status line and then the
+   lower filet rather than scrolling them — the accepted cost of the authority
+   (Part 2 Session 22 F-1), not a P4e regression. */
 .passport-pane > * {
   flex: none;
 }
 
-.passport-pane > .passport-carousel {
+.passport-pane > .passport-pane__viewport {
   flex: 1 1 auto;
-  min-height: 8rem;
+  min-height: 0;
 }
 
-/* TG019 Pass D (operator feedback §13): `01 Passaport` (passed in as
-   `header`) plus the numbered rail/reset control now sit in one wrapper so
-   they can share a single sticky region while the carousel scrolls beneath —
-   never two independent sticky layers with their own top offsets to keep in
-   sync. Sticks against whichever ancestor is actually the scrolling one: the
-   desktop `.editorial-shell__body` (block flow, grid carousel) or, on a
-   viewport too short even for the mobile flex composition below, the same
-   body's own scrollbar. Opaque background so scrolled card content never
-   shows through underneath it. */
-.passport-pane__sticky {
-  position: sticky;
-  top: 0;
-  /* TG020-R3 (FB-071): raised a step above the carousel below (still default
-     stacking otherwise) and given the canonical black lower hairline the R3
-     authority calls for — the rail field is now an unambiguous, fully
-     opaque boundary; scrolled card content can never visually leak above or
-     behind it. */
-  z-index: 2;
+/* TG022 P4-OWN (FB-080 / Session 7 §7.4, D-6) — THE OWNER CORRECTION.
+   The Passport-owned content viewport: the only box in the Passport subtree
+   that changes scrollTop, and the clip owner. Because it and the control band
+   are adjacent flex items of the same column, this box's padding-box top edge
+   IS the band's bottom edge — so a card pixel in the band's y-range has no
+   legal layout position to be hidden from. That is the whole difference from
+   the three prior passes, which each strengthened an opaque fill on a sticky
+   band and left the invariant resting on paint order.
+
+   Both axes are named on purpose. Per CSS Overflow a non-`visible` value on
+   one axis computes `visible` on the other to `auto`, so declaring only
+   `overflow-y` would quietly make this a horizontal scroll container too and
+   stack a second horizontal scrollbar on the carousel's own at narrow tiers.
+   `.infocard-dossier__content` below names both for the same reason.
+
+   `margin: 0 -4px` + 4px horizontal padding is this file's own idiom, already
+   used by `.passport-stop-rail__track` (`margin: 0 -5px` / `padding: 5px`):
+   the padding keeps a focused card's 4px ring (`:focus-visible`, 2px outline
+   at 2px offset) off the clip edge, and the negative margin pays it back so
+   this box's CONTENT box stays horizontally identical to the band's. That
+   identity is load-bearing — it is what preserves P3 Mechanism C's circle 1 ↔
+   card column 1 and Reset ↔ column 5 alignment now that the two derive from
+   sibling boxes rather than from one. The 4px of border-box overhang per side
+   is absorbed inside `.editorial-shell__body`'s own 1.35rem/1rem padding, so
+   it can never reach that box's scrollable overflow.
+
+   `padding-top: 8px` is P3's committed lower rhythm leg, re-owned. It used to
+   be `.passport-carousel`'s `margin-top`, which now sits inside this scroller
+   and would scroll away with the cards — correct at scroll-top, zero
+   thereafter. 8px here + the carousel's own 4px focus padding is the same
+   12px filet → first card. P3's upper leg (track `padding-bottom: 5px` + rail
+   `margin-bottom: 7px` = 12px) is inside the band and is untouched.
+
+   It is a flex column for the same reason `.passport-pane` is: the carousel
+   stays the single flexible row, so a card's height — and through
+   `aspect-ratio`, its width — still derives from the composition rather than
+   collapsing to its own content.
+
+   TG022 P4e (FB-101 horizontal / D-8): `scrollbar-gutter: stable` is the other
+   half of the band's gutter reserve declared on `.passport-pane` above. It
+   makes this box's content width `W − gutter` whether or not the grid is
+   currently overflowing, so the card field's right boundary is a constant the
+   band can match rather than a function of content height. Nothing else here
+   moves: `overflow-y`/`overflow-x`, the margin/padding pair (obligation 3's
+   content-box identity plus the 4px focus-ring guard) and the 8px top padding
+   — P3's committed lower rhythm leg, re-owned by P4-OWN — are all unchanged.
+   The scrollbar is deliberately NOT hidden and vertical scrolling is
+   deliberately NOT returned to `.editorial-shell__body`; either would reopen
+   FB-080. */
+.passport-pane__viewport {
+  display: flex;
+  flex-direction: column;
+  overflow-y: auto;
+  overflow-x: hidden;
+  scrollbar-gutter: stable;
+  margin: 0 -4px;
+  padding: 8px 4px 0;
+}
+
+.passport-pane__viewport > .passport-carousel {
+  flex: 1 1 auto;
+  min-height: 0;
+}
+
+/* TG019 Pass D (operator feedback §13): the numbered rail/reset control sit in
+   one wrapper rather than two independent layers with their own offsets to
+   keep in sync. That consolidation stands; only its mechanism changed below.
+
+   TG022 P4-OWN (FB-080 / D-6, Session 7 §7.3 / F-6) — THE PASSPORT CONTROL
+   BAND. Renamed from `.passport-pane__sticky`: the box is no longer sticky, so
+   a name asserting that ownership would be a lie sitting in the file.
+   `position: sticky`, `top: 0` and `z-index: 2` are DELETED rather than left
+   inert, and the distinction matters — a sticky box carrying a z-index is a
+   positioned element that establishes a stacking context and is a candidate
+   for compositor-layer promotion in every engine, which is precisely the
+   machinery a paint-order guarantee depends on and a layout clip does not.
+   Leaving the declarations unused would have preserved the mechanism while
+   removing the excuse for it.
+
+   The band is now an ordinary in-flow `flex: none` sibling of
+   `.passport-pane__viewport` above. It cannot scroll, because it is outside
+   the scroller; cards cannot reach it, because the viewport clips them. The
+   TG020-R3 / FB-071 visual authority below is preserved verbatim — this box
+   still owns the opaque white Passport control field and the canonical
+   full-width black filet. Only their role changed: they were the guarantee,
+   and they are now the appearance.
+
+   TG022 P4e adds the band's own two insets, and nothing else here changes —
+   the white control field and the full-width filet are still the committed
+   TG020-R3 / FB-071 pair above.
+
+   `padding-top` (FB-101 vertical): the band now owns the top-filet -> stop
+   circles leg, which used to arrive as `.editorial-shell__body`'s generic
+   reading inset (zeroed for Passport above). The leg below it is untouched
+   committed P3 — track `padding-bottom: 5px` + rail `margin-bottom: 7px` = the
+   12px from the circles down to this box's own `border-bottom`.
+
+   `padding-right` (FB-101 horizontal / D-8): the scrollbar reserve the viewport
+   below takes out of its content box and this band does not. Padding is inside
+   the border box, so the filet still spans the band edge to edge — only the
+   rail's content field narrows, which is the point: Reset's right edge and card
+   column 5's right edge become the same x. Deliberately no left compensation —
+   the left boundary (header back circle / circle 1 / card column 1 at x = 0) is
+   already correct and must not move. */
+.passport-pane__band {
   background: var(--surface);
   border-bottom: 1px solid var(--canonical-ink);
+  padding-top: 7px;
+  padding-right: var(--passport-scrollbar-gutter);
 }
 
 /* TG011 Pass C (ADGARC-FB-043 / DEC-010 §11.3): the Pasaporte pane's literal
@@ -1103,23 +1498,43 @@ body,
   flex-direction: column;
   align-items: flex-start;
   gap: 0.4rem;
-  margin-bottom: 0.9rem;
+  margin-bottom: 7px;
+}
+
+/* TG022 Session 45 (FB-098 topology fix): the row that owns the horizontal
+   split between the stops-only scroller and Reset — see PassportPane.tsx.
+   `width: fit-content` + `max-width: 100%` is TG020-R3's own sizing idiom,
+   re-derived one level up: it is now the ROW that terminates right after
+   Reset (its last child) rather than any ambient tail, while `max-width`
+   preserves the track's `overflow-x: auto` scroll for the genuine case the
+   full ordinal count is wider than the panel. `gap` reuses the track's own
+   existing 4px stop-gap token for the track/Reset separation rather than
+   inventing an unrelated value. */
+.passport-stop-rail__row {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  width: fit-content;
+  max-width: 100%;
 }
 
 /* The negative inline margins pay back the padding: the padding exists only
    so the first and last circle's 2px/2px focus ring is not clipped by this
    scroller, and the margins keep circle 1 optically aligned with the
-   destination header above it. */
+   destination header above it.
+   TG022 Session 45 (FB-098 topology fix): Reset is no longer this box's
+   last child (see `.passport-stop-rail__row` above and PassportPane.tsx), so
+   this scroller no longer owns `width: fit-content` / `max-width: 100%` —
+   that sizing moved to the row, which now terminates right after Reset.
+   `min-width: 0` is the row's counterpart obligation: it is what lets this
+   flex item actually shrink inside the row (rather than forcing the row to
+   overflow) once Reset's fixed footprint claims part of the row's width. */
 .passport-stop-rail__track {
   display: flex;
   align-items: center;
   gap: 4px;
-  /* TG020-R3 (FB-070): intrinsic width — the track terminates right after
-     Reset (its last child) rather than any ambient tail — while `max-width`
-     preserves the existing `overflow-x: auto` scroll for the genuine case
-     the full ordinal count is wider than the panel. */
-  width: fit-content;
-  max-width: 100%;
+  flex: 1 1 auto;
+  min-width: 0;
   margin: 0 -5px;
   padding: 5px;
   overflow-x: auto;
@@ -1131,17 +1546,41 @@ body,
   display: none;
 }
 
+/* TG022 Session 45 (F-3 / FB-103, D2): the scroll-state-driven trailing
+   fade, re-homed on the stops-only scroller now that Reset is no longer the
+   scrollport boundary (superseding the reset-zone-anchored `::before` — see
+   its removal below). `data-scroll-more` is set by PassportPane.tsx from
+   actual scroll geometry (`scrollWidth > clientWidth` and not at the
+   terminal scroll position), never from viewport width, so the mask is
+   absent whenever there is nothing left to reveal and returns the instant
+   the visitor scrolls away from the terminal position.
+   `mask-image` is used rather than a background gradient because the fade
+   must dim whatever is actually rendered (stop circles at any fill state)
+   without adding a second paint layer or affecting `scrollWidth`.
+   12px matches the fade depth carried over from the prior reset-zone
+   `::before` (D-17/D-19's committed visual length) — not re-tuned here. */
+.passport-stop-rail__track[data-scroll-more="true"] {
+  -webkit-mask-image: linear-gradient(to left, transparent 0, #000 12px);
+  mask-image: linear-gradient(to left, transparent 0, #000 12px);
+}
+
 /* FB-043's catalog boundary after position 10 — physical+digital stops to
    its left, digital-only positions to its right. Presentation only: it says
    nothing about the stamping denominator, which stays derived from the real
-   physical set in usePassport. */
+   physical set in usePassport.
+   TG022 P7 (FB-091 / P7-D3): the `opacity: 0.45` reduced-strength treatment
+   is removed, not replaced — this divider converges onto the same
+   full-strength canonical-ink language as the dossier divider system. Its
+   structural role, position and geometry (width/height/margin) are
+   untouched; this is distinct from `.passport-stop-rail__track`/`__row`/
+   `__reset-zone` (TG022 Session 45's FB-098 topology owners), none of
+   which this rule is or touches. */
 .passport-stop-rail__divider {
   flex: none;
   width: 1px;
   height: 1.5rem;
   margin: 0 4px;
   background: var(--canonical-ink);
-  opacity: 0.45;
 }
 
 /* TG018 Pass B (correction matrix §B / evidence
@@ -1156,8 +1595,8 @@ body,
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  width: var(--circle-nav-diameter);
-  height: var(--circle-nav-diameter);
+  width: var(--control-height);
+  height: var(--control-height);
   padding: 0;
   border: 1px solid var(--canonical-ink);
   border-radius: 50%;
@@ -1175,6 +1614,25 @@ body,
   height: 16px;
 }
 
+/* TG022 Session 45 (FB-098 / D1) — RESET AS TRUE SIBLING.
+   Supersedes P4f R1-R3 (the sticky-descendant occlusion mechanism, see
+   report history): Reset is now an ordinary, non-scrolling flex sibling of
+   `.passport-stop-rail__track` inside `.passport-stop-rail__row` (see
+   PassportPane.tsx), never a child of the scroll owner. `flex: none` is the
+   whole containment mechanism — its terminal position at the row's end
+   arises from layout topology, not from a positioned box sized/offset to
+   paint over whatever content happens to scroll beneath it. No sticky
+   positioning, no offset, no border-box/negative-margin compensation and no
+   `z-index` are needed, because nothing ever renders underneath it to
+   require covering. */
+.passport-stop-rail__reset-zone {
+  flex: none;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  background: var(--surface);
+}
+
 .passport-stop-circle {
   appearance: none;
   flex: none;
@@ -1182,8 +1640,8 @@ body,
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  width: var(--circle-nav-diameter);
-  height: var(--circle-nav-diameter);
+  width: var(--control-height);
+  height: var(--control-height);
   padding: 0;
   /* Border width is the *selection* channel and nothing else, so it is
      declared at 0 here and only the current stop raises it (DEC-010 §11.3:
@@ -1261,8 +1719,28 @@ body,
    scrollbar — is unchanged and stays intentional: the OPERATOR's review
    marked this horizontal scroll as accepted, and only the *vertical* pane
    scrollbar was the defect. */
+/* TG022 P4-OWN: the 8px top margin P3 committed here is gone — not removed,
+   re-owned. It is now `.passport-pane__viewport`'s `padding-top`, because
+   this box moved inside that scroller and a top margin here would scroll away
+   with the cards. `8 + 4 = 12` is unchanged; the 4px below is P3's untouched
+   focus-ring padding (zero slack — see Session 4 F-4), and the right/bottom/
+   left margin values are exactly as committed.
+   TG022 P4e (FB-100): the bottom margin goes too, and for the same reason the
+   top one did — it is inside the scroller. It was the stale sibling P4-OWN left
+   behind: a third competing bottom gap straddling the clip boundary, whose
+   inclusion in a flex scroll container's scrollable-overflow region is
+   engine-dependent, so what the visitor saw at scroll-end was not reliably
+   16px. `.editorial-shell__body`'s own `padding-bottom` is now the single outer
+   lower inset, and no compensating padding is added anywhere to replace this —
+   in particular NOT on `.passport-pane__viewport`, the box that looks like the
+   natural owner and is the least reliable one for exactly the same reason.
+   Padding is again byte-for-byte untouched: the 4px top is P3's focus guard
+   with zero slack, and the 12px bottom is the narrow tier's clearance for this
+   box's own horizontal scrollbar. Named consequence: at <1024 this box is the
+   flexible row, so the cards gain the 16px and — through `aspect-ratio: 9/16` —
+   about 9px of width. That is intended. */
 .passport-carousel {
-  margin: 0 0 1rem;
+  margin: 0;
   padding: 0.25rem 0 0.75rem;
   list-style: none;
   display: flex;
@@ -1405,17 +1883,24 @@ body,
    (App's `activeCases`), currently 20 — back to the original "four rows"
    this comment described, but by construction (`repeat(5, 1fr)` over
    whatever it is handed), not by re-tuning this rule to a count. */
+/* TG022 P4-OWN (D-6 ii): the two TG018-era `display: block` owner overrides
+   that used to open this block are REMOVED under explicit operator
+   supersession. They handed the desktop tier's vertical regions back to
+   `.editorial-shell__body`, which is the ownership this pass re-anchors;
+   Passport is now the same flex column at every tier, so the composition —
+   and therefore the clip guarantee — is no longer tier-conditional.
+   The grid rule below is re-pointed from `.passport-pane > .passport-carousel`
+   to `.passport-pane__viewport > …`: the new wrapper made the old direct-child
+   selector stop matching, which would have silently dropped the five-column
+   desktop grid and reverted every tier to a horizontal card row. `flex: none`
+   replaces `flex: initial` for the same re-anchor — as a flex item of the
+   viewport the grid must take its full content height and overflow the
+   scroller, never shrink to fit it. Everything the desktop composition
+   actually renders — `display: grid`, `repeat(5, 1fr)`, the gap,
+   `overflow: visible`, `scroll-snap-type: none` — is unchanged. */
 @media (min-width: 1024px) {
-  .editorial-shell__body:has(> .passport-pane) {
-    display: block;
-  }
-
-  .passport-pane {
-    display: block;
-  }
-
-  .passport-pane > .passport-carousel {
-    flex: initial;
+  .passport-pane__viewport > .passport-carousel {
+    flex: none;
     min-height: 0;
     display: grid;
     grid-template-columns: repeat(5, 1fr);
@@ -1431,6 +1916,64 @@ body,
   .passport-carousel__card {
     height: auto;
     width: 100%;
+  }
+}
+
+/* TG022 P4f (D-9 resolved by D-12 / D-12 binding) — P3's composition gate,
+   widened, and P3 Mechanism C's surplus collector, deleted.
+
+   The gate was `(min-width: 1024px) and (pointer: fine)`. That left a
+   fine-pointer interval below 1024px in which the track had positive free
+   space but neither stretched (the gate excluded it) nor scrolled (nothing
+   overflowed) — so neither of D-12's two regimes was expressed and the old
+   FB-079-class dead tail came back. Dropping the width half makes the regime a
+   function of free space rather than of viewport width, which is what D-12
+   describes as continuous behaviour: positive free space, `space-between`
+   distributes it; negative free space, the track's own `overflow-x: auto`
+   scrolls the intrinsic content while Reset holds its position by ordinary
+   flex layout (TG022 Session 45 — no longer a sticky pin, see
+   `.passport-stop-rail__reset-zone`). No breakpoint is introduced and no
+   media query is added — this is the same block.
+
+   Coarse pointer is deliberately NOT included. At 44px controls the track's
+   intrinsic width already exceeds the capped field at every viewport, so the
+   base overflow behaviour IS the NARROWING regime there; stretching it would
+   only add a branch that can never be taken.
+
+   DELETED with this pass — P3 Mechanism C's
+   `.passport-stop-rail__track > .passport-stop-rail__divider:last-of-type
+   { margin-left: auto }`. Two independent reasons, either sufficient:
+   (1) that auto margin exists to collect the wide surplus into one void just
+   before Reset, and D-12 explicitly rejects that void; (2) now that the Reset
+   divider lives inside `.passport-stop-rail__reset-zone`, the track's only
+   remaining direct-child divider is the CATALOG one, so `:last-of-type` would
+   silently re-target it and dump the whole surplus between stops 10 and 11.
+   Amending it was not an option either way: auto margins absorb free space
+   before `justify-content` ever applies, so the two cannot coexist.
+
+   `justify-content: space-between` is the successor. Named cost, carried
+   openly: the stop-to-stop rhythm becomes fluid across the wide band instead
+   of a constant 4px, and the catalog boundary's visual distinction narrows
+   with it. That trade is D-12's, not this rule's — the surplus has to go
+   somewhere, and growing the controls or the gap token instead is P5 control
+   canon.
+   TG022 Session 45 (FB-098 topology fix): `align-self: stretch` / `width:
+   auto` / `max-width: none` move from the track to `.passport-stop-rail__row`
+   — Reset is no longer the track's last child, so it is the ROW whose
+   content box must now equal the rail field for the stops to consume the
+   surplus. The track itself keeps `flex: 1 1 auto` (declared unconditionally
+   above) so it fills whatever space the row leaves after Reset's fixed
+   footprint; `justify-content: space-between` still only distributes that
+   space among the stops, exactly as before. */
+@media (pointer: fine) {
+  .passport-stop-rail__row {
+    align-self: stretch;
+    width: auto;
+    max-width: none;
+  }
+
+  .passport-stop-rail__track {
+    justify-content: space-between;
   }
 }
 
@@ -2205,11 +2748,13 @@ body,
 
   /* TG010 S4 (ADGARC-FB-017 / DEC-007 §11): the compact map controls are
      real, comfortably tappable targets — and the glyph inside grows with
-     the box, so the home icon is optically legible rather than a 16px mark
-     adrift in a 44px target. */
+     the box, so each icon is optically legible rather than a 16px mark
+     adrift in a 44px target. TG022 P8 (FB-094, P8-D1): fixed width/height,
+     matching the base-tier circle fix — this coarse floor stays a true
+     circle too, not a min-* rounded square. */
   .map-controls__btn {
-    min-width: 44px;
-    min-height: 44px;
+    width: 44px;
+    height: 44px;
   }
 
   .map-controls__btn svg {
@@ -2236,16 +2781,35 @@ body,
      .app-menu__back does — at a 4px rail gap, a 44px pseudo-element on a
      32px circle would overlap its neighbours' targets, which is worse than
      no floor at all. The rail already scrolls horizontally, so the wider
-     track costs nothing. */
+     track costs nothing.
+     TG022 P5-DEP-01: expressed as a `.passport-stop-rail`-scoped override of
+     the same `--control-height` property (not a second token) — the
+     Passport-only ancestor reaches both the stop circles (nested in
+     `.passport-stop-rail__track`) and reload (nested in
+     `.passport-stop-rail__reset-zone`) without reaching the map navbar's own
+     `.passport-stop-circle` instances, which stay on `--circle-map-diameter`
+     via their own higher-specificity override regardless. */
+  .passport-stop-rail {
+    --control-height: 44px;
+  }
+
   .passport-stop-circle,
   .passport-stop-rail__reload {
-    width: 44px;
-    height: 44px;
+    width: var(--control-height);
+    height: var(--control-height);
   }
 
   .passport-stop-rail__divider {
     height: 2rem;
   }
+
+  /* TG022 Session 45 (FB-098 topology fix): the coarse-tier
+     `scroll-padding-inline-end: 74px` keyboard-scroll-into-view compensation
+     is removed with no replacement. It existed only because Reset used to be
+     a sticky descendant overlaying the scrollport's own right edge; now that
+     Reset is a true flex sibling outside the scroller (see
+     `.passport-stop-rail__row`), a keyboard-focused stop's own native
+     scroll-into-view target is already fully unobstructed. */
 }
 
 /* TG012 Pass C (ADGARC-DEC-010 §7 step 4) — final Infocard dossier chrome.
@@ -2272,6 +2836,42 @@ body,
   background: var(--surface);
   color: var(--ink);
   overflow: hidden;
+  /* Operator corrective (runtime review, post Prompt 074): `.infocard-dossier__content`
+     (clamp(1.25rem,4vw,2.5rem) ~ 20-40px, fluid) and `.infocard-dossier__nav`
+     (a fixed 16px) carried two independently-tuned horizontal insets, so the
+     cover media frame and the footer row (Explora / credit) never actually
+     shared a left-right edge except by coincidence at one viewport width —
+     the exact "not the same horizontal rail" defect runtime review flagged.
+     One shared token, consumed by both rules below, is the structural fix:
+     reduce content's horizontal inset down to the nav's already-exact,
+     deliberately-tuned 16px (TG019 Pass A) rather than widen nav to match
+     content's guessed fluid value. Vertical padding on each rule is
+     untouched — only the horizontal rail is unified. */
+  --dossier-rail: 16px;
+  /* TG033 Prompt 075 corrective (ADGARC-FB-114/FB-115 §A): runtime review
+     measured three different vertical distances on the cover/specimen
+     pages — content-top-to-frame, frame-to-footer-row, and
+     footer-row-to-dossier-bottom — and named the third (the footer nav's
+     own existing bottom inset, `max(16px, env(safe-area-inset-bottom))`,
+     i.e. this same 16px at rest) as the correct canonical distance. This
+     token is that same literal value, reused (not a new number) as the
+     single source of truth `.infocard-dossier__content--cover`/
+     `.infocard-dossier__content:has(.infocard-page--specimen)` pull their
+     own top padding from below — see those rules' own comments for how
+     bottom parity is achieved without a third copy of the value. Scoped to
+     cover/specimen only; every editorial page type keeps its own unrelated
+     fluid vertical padding (the base `.infocard-dossier__content` rule,
+     untouched). */
+  --dossier-media-gap: 16px;
+  /* TG033 Prompt 077 corrective (Figma spacing / frame-contract authority):
+     one explicit outer-inset unit for every non-media page family — the
+     product's own "X = 16px, on the 4/8 grid" authority. Aliased to the
+     already-canonical `--dossier-rail` value rather than a new literal (same
+     16px), so this never drifts into a second, independently-tuned number.
+     Kept as its own named token — semantically distinct from
+     `--dossier-media-gap` (media-only, frozen) — so the non-media frame
+     contract and the media-gap contract can never be conflated. */
+  --dossier-space-x: var(--dossier-rail);
 }
 
 .infocard-dossier__panel {
@@ -2303,9 +2903,13 @@ body,
    replacement — this is now a two-slot row, `align-items: center` (was
    `baseline`) so the number circle and building title share one balanced
    vertical composition instead of sitting on a text baseline. */
+/* TG028 (ADGARC-FB-107): `flex-start` (was `center`) so the number circle
+   and the title's own top edge align, holding for multiline titles too —
+   the title's own reduced line-height below (`__case-name`) is what keeps a
+   single-line title reading correctly against the same rule. */
 .infocard-dossier__row-left {
   display: flex;
-  align-items: center;
+  align-items: flex-start;
   gap: 0.65rem;
   min-width: 0;
 }
@@ -2335,6 +2939,18 @@ body,
      width moved to the footer pill below (§5). */
   font-size: clamp(1.35rem, 3.2vw, 1.75rem);
   font-weight: 700;
+  /* TG028 (ADGARC-FB-107): reduced from the browser default so a wrapped
+     or deterministically-broken multiline title reads as one tight
+     heading rather than loosely spaced lines. */
+  line-height: 1.05;
+}
+
+/* TG028 (ADGARC-FB-107): one line per `identity.displayNameLines` entry
+   (or the single plain-name fallback) — `display: block` so each line
+   respects the reduced line-height above independent of surrounding
+   inline layout. */
+.infocard-dossier__case-name-line {
+  display: block;
 }
 
 /* Pass F1 §5: the bottom nav's visual-label pill — a non-interactive
@@ -2353,18 +2969,34 @@ body,
    for the longest live label ("Arquitectura", 12 characters); `white-space:
    nowrap` plus that fixed width is what keeps every shorter label centered
    in the same box rather than shrinking it.
-   TG020-R3 (FB-064): compacted to the shared `--pill-height` (26px) —
+   TG020-R3 (FB-064) / TG022 P5 (FB-085/FB-086): compacted to the shared
+   `--control-height` (formerly its own `--pill-height`, consolidated so the
+   pill and the circle controls can never drift apart in height again) —
    vertical padding dropped to 0 since the fixed height plus `align-items:
    center` already centers the label; only horizontal padding remains, to
    keep the label off the border. Non-interactive `<span>`, so no touch
    target to preserve here (see `.infocard-dossier__explore` below for the
-   interactive twin, which does need one). */
-.infocard-dossier__nav-pill {
+   interactive twin, which does need one).
+   TG033 Prompt 074 corrective (ADGARC-FB-114): `Explora` now shares this
+   exact rule (selector list below) rather than its own near-identical
+   declaration block — runtime review found the two still visually diverged
+   (width/padding behavior) despite both referencing the same height/border/
+   radius/font tokens; one shared selector is the only way to guarantee they
+   can never drift again, "Fitxa" or any other section label included.
+   Operator corrective: `gap` added — Explora's own two children (the
+   "Explora" text node and the `NavArrowGlyph` icon) need a structural,
+   deterministic space between them rather than relying on an incidental
+   whitespace character in JSX source; harmless here on the pill's own
+   single-text-node case (a `gap` with nothing to separate has no visible
+   effect). */
+.infocard-dossier__nav-pill,
+.infocard-dossier__explore {
   flex: none;
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  height: var(--pill-height);
+  gap: 0.35rem;
+  height: var(--control-height);
   width: var(--pill-nav-width);
   padding: 0 0.5rem;
   border: 1px solid var(--canonical-ink);
@@ -2419,7 +3051,40 @@ body,
   min-height: 0;
   overflow-y: auto;
   overflow-x: hidden;
-  padding: clamp(1.25rem, 4vw, 2.5rem);
+  /* TG033 Prompt 077 corrective (Figma spacing / frame-contract authority):
+     this is the FRAME / OUTER INSET every non-media page sits inside — a
+     flat `--dossier-space-x` (16px) on all four sides, superseding the
+     former content-height-dependent fluid clamp (SESSION 8's own
+     `justify-content` correctives on individual pages are superseded by
+     this same change — see each page family's own rule further down). The
+     outer frame is now stable regardless of a page's own content height.
+     Cover/specimen's top/bottom override (rule immediately below) is
+     unaffected — it still only replaces top/bottom, so their horizontal
+     inset stays this exact value, unchanged numerically from before. */
+  padding: var(--dossier-space-x);
+}
+
+/* TG033 Prompt 075 corrective (ADGARC-FB-114/FB-115 §A): cover/specimen
+   only (`:has()` scopes the specimen case the same way every other
+   page-type-specific content override in this file already does — see the
+   `:has()` group further down). `padding-top: var(--dossier-media-gap)`
+   makes "content-top → media frame" (gap 1) exactly the canonical distance.
+   `padding-bottom: 0` is deliberate, not an oversight: `.infocard-dossier__nav`
+   below already contributes its own `padding-top` (16px, unchanged) to the
+   visible space between the frame's bottom edge and the nav's own
+   pill/button row — since the two share one continuous canonical-yellow
+   background with no border/seam between them, that nav `padding-top`
+   alone already renders as the full "media frame → footer/nav row" gap
+   (gap 2). Restating `--dossier-media-gap` here too would double it to 32px
+   instead of matching. This is the one structural source of truth for both
+   gaps: `--dossier-media-gap` (gap 1) and the nav's own pre-existing,
+   untouched top padding (gap 2) are the same literal 16px value as the
+   nav's own bottom padding (gap 3), so all three render identically without
+   a third independently-tuned number anywhere. */
+.infocard-dossier__content--cover,
+.infocard-dossier__content:has(.infocard-page--specimen) {
+  padding-top: var(--dossier-media-gap);
+  padding-bottom: 0;
 }
 
 .infocard-dossier__content:focus {
@@ -2449,9 +3114,8 @@ body,
    effect once their direct parent is itself a flex container. Scoped via
    `:has()` (the same technique `PassportPane`'s own EditorialShell-body
    override already established) so only these two page types gain true
-   vertical centering — Facts/Specimen's own dormant `flex: 1` rules are
-   deliberately left inert, since their top-anchored composition is already
-   correct. */
+   vertical centering — Facts' own dormant `flex: 1` rule is deliberately
+   left inert, since its top-anchored composition is already correct. */
 /* TG019 Pass B (operator feedback §6): `.infocard-page--facts` added to this
    list — its own `flex: 1; justify-content: center;` (below) already existed
    from TG018 but was inert, since its parent here was never a flex container
@@ -2461,44 +3125,53 @@ body,
    same `:has()` technique, so their own `flex: 1; justify-content: center;
    align-items: center;` below (previously dormant, exactly like the others
    were before this rule existed) finally takes effect. */
+/* TG033 Prompt 074 corrective (ADGARC-FB-115): `.infocard-page--specimen`
+   joins this list — it was deliberately left off while the specimen page
+   was still "a deliberately vacant, case-independent canvas" (pre-FB-115);
+   now that it renders a real media box that must fill the same available
+   region the cover does, its own `flex: 1 1 auto; min-height: 0;` (below)
+   needs this same activation.
+   Operator corrective (page-family ownership audit, post Prompt 074/
+   SESSION 5): this single `display: flex; flex-direction: column;`
+   declaration is shared by every page type listed below and was never
+   itself the media-fill mechanism — it only establishes the flex-column
+   context each page type's OWN rule (below) then opts into differently.
+   `--highlight`/`--typography`/`--architecture-movement`/`--facts`/
+   `--building`/`--architecture-prose`/`--dialogue` each still own
+   `flex: 1; justify-content: center; align-items: center|flex-start;`
+   (unchanged, pre-dating any media-fill work) — centering, never filling.
+   Only `--cover` and `--specimen` own `flex: 1 1 auto; min-height: 0;`
+   (filling). Confirmed via this audit that no editorial page type's own
+   rule was ever changed to the filling variant — see
+   `.infocard-page--cover`/`.infocard-page--specimen` below for the only two
+   page types media-fill geometry actually applies to. */
 .infocard-dossier__content:has(.infocard-page--highlight),
 .infocard-dossier__content:has(.infocard-page--typography),
 .infocard-dossier__content:has(.infocard-page--architecture-movement),
 .infocard-dossier__content:has(.infocard-page--facts),
 .infocard-dossier__content:has(.infocard-page--building),
 .infocard-dossier__content:has(.infocard-page--architecture-prose),
-.infocard-dossier__content:has(.infocard-page--dialogue) {
+.infocard-dossier__content:has(.infocard-page--dialogue),
+.infocard-dossier__content:has(.infocard-page--specimen) {
   display: flex;
   flex-direction: column;
 }
 
-/* TG020-R1 (FB-049) / TG020-R3 (FB-064): exactly the chapter/status pill's
-   own control height (`--pill-height`, shared token above), border weight,
-   corner radius and vertical text alignment (`.infocard-dossier__nav-pill`
-   above) — Explora carries no separate CTA geometry. Padding is horizontal
-   only, same as the pill: the fixed height plus `align-items: center`
-   already centers the label, so no vertical padding is needed beyond that.
-   A pseudo-element hit area (below) restores the 44px touch floor this
-   compact box gives up — same technique `.app-menu__back` uses for its own
-   compact circle — without enlarging the box itself or the surrounding
-   `.infocard-dossier__nav` row. */
+/* TG033 Prompt 074 corrective (ADGARC-FB-114): all shared geometry/
+   typography (height, width, padding, border, radius, font, color,
+   text-overflow behavior) now lives on the combined
+   `.infocard-dossier__nav-pill, .infocard-dossier__explore` rule above —
+   this rule only adds what a clickable `<button>` needs that a
+   non-interactive `<span>` pill does not: native button appearance reset,
+   a pointer cursor, and the hover affordance below. `position: relative`
+   stays here for the touch-target pseudo-element (below). Do not restate
+   any of the pill's own box properties here — that duplication is exactly
+   what let this control visually drift from the pill before. */
 .infocard-dossier__explore {
   appearance: none;
   position: relative;
   align-self: center;
-  flex: none;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  height: var(--pill-height);
-  border: 1px solid var(--canonical-ink);
-  border-radius: var(--pill-corner);
-  background: var(--surface);
-  color: var(--canonical-ink);
-  font: inherit;
-  font-size: var(--type-nav-pill);
-  font-weight: 700;
-  padding: 0 1.1rem;
+  font-family: inherit;
   cursor: pointer;
 }
 
@@ -2527,26 +3200,50 @@ body,
 /* TG019 Pass A (operator feedback §8): exactly 16px on all four sides —
    was 0.55rem (8.8px) top/bottom, 1rem (16px) left/right. The bottom side
    keeps a safe-area floor (never less than 16px) rather than dropping the
-   existing home-indicator clearance on notch devices. */
+   existing home-indicator clearance on notch devices.
+   Operator corrective: left/right now read `var(--dossier-rail)` (still
+   16px) instead of a second literal `16px` — the same token
+   `.infocard-dossier__content` above now shares, so this row's rail can
+   never drift from the media frame's again. Top/bottom stay their own
+   literal values, unrelated to the horizontal-rail fix. */
 .infocard-dossier__nav {
   flex: none;
   display: flex;
   align-items: center;
   justify-content: space-between;
   gap: 0.6rem;
-  padding: 16px 16px max(16px, env(safe-area-inset-bottom));
+  padding: 16px var(--dossier-rail) max(16px, env(safe-area-inset-bottom));
   background: var(--canonical-yellow);
 }
 
+/* TG033 Prompt 073 corrective (ADGARC-FB-114): supersedes the former
+   ADGARC-FB-108/TG028 centering above — the cover footer now holds both
+   Explora (flush left/start) and the image credit (flush right/end, filling
+   the remaining width — see `.infocard-page__hero-credit` override just
+   below), so the base `.infocard-dossier__nav` row's own
+   `justify-content: space-between` already produces the required layout
+   with exactly two children; this modifier no longer overrides it. */
+
+/* The credit caption reused inside this footer row (InfocardDossier.tsx)
+   needs its own in-flow sizing here — `.infocard-page__hero-credit`'s base
+   rule is written for sitting beneath the hero image, not inside a fixed-
+   height flex row beside a pill button. */
+.infocard-dossier__nav--cover .infocard-page__hero-credit {
+  flex: 1 1 auto;
+  min-width: 0;
+  margin: 0;
+  text-align: right;
+}
+
 /* TG019 Pass A (operator feedback §3): was a literal 40px, one size larger
-   than the page-nav pip's `--circle-nav-diameter` (32px) below — the exact
+   than the page-nav pip's `--control-height` (32px) below — the exact
    arrow/number mismatch the correction calls out. Same token now, so the
    two can never drift again. */
 .infocard-dossier__nav-arrow {
   appearance: none;
   flex: none;
-  width: var(--circle-nav-diameter);
-  height: var(--circle-nav-diameter);
+  width: var(--control-height);
+  height: var(--control-height);
   border-radius: 50%;
   border: 1px solid var(--canonical-ink);
   background: var(--surface);
@@ -2578,8 +3275,8 @@ body,
 
 .infocard-dossier__page-pip {
   appearance: none;
-  width: var(--circle-nav-diameter);
-  height: var(--circle-nav-diameter);
+  width: var(--control-height);
+  height: var(--control-height);
   border-radius: 50%;
   border: var(--stroke-hairline) solid var(--canonical-ink);
   /* Unselected = no fill/transparent on the yellow nav surface (operator
@@ -2599,16 +3296,14 @@ body,
     transform var(--motion-duration) var(--motion-easing);
 }
 
-/* Selected = white fill. Still carries a second signal (border weight/
-   font-weight) alongside the fill so state never rests on color alone
-   (contract §10), plus the brief scale-in the correction calls "subtle
-   motion" on the window shifting/current page changing. */
+/* Selected = white fill. TG022 P5 (FB-087): selection is a non-geometric
+   channel — fill and type weight carry it; the base pip's own border stays
+   the geometry authority, so selection never changes box or stroke
+   dimensions. */
 .infocard-dossier__page-pip[data-active="true"] {
   background: var(--surface);
   color: var(--canonical-ink);
-  border-width: 2px;
   font-weight: 700;
-  transform: scale(1.05);
 }
 
 /* Defensive only — every case's descriptor list always covers all five
@@ -2622,14 +3317,63 @@ body,
 
 /* Pass F1 §6 — passport-stamp step: post-chapter, outside the numbered
    pagination, reusing the same `.infocard-dossier__content--page`/`__nav`
-   shell as ordinary content pages. */
+   shell as ordinary content pages.
+   TG033 Prompt 077 corrective (Figma spacing / frame-contract authority):
+   Prompt 076's centering fix on this selector is superseded. Passport is
+   FAMILY B, but unlike the pagination pages its outer scroll container and
+   its content block used to be the same element — one box cannot carry both
+   the outer `--dossier-space-x` inset (from the shared base
+   `.infocard-dossier__content` rule) and an additional inner
+   `--dossier-space-x` content-frame padding, since CSS does not stack two
+   `padding` declarations on one element. `.infocard-dossier__stamp-frame`
+   (new, below) is the minimal structural wrapper that expresses that
+   nesting.
+   TG033 Prompt 078 micro-corrective: restores a minimal `display: flex;
+   flex-direction: column;` body here — not the centering/positioning
+   properties (those stay owned by `.infocard-dossier__stamp-frame` below)
+   but the flex-column context the frame below needs in order to fill this
+   element's own full available height via `flex: 1 1 auto`. Without this,
+   the frame could only size itself from its own content, reopening the
+   same content-height-dependent bottom-inset defect
+   `.infocard-page--facts`'s own comment describes for the pagination
+   pages. `InfocardDossier.tsx` still renders this class name as the step's
+   identity hook either way. */
 .infocard-dossier__content--stamp {
   display: flex;
   flex-direction: column;
+}
+
+/* TG033 Prompt 077 corrective (Figma spacing / frame-contract authority):
+   Passport's content frame — the inner `--dossier-space-x` padding plus the
+   centering/gap properties that used to live directly on
+   `.infocard-dossier__content--stamp` (see that rule's own comment for why
+   a wrapper was genuinely required here, the one allowed structural change
+   this corrective makes). Horizontal centering (`align-items: center`),
+   the QR/check visual, the stamp target's own size/behavior, and existing
+   copy wording are all unchanged.
+   TG033 Prompt 078 micro-corrective: `flex: 1 1 auto; min-height: 0;`
+   added — the frame now fills the available dossier content region
+   (sized by the restored flex-column context on
+   `.infocard-dossier__content--stamp` above) rather than only its own
+   content height.
+   TG033 Prompt 079 (OPERATOR runtime direction): `justify-content:
+   center` added now that the fill is reliable — the stamp target +
+   instruction now center as one unit *within* the full-height frame
+   (vertical axis) while staying horizontally centered as before
+   (`align-items: center`, unchanged), rather than sitting at the frame's
+   top edge. `.infocard-dossier__content--stamp` itself needed no change —
+   its single child (this frame) already fills it completely, so centering
+   belongs on this selector's own children, not on that outer one. */
+.infocard-dossier__stamp-frame {
+  display: flex;
+  flex-direction: column;
   align-items: center;
-  justify-content: center;
   gap: 1.5rem;
   text-align: center;
+  padding: var(--dossier-space-x);
+  flex: 1 1 auto;
+  min-height: 0;
+  justify-content: center;
 }
 
 .infocard-dossier__stamp-target {
@@ -2659,8 +3403,29 @@ body,
   opacity: 0.35;
 }
 
+/* TG033 Prompt 076 corrective (§E.2): runtime review requires this text to
+   present as exactly two visual lines at the canonical dossier width. A
+   structural measure, not a copy change or a per-case hack: the Spanish
+   `passport.stampInstruction` string ("Toca el sello para registrar tu
+   visita.") naturally renders as one long line at this panel's width with
+   no constraint; `max-width: 22ch` forces a wrap after "para" ("Toca el
+   sello para" / "registrar tu visita.", both comfortably under 22
+   characters) at every viewport the dossier supports. `stampDisabledReason`
+   (the alternate text shown via the same element when stamping is
+   disabled) shares this same measure — its own wording is owned elsewhere
+   (App-level, pre-resolved text), so this is a best-effort structural
+   constraint for it, not a guarantee of exactly two lines for arbitrary
+   text. `text-align: center` (inherited from `.infocard-dossier__stamp-frame`
+   — TG033 Prompt 077 moved this element's parent styling there, see that
+   rule's own comment) already centers the now-narrower block; flex
+   `align-items: center` on that same parent centers it horizontally as a
+   block, so no extra `margin: 0 auto` is needed here. This `22ch` measure
+   is unaffected by Prompt 077's outer/inner frame-padding change — it
+   constrains the text's own width, not the frame — so it still produces
+   exactly two lines against the same shipped string. */
 .infocard-dossier__stamp-instruction {
   margin: 0;
+  max-width: 22ch;
   font-size: 0.95rem;
   font-weight: 600;
 }
@@ -2720,32 +3485,44 @@ body,
   gap: 1rem;
 }
 
+/* Operator corrective (page-family ownership): `.infocard-page--cover` and
+   `.infocard-page--specimen` (further down this file) are the only two page
+   types that own this "fill the available space" geometry
+   (`flex: 1 1 auto; min-height: 0`) — every editorial prose page type
+   (`--building`, `--architecture-prose`, `--dialogue`, `--typography`,
+   `--facts`, `--highlight`, `--architecture-movement`) owns the centering
+   variant instead (`flex: 1; justify-content: center; ...`, above/below).
+   Never widen this selector to include an editorial page type. */
 .infocard-page--cover {
   flex: 1 1 auto;
+  min-height: 0;
   width: 100%;
   gap: 0;
 }
 
-/* Honest hero-media slot: fills the available cover height whether or not
-   `heroMedia` is populated. Never a fabricated image nor the Figma
-   screenshot itself — an empty slot keeps the target composition without
-   inventing a product asset (Pass E §6, hero asset BLOCKED for every
-   current case). */
-.infocard-page__hero {
-  flex: 1 1 auto;
-  min-height: 220px;
-  border: 1px solid var(--canonical-ink);
-  background: rgba(255, 255, 255, 0.3);
-  overflow: hidden;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-
-.infocard-page__hero[data-empty="true"] {
-  border-style: dashed;
-}
-
+/* Honest hero-media slot, present whether or not `heroMedia` is populated —
+   never a fabricated image nor the Figma screenshot itself (Pass E §6).
+   TG023 corrective (ADGARC-FB-106, prompt 057): was `flex: 1 1 auto; min-
+   height: 220px`, i.e. sized from whatever height the cover's flex column
+   left over after its siblings (the row header above, the optional credit
+   caption below). That remainder was case-specific at the time (a longer
+   building name wrapped the row to two lines, a longer/second credit
+   wrapped the caption) — fixed `aspect-ratio: 4/3; max-height: 45vh` (TG033
+   Prompt 073) made the frame a function of the box's own width alone
+   instead, uniform for every case at a given viewport.
+   TG033 Prompt 074 corrective (ADGARC-FB-114): that fixed-ratio box is
+   itself now the defect runtime review flagged — on any viewport taller
+   than the 45vh-capped box actually needs, it left a large dead yellow zone
+   between the frame and the footer nav. The credit no longer lives inside
+   this flex column at all (Prompt 073 already moved it into the nav row),
+   so there is no sibling left whose height this box could still depend on —
+   `flex: 1 1 auto; min-height: 0` (below, shared with
+   `.infocard-page__specimen-frame`) now sizes the box from the *actual*
+   available space between the row header and the footer nav instead of a
+   second guessed fixed number. `object-fit: cover` on the image still
+   crops to fill whatever that computed box shape is, preserving the
+   image's own aspect ratio without distortion; `overflow: hidden` on the
+   box is what guarantees this can never cause scroll. */
 .infocard-page__hero-image {
   width: 100%;
   height: 100%;
@@ -2753,8 +3530,57 @@ body,
   display: block;
 }
 
+/* TG023 (ADGARC-FB-006): discreet but clearly readable, always-rendered
+   (never hover-only) credit caption — visually subordinate to editorial
+   content via scale alone (full canonical-ink contrast is kept for
+   legibility; the TG022 P7 finding already established that de-emphasis via
+   opacity, not scale, is what reads as insufficient contrast here).
+   TG033 Prompt 073 corrective (ADGARC-FB-114): this base rule's own
+   margin/sizing is for the caption sitting on its own line; the cover
+   dossier now instead places it in the footer nav row beside Explora, where
+   `.infocard-dossier__nav--cover .infocard-page__hero-credit` above resets
+   the margin and sizing for that context. */
+.infocard-page__hero-credit {
+  flex: none;
+  margin: 0.4rem 0 0;
+  font-size: 0.72rem;
+  line-height: 1.35;
+  color: var(--canonical-ink);
+}
+
+.infocard-page__hero-credit a {
+  color: inherit;
+  text-decoration: underline;
+}
+
+/* TG033 Prompt 077 corrective (Figma spacing / frame-contract authority):
+   Prompt 076's `flex: 1; justify-content: flex-start` (itself a fix for
+   content-height-dependent centering) is superseded — Facts/Fitxa is
+   FAMILY A (structural/barred page): outer inset = `--dossier-space-x`
+   from `.infocard-dossier__content` alone; inner additional content
+   padding = 0. The rows/separators/labels/values below are the page's own
+   internal structure and are completely untouched.
+   TG033 Prompt 078 micro-corrective: Prompt 077 over-removed — dropping
+   `justify-content` was correct, but dropping `flex: 1` too meant this
+   section's own box no longer filled the available content region, so its
+   BOTTOM outer inset was `X + leftover` (content-height-dependent) rather
+   than exactly `X` — the same defect Prompt 077 was meant to remove, just
+   moved to the other edge. `flex: 1 1 auto; min-height: 0;` restores the
+   fill (frame now reaches the content region's true bottom, where
+   `.infocard-dossier__content`'s own `X` padding takes over); at this
+   point the frame did not yet carry `justify-content` again.
+   TG033 Prompt 079 (OPERATOR runtime direction): the frame now reliably
+   fills the region (Prompt 078), so `justify-content: center` is safe to
+   reintroduce here — unlike Prompt 076's version, centering now happens
+   *inside an already-full-height frame*, so the visible result is
+   content-height-independent (the frame's own top/bottom edges, and thus
+   the `X` outer inset, never move; only where the content sits *within*
+   that fixed frame changes). This is a product-direction change (OPERATOR
+   wants the non-media content vertically centered in the yellow region),
+   not a reversion to the old content-height-dependent defect. */
 .infocard-page--facts {
-  flex: 1;
+  flex: 1 1 auto;
+  min-height: 0;
   justify-content: center;
 }
 
@@ -2775,32 +3601,37 @@ body,
    so label and value top-align on the same row edge, rather than sharing a
    text baseline that reads as misaligned once the value is markedly larger
    than the label (evidence 05_fitxa_alignment_annotated.png). */
-/* TG019 Pass B (operator feedback §5): the internal row dividers are
-   thickened by 1px over the shared `--separator-width` token (never moved
-   vertically) — `calc()` keeps the relationship explicit rather than a new
-   literal. The last row's own border-bottom is dropped entirely below: every
-   row used to carry one, which is what produced the surplus rule after the
-   final fact (evidence 03_fitxa_bottom_separator_surplus.png) — the block's
-   already-separate top rule (`.infocard-page__facts`, unchanged at 1px) is
-   the only edge that was ever meant to close on its own. */
+/* TG019 Pass B (operator feedback §5): the last row's own border-bottom is
+   dropped entirely below: every row used to carry one, which is what
+   produced the surplus rule after the final fact (evidence
+   03_fitxa_bottom_separator_surplus.png) — the block's already-separate top
+   rule (`.infocard-page__facts`) is the only edge that was ever meant to
+   close on its own.
+   TG022 P7 (FB-091): the former `calc(var(--separator-width) + 1px)`
+   thickening is removed — "no 2px-vs-1px divergence" means this row rule
+   converges to the same canonical 1px weight as `.infocard-page__facts`
+   above and treatment 5, not a heavier variant of it. */
 .infocard-page__fact {
   display: flex;
   align-items: flex-start;
   justify-content: space-between;
   gap: 1.25rem;
   padding: 0.9rem 0;
-  border-bottom: calc(var(--separator-width) + 1px) solid var(--separator-color);
+  border-bottom: var(--separator-width) solid var(--separator-color);
 }
 
 .infocard-page__fact:last-child {
   border-bottom: none;
 }
 
+/* TG028 (ADGARC-FB-110): weight/size converged onto the shared
+   `--type-data-label` data-row token (the Moviment label's own regular
+   weight, not the former page-specific 600 bold). */
 .infocard-page__fact dt {
   flex: none;
   margin: 0;
-  font-size: var(--type-fact-label);
-  font-weight: 600;
+  font-size: var(--type-data-label);
+  font-weight: 400;
 }
 
 /* TG018 Pass C (correction matrix §D): normalized toward panel5's measured
@@ -2812,33 +3643,62 @@ body,
 .infocard-page__fact dd {
   margin: 0;
   text-align: right;
-  font-size: var(--type-fact-value);
+  font-size: var(--type-data-value);
   font-weight: 700;
   overflow-wrap: anywhere;
 }
 
 .infocard-page--highlight {
-  flex: 1;
   /* TG020-R1 (FB-050): overrides the base `.infocard-page`'s 1rem gap — the
      quote/phrase and its attribution footer must read as one unit while
      staying typographically distinct (already true via the italic
-     cite/smaller size below), not as two separate blocks. */
-  gap: 0.4rem;
+     cite/smaller size below), not as two separate blocks.
+     TG028 (ADGARC-FB-110): tightened further, 0.4rem -> 0.3rem.
+     TG033 Prompt 077 corrective (Figma spacing / frame-contract authority):
+     `justify-content: center` removed — Quote/Cita is FAMILY B
+     (content page): outer inset from `.infocard-dossier__content` alone,
+     inner `--dossier-space-x` content padding owned here instead of
+     content-height-dependent centering.
+     TG033 Prompt 078 micro-corrective: `flex: 1` was dropped along with
+     `justify-content` in Prompt 077, which should not have happened — see
+     `.infocard-page--facts`'s own comment in this file for why. Restored as
+     `flex: 1 1 auto; min-height: 0;` (frame fills the available region).
+     TG033 Prompt 079 (OPERATOR runtime direction): `justify-content:
+     center` reintroduced now that the fill is reliable — see
+     `.infocard-page--facts`'s own comment for why this centers within an
+     already-full-height frame rather than reopening the old
+     content-height-dependent defect. */
+  gap: 0.3rem;
   align-items: center;
-  justify-content: center;
   text-align: center;
+  padding: var(--dossier-space-x);
+  flex: 1 1 auto;
+  min-height: 0;
+  justify-content: center;
 }
 
 /* Pass F1B (prompt 046 §4D): literal quotes now carry their own corrected
-   size/leading/italic; paraphrase/synthesis (`__phrase`) keeps the prior
-   treatment on purpose — it must never visually masquerade as a literal
-   quotation (InfocardHighlightedPhrasePage comment, DEC-010 §D3). */
+   size/leading; paraphrase/synthesis (`__phrase`) keeps the prior treatment
+   on purpose — it must never visually masquerade as a literal quotation
+   (InfocardHighlightedPhrasePage comment, DEC-010 §D3). */
+/* TG028 (ADGARC-FB-110): shared `--type-display`/`--type-display-line` with
+   `.infocard-page__meta-typeface` for one display-text style.
+   TG033 Prompt 075 corrective (ADGARC-FB-117 §B): runtime review
+   established one shared display-size contract across the quote headline,
+   the architecture-movement value, and the typeface title —
+   `--type-emphasis-display` (replaces `--type-display` here; see that
+   token's own comment). The corrective also explicitly supersedes DEC-010
+   §D3's prior "italic is the one property that stays quote-only" rule:
+   `font-style: italic` is removed. The quote/paraphrase distinction DEC-010
+   §D3 protects still holds via every other channel (blockquote semantics,
+   element choice, attribution treatment) — only the italic style itself is
+   no longer part of it. Line-height stays `--type-display-line` (unchanged
+   — this corrective's own scope is display *size*, not leading). */
 .infocard-page__quote {
   margin: 0;
-  font-size: clamp(1.4rem, 4.6vw, 2.1rem);
+  font-size: var(--type-emphasis-display);
   font-weight: 700;
-  font-style: italic;
-  line-height: 1.3;
+  line-height: var(--type-display-line);
 }
 
 .infocard-page__phrase {
@@ -2848,11 +3708,17 @@ body,
   line-height: 1.35;
 }
 
+/* TG028 (ADGARC-FB-110): author and year now read as one line ("Le
+   Corbusier · Vers une architecture, 1923") instead of a stacked two-line
+   footer — `row` + `flex-wrap` so a long bibliographic context still wraps
+   rather than overflowing on a narrow viewport. */
 .infocard-page__attribution {
   display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 0.25rem;
+  flex-direction: row;
+  flex-wrap: wrap;
+  align-items: baseline;
+  justify-content: center;
+  gap: 0.35rem;
   font-size: 1rem;
 }
 
@@ -2860,9 +3726,12 @@ body,
   font-style: italic;
 }
 
-.infocard-page__bibliographic-context {
-  opacity: 0.7;
-}
+/* TG022 P7 (FB-088 / P7-D1): the `opacity: 0.7` de-emphasis channel is
+   removed, not replaced — the statement/attribution hierarchy is already
+   carried by scale, italic treatment, placement and structure, so this
+   element now renders at full inherited canonical-ink strength like its
+   siblings. No rule remains at this selector; nothing else in this pass
+   styles it. */
 
 .infocard-page__heading {
   margin: 0;
@@ -2894,16 +3763,37 @@ body,
 
 .infocard-page__meta-typeface {
   margin: 0;
-  font-size: clamp(1.8rem, 6vw, 2.6rem);
+  /* TG033 Prompt 075 corrective (ADGARC-FB-117 §B): `--type-emphasis-display`
+     replaces `--type-display` — the typeface title now shares its display
+     size with the quote headline and the architecture-movement value (see
+     that token's own comment). */
+  font-size: var(--type-emphasis-display);
   font-weight: 700;
   /* TG020-R1 (FB-052): a long typeface name wrapping onto two lines at this
      display size was reading as two separate headings rather than one
      compact multiline one — the browser default line-height at this
-     font-size leaves too much interline gap for a display treatment. */
-  line-height: 0.95;
+     font-size leaves too much interline gap for a display treatment.
+     TG028 (ADGARC-FB-110): now the shared `--type-display-line` token,
+     also consumed by `.infocard-page__quote` above. */
+  line-height: var(--type-display-line);
   /* TG018 Pass D: a long/unbroken typeface family name must never be the
      one thing that forces horizontal dossier overflow. */
   overflow-wrap: anywhere;
+}
+
+/* FB-117 (TG033 Prompt 073 corrective): running-copy emphasis — one
+   dedicated element/class per matched span (never a raw `<u>`/`<b>` or
+   markup injected into the copy itself), applied by
+   `renderEditorialCopy`/`InfocardProsePage` in InfocardPages.tsx. The
+   typeface-name span reuses `<strong>`'s own default bold; the
+   building-name span needs its own underline, the same convention
+   `.infocard-page__hero-credit a` already uses elsewhere in this file. */
+.infocard-page__body-typeface {
+  font-weight: 700;
+}
+
+.infocard-page__body-building {
+  text-decoration: underline;
 }
 
 /* TG019 Pass C (operator feedback §7): shared reading-body treatment for
@@ -2916,42 +3806,123 @@ body,
    default), a controlled reading measure now shared by all four instead of
    only Diàleg's own override below it (removed as redundant). Never the
    intentionally distinct specimen/display typeface treatment
-   (`__meta-typeface` below, or the quote/phrase treatments). */
+   (`__meta-typeface` below, or the quote/phrase treatments).
+   TG022 P7 (FB-090): `overflow-wrap: anywhere` is replaced with the
+   least-aggressive `break-word` — it still guarantees the same no-overflow
+   floor (breaks a single word too long for the measure) but, unlike
+   `anywhere`, never chooses a mid-word break the line-breaking algorithm had
+   an ordinary word-boundary alternative for. `text-wrap: pretty` improves
+   ordinary line-break quality on top of that (an unsupporting engine simply
+   ignores the declaration). `hyphens: auto` is deliberately not added here —
+   deferred per P7-D2 pending separate `<html lang>` locale-ownership work.
+   TG033 Prompt 074 corrective (ADGARC-FB-117 §E) widened this measure to
+   38ch and loosened `line-height` to an explicit 1.4, to reduce orphans/
+   rivers. Operator corrective (runtime review, post Prompt 074/SESSION 5):
+   these four pages (L'edifici/Arquitectura/Tipografia/Diàleg) are centered
+   vertically within the available content height (`.infocard-dossier__content:has(...)`
+   + this group's own `flex: 1; justify-content: center;` below) — making
+   the text block taller consumed more of that available height from both
+   the top and the bottom, and runtime review found the bottom edge in
+   particular now read as crowding the footer nav. Editorial pages are
+   explicitly out of scope for the cover/specimen media-fill geometry (see
+   `.infocard-page--cover`/`.infocard-page--specimen` below) and must keep
+   their own pre-existing spacing contract, so this reverts back to the
+   pre-Prompt-074 34ch / `var(--type-body-line)` (1.1875) pairing. This
+   reopens the FB-117 §E orphans/rivers finding — see this pass's report
+   for the honest residual note; a future pass must find a fix that does
+   not also increase these pages' own vertical footprint. */
 .infocard-page__body {
   margin: 0;
   max-width: 34ch;
   font-size: var(--type-body);
   font-weight: 400;
   line-height: var(--type-body-line);
-  overflow-wrap: anywhere;
+  overflow-wrap: break-word;
+  text-wrap: pretty;
 }
 
 /* TG020-R1 (FB-051): L'edifici, Arquitectura (running-text step) and Diàleg
    were reading as anchored toward the upper-left of the yellow content area.
-   `align-items: center` on the (now-flex, via the `:has()` rule above)
-   section centers the `.infocard-page__body` block horizontally — it keeps
-   its own `max-width: 34ch`, so it no longer stretches edge-to-edge, and its
-   paragraph text stays left-aligned inside that narrower centered box (no
-   `text-align` set here). `justify-content: center` centers it vertically,
-   the same mechanism `--highlight`/`--typography` already use. Tipografia
-   itself is deliberately NOT in this list — TG019 Pass C already settled it
-   on left-aligned/vertical-only centering and this correction does not
-   revisit that. */
+   `align-items: center` centers the `.infocard-page__body` block
+   horizontally — it keeps its own `max-width` (34ch — reverted here after a
+   brief Prompt 074 widening to 38ch, see that rule's own comment above), so
+   it no longer stretches edge-to-edge, and its paragraph text stays
+   left-aligned inside that narrower centered box (no `text-align` set
+   here).
+   TG028 (ADGARC-FB-110): Tipografia used to join this list too (horizontal
+   centering), per FB-110's "consistent centering/alignment" direction.
+   TG033 (ADGARC-FB-117) narrows that back for Tipografia only: its meta
+   (typeface name + building name) must left-align flush with this same
+   body box rather than each centering independently, so Tipografia now
+   keeps its own `align-items: flex-start` rule below instead of sharing
+   this one — its body still shares this rule's `max-width`/font-size via
+   the shared selector list further down, only the horizontal alignment
+   differs.
+   TG033 Prompt 077 corrective (Figma spacing / frame-contract authority):
+   `justify-content: center` removed — these three are FAMILY B
+   (content pages): outer inset from `.infocard-dossier__content` alone,
+   inner `--dossier-space-x` content padding owned here instead of
+   content-height-dependent centering.
+   TG033 Prompt 078 micro-corrective: `flex: 1` was dropped along with
+   `justify-content` in Prompt 077, which should not have happened — see
+   `.infocard-page--facts`'s own comment in this file for why. Restored as
+   `flex: 1 1 auto; min-height: 0;` (frame fills the available region).
+   TG033 Prompt 079 (OPERATOR runtime direction): `justify-content: center`
+   reintroduced now that the fill is reliable — see
+   `.infocard-page--facts`'s own comment for why this centers within an
+   already-full-height frame rather than reopening the old
+   content-height-dependent defect. */
 .infocard-page--building,
 .infocard-page--architecture-prose,
 .infocard-page--dialogue {
-  flex: 1;
-  justify-content: center;
   align-items: center;
+  padding: var(--dossier-space-x);
+  flex: 1 1 auto;
+  min-height: 0;
+  justify-content: center;
+}
+
+/* FB-117 (TG033): Tipografia's own meta (typeface name + building name)
+   must share the same left edge as its running-text body beneath it,
+   rather than each centering independently at its own (differing) content
+   width — `align-items: flex-start` replaces the `center` the other three
+   prose pages above keep. The shared body/meta grammar and every other
+   prose page are untouched.
+   TG033 Prompt 077 corrective (Figma spacing / frame-contract authority):
+   Prompt 076's `flex: 1; justify-content: flex-start` is superseded —
+   Typography is FAMILY B: outer inset from `.infocard-dossier__content`
+   alone, inner `--dossier-space-x` content padding owned here. Left
+   alignment, the SESSION-7 typeface-title size, inline emphasis, source
+   copy, and the paragraph measure/leading are all unchanged.
+   TG033 Prompt 078 micro-corrective: Prompt 077 dropped `flex: 1` along
+   with `justify-content` — see `.infocard-page--facts`'s own comment in
+   this file for why that was wrong. Restored as `flex: 1 1 auto;
+   min-height: 0;` (frame fills the available region).
+   TG033 Prompt 079 (OPERATOR runtime direction): `justify-content: center`
+   reintroduced now that the fill is reliable — see
+   `.infocard-page--facts`'s own comment for why. `align-items: flex-start`
+   (left alignment, the cross/horizontal axis) is unchanged — this adds
+   vertical centering only, so Typography reads centered top-to-bottom
+   while staying left-aligned edge-to-edge, exactly as the handoff's own
+   left-alignment requirement and this new vertical-centering requirement
+   both ask for independently. */
+.infocard-page--typography {
+  align-items: flex-start;
+  padding: var(--dossier-space-x);
+  flex: 1 1 auto;
+  min-height: 0;
+  justify-content: center;
 }
 
 /* TG020-R1 (FB-051): "increase prose size approximately 4 CSS px" —
    `--type-body` (0.95rem / 15.2px) + 4px = 1.2rem / 19.2px, exactly.
-   Scoped to these three pages' own body copy only; Tipografia's running text
-   stays at the shared `--type-body` size (see the comment above). */
+   TG028 (ADGARC-FB-110): Tipografia's running text joins this shared size —
+   FB-110 requires it "use the same body grammar" as the other prose pages,
+   superseding the former Tipografia-stays-at-`--type-body` exception. */
 .infocard-page--building .infocard-page__body,
 .infocard-page--architecture-prose .infocard-page__body,
-.infocard-page--dialogue .infocard-page__body {
+.infocard-page--dialogue .infocard-page__body,
+.infocard-page--typography .infocard-page__body {
   font-size: 1.2rem;
 }
 
@@ -2961,26 +3932,41 @@ body,
    same chapter dot, never merged on one page. `.infocard-page--architecture`
    stays a shared base class on both steps for the properties below that
    apply to either. */
-/* TG019 corrective C1 (operator confirmation, evidence
-   16_internal_separator_stroke.png): the +1px internal-separator stroke
-   correction extends to this divider too — same `calc(var(--separator-width)
-   + 1px)` logic as the Fitxa fix (`.infocard-page__fact`). `--separator-width`
-   is 1px, the same value this rule's own literal already was, so this is a
-   pure +1px width increase (1px -> 2px) with no other change: color stays
-   the existing `rgba(29, 29, 27, 0.3)` literal (not switched to
-   `--separator-color`), and the divider is not moved (`border-top`,
+/* TG022 P7 (FB-091 §21.5/§21.11): the former hardcoded `rgba(29, 29, 27,
+   0.3)` — a duplicate of the pre-P7 `--separator-color` literal at a
+   different alpha — and its `calc(var(--separator-width) + 1px)` thickening
+   are both removed. This divider now shares the same retargeted
+   `--separator-width`/`--separator-color` tokens as `.infocard-page__facts`/
+   `__fact` above, converging all three onto treatment 5's canonical solid
+   `--canonical-ink` weight. The divider is not moved (`border-top`,
    `padding-top` unchanged). */
 .infocard-page--architecture .infocard-page__meta {
   margin: 0;
   padding-top: 1.1rem;
-  border-top: calc(var(--separator-width) + 1px) solid rgba(29, 29, 27, 0.3);
+  border-top: var(--separator-width) solid var(--separator-color);
 }
 
 /* The movement-only step: a label/value row (matching the Facts page's own
-   row grammar), vertically centered in the available page height via the
-   `:has()` rule above. */
+   row grammar). TG033 Prompt 077 corrective (Figma spacing / frame-contract
+   authority): Prompt 076's `flex: 1; justify-content: flex-start` is
+   superseded — Architecture movement is FAMILY A (structural/barred page):
+   outer inset = `--dossier-space-x` from `.infocard-dossier__content`
+   alone; inner additional content padding = 0.
+   TG033 Prompt 078 micro-corrective: `flex: 1 1 auto; min-height: 0;`
+   restored — see `.infocard-page--facts`'s own comment for why dropping
+   `flex` entirely, not just `justify-content`, reopened a
+   content-height-dependent bottom-inset defect.
+   TG033 Prompt 079 (OPERATOR runtime direction): `justify-content: center`
+   reintroduced on top of that now-reliable fill — see
+   `.infocard-page--facts`'s own comment for why this is safe now (frame
+   fills first, then centers within itself) and is a product-direction
+   change, not a reversion. Movement label/value structure, the SESSION-7
+   shared display size (`--type-emphasis-display`), horizontal alignment,
+   and the divider treatment (`.infocard-page--architecture .infocard-page__meta`'s own border-top,
+   below) are all unchanged. */
 .infocard-page--architecture-movement {
-  flex: 1;
+  flex: 1 1 auto;
+  min-height: 0;
   justify-content: center;
 }
 
@@ -2993,32 +3979,110 @@ body,
 
 /* Reference composition shows a regular-weight, sentence-case label — not
    the uppercase/letter-spaced treatment `.infocard-page__meta-label` uses
-   elsewhere — paired with the already-bold (`<strong>`) value. */
+   elsewhere — paired with the already-bold (`<strong>`) value.
+   TG022 P7 (FB-089): `min-width: 0` overrides the flex-item default of
+   `min-width: auto`, which was refusing to let this label shrink below its
+   own content width inside the `__meta-line` row above — the actual
+   mechanism of the reported overflow, not the row's own flex properties. */
 .infocard-page--architecture .infocard-page__meta-label {
   text-transform: none;
   letter-spacing: normal;
   font-weight: 400;
-  font-size: clamp(1.1rem, 3vw, 1.35rem);
+  font-size: var(--type-data-label);
+  min-width: 0;
 }
 
+/* TG022 P7 (FB-089): same `min-width: 0` shrink correction as the label
+   above. The former `4.5vw` preferred term scaled against the *viewport*,
+   not this dossier panel (`clamp(433px, 34vw, 480px)` fixed-width at
+   desktop, full-viewport only below 1024px) — at any desktop width the term
+   resolves well past the 1.9rem ceiling, so the value rendered at a size
+   sized for a viewport several times the panel's own width. Replaced with a
+   static preferred term so the accepted `1.4rem`/`1.9rem` bounds stay
+   explicit in the `clamp()` itself with no viewport dependency; introducing
+   a container-query unit to keep continuous scaling would require a new
+   sizing-context owner this file does not have (out of P7's authorized
+   scope).
+   TG033 Prompt 075 corrective (ADGARC-FB-117 §B): `font-size` now reads
+   `--type-emphasis-display` instead of `--type-data-value` directly — same
+   literal value (the token was introduced at exactly this value, so the
+   movement value's own rendered size is unchanged), but now via the named
+   token the quote headline and typeface title also share, making this
+   surface the explicit visual reference it already was in practice. */
 .infocard-page--architecture .infocard-page__meta-value {
-  font-size: clamp(1.4rem, 4.5vw, 1.9rem);
+  font-size: var(--type-emphasis-display);
   text-align: right;
+  min-width: 0;
 }
 
-/* Pass F1C (prompt 047 §G): reverted F1B's horizontal centering — the
-   reference composition keeps the typeface name and running text left-
-   aligned like every other prose page. "Better centered and composed" reads
-   as vertical placement, handled by the `:has()` rule above plus this
-   page's own `flex: 1; justify-content: center`. */
-.infocard-page--typography {
-  flex: 1;
-  justify-content: center;
-}
+/* Pass F1C (prompt 047 §G) / TG028 (ADGARC-FB-110): Tipografia's own
+   `flex`/`justify-content`/`align-items` now come from the shared
+   `.infocard-page--building, --architecture-prose, --dialogue,
+   --typography` rule above rather than a standalone declaration here —
+   see that rule's comment for why the former left-aligned exception was
+   removed. */
 
+/* TG033 Prompt 074 corrective (ADGARC-FB-115): activated by the `:has()`
+   rule above (its parent `.infocard-dossier__content` is now a flex column
+   whenever a specimen page is active) — `flex: 1 1 auto; min-height: 0`
+   lets `.infocard-page__specimen-frame` below size itself from the actual
+   remaining space, the same mechanism the cover's own section uses. No
+   `justify-content`/`align-items: center` here any more: centering an
+   intrinsically-sized child is not the goal once the goal is that child
+   *filling* the section instead. */
 .infocard-page--specimen {
-  flex: 1;
+  flex: 1 1 auto;
+  min-height: 0;
+}
+
+/* TG033 Prompt 073 corrective (ADGARC-FB-115): the outer specimen box
+   shares the exact same layout contract as `.infocard-page__hero` above
+   (one shared rule, not case-specific/page-specific CSS). Only the
+   specimen box's own background (explicit white, never the hero's
+   canonical-ink tint) and its image's `contain`/never-crop behavior stay
+   specimen-specific. The *inner* SVG itself is what stays natively 1:1: at
+   `object-fit: contain` inside this box, the browser centers and
+   letterboxes it automatically — no inner wrapper element is needed to
+   force a square, and the outer box itself is not required to be square.
+   TG033 Prompt 074 corrective (ADGARC-FB-114/FB-115): the fixed
+   `aspect-ratio: 4/3; max-height: 45vh` both boxes shared is removed — it
+   was itself leaving a dead yellow/white zone on any viewport taller than
+   the capped box needed. `flex: 1 1 auto; min-height: 0` instead sizes
+   both boxes from the real available space between the dossier's row
+   header and its footer nav (their shared flex-column ancestor, activated
+   per page type by the `:has()` rules above), so cover and specimen
+   compute to the exact same final footprint at any viewport — not two
+   independently guessed numbers that happen to agree today. */
+.infocard-page__hero,
+.infocard-page__specimen-frame {
+  flex: 1 1 auto;
+  min-height: 0;
+  width: 100%;
+  border: 1px solid var(--canonical-ink);
+  overflow: hidden;
+  display: flex;
+  align-items: center;
   justify-content: center;
+}
+
+.infocard-page__hero {
+  background: rgba(255, 255, 255, 0.3);
+}
+
+.infocard-page__specimen-frame {
+  background: var(--surface);
+}
+
+.infocard-page__hero[data-empty="true"],
+.infocard-page__specimen-frame[data-empty="true"] {
+  border-style: dashed;
+}
+
+.infocard-page__specimen-image {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  display: block;
 }
 
 /* Desktop: a right-side panel compatible with the later map split-view
@@ -3030,7 +4094,7 @@ body,
     top: 0;
     right: 0;
     bottom: 0;
-    width: clamp(360px, 34vw, 480px);
+    width: clamp(433px, 34vw, 480px);
     z-index: var(--z-dossier);
     border-left: 1px solid var(--canonical-ink);
     box-shadow: -8px 0 28px rgba(20, 12, 6, 0.16);
@@ -3054,8 +4118,8 @@ body,
   }
 
   .infocard-dossier__nav {
-    padding-left: max(16px, env(safe-area-inset-left));
-    padding-right: max(16px, env(safe-area-inset-right));
+    padding-left: max(var(--dossier-rail), env(safe-area-inset-left));
+    padding-right: max(var(--dossier-rail), env(safe-area-inset-right));
   }
 }
 
@@ -3075,10 +4139,15 @@ body,
      shared token instead so arrow and number circles can only ever shrink
      together at this breakpoint. */
   .infocard-dossier {
-    --circle-nav-diameter: 28px;
+    --control-height: 28px;
   }
 
-  .infocard-dossier__nav-pill {
+  /* TG033 Prompt 074 corrective (ADGARC-FB-114): `.infocard-dossier__explore`
+     joins this override too — their shared base rule's `width:
+     var(--pill-nav-width)` must step down together at this breakpoint, the
+     same as every other property they already share. */
+  .infocard-dossier__nav-pill,
+  .infocard-dossier__explore {
     width: 6.5rem;
   }
 

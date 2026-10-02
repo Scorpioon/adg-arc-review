@@ -1,0 +1,34 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg id="BASE" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 1200">
+  <defs>
+    <style>
+      .cls-1 {
+        stroke-dasharray: 12.5 12.5;
+      }
+
+      .cls-1, .cls-2 {
+        fill: none;
+        stroke: #ffed00;
+        stroke-miterlimit: 10;
+        stroke-width: 2px;
+      }
+    </style>
+  </defs>
+  <g>
+    <path d="M299.76,264.02h64.66v494.62h270.75v63.04h-335.4V264.02Z"/>
+    <path d="M712.75,683.47V223.61h64.66v465.52c0,51.72,21.82,74.35,75.16,74.35h91.33v58.19h-91.33c-92.94,0-139.82-47.68-139.82-138.2Z"/>
+  </g>
+  <g>
+    <line class="cls-2" x1="0" y1="263.79" x2="6.19" y2="263.79"/>
+    <line class="cls-1" x1="18.69" y1="263.79" x2="1187.56" y2="263.79"/>
+    <line class="cls-2" x1="1193.81" y1="263.79" x2="1200" y2="263.79"/>
+  </g>
+  <line class="cls-2" x1="1200" y1="223.52" y2="223.52"/>
+  <g>
+    <line class="cls-2" x1="1200" y1="391.03" x2="1193.81" y2="391.03"/>
+    <line class="cls-1" x1="1181.31" y1="391.03" x2="12.44" y2="391.03"/>
+    <line class="cls-2" x1="6.19" y1="391.03" x2="0" y2="391.03"/>
+  </g>
+  <line class="cls-2" x1="1200" y1="821.73" y2="821.73"/>
+  <line class="cls-2" x1="1200" y1="1007.7" y2="1007.7"/>
+</svg>

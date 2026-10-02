@@ -56,6 +56,9 @@ export const es = {
   "nav.about": "Acerca de",
   "nav.settings": "Ajustes",
   "nav.devtools": "Dev Settings",
+  // TG023 corrective (ADGARC-FB-105, prompt 057): sixth root-menu row —
+  // operator-locked exact label, not a translation of an English "Credits".
+  "nav.credits": "Crèdits",
 
   "info.p1":
     "ADG-ARC explora relaciones entre arquitectura y tipografía en Barcelona, emparejando cada edificio con una tipografía elegida por su resonancia con él.",
@@ -104,6 +107,10 @@ export const es = {
   // read the same word in the footer. Proven key gap (prompt 046 §5).
   "caseSheet.section.facts": "Fitxa",
   "caseSheet.section.architecture": "Arquitectura",
+  // TG028 (ADGARC-FB-110 page grammar): the movement-only step is labelled
+  // "Moviment", not "Arquitectura" — distinct from the key above, which
+  // stays the running-text Arquitectura step's label.
+  "caseSheet.section.movement": "Moviment",
   "caseSheet.section.typography": "Tipografia",
   "caseSheet.section.dialogue": "Diàleg",
   "caseSheet.section.specimen": "Espécimen",
@@ -128,6 +135,13 @@ export const es = {
   // TG010 S4 (ADGARC-FB-024): Casos carousel.
   "cases.carouselLabel": "Casos de la colección",
   "cases.mediaPending": "Imagen pendiente de verificación",
+
+  // TG023 corrective (ADGARC-FB-105, prompt 057): the `Crèdits` destination
+  // — structured-data-backed, same Catalan register as `nav.credits` and the
+  // dossier's own section labels above, not a re-translation of UI chrome.
+  "credits.creditLabel": "Crèdit",
+  "credits.rightsLabel": "Drets / publicació",
+  "credits.provenanceLabel": "Procedència",
 
   // TG018 Pass B (correction matrix §B): `passport.progress` ("1 de 10
   // paradas") is removed — its sole consumer, the rail's own count line,

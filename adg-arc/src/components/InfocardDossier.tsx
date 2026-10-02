@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from "react";
-import { activeCases, type CaseRecord } from "../data/cases";
+import { activeCases, SPECIMEN_MEDIA, type CaseRecord } from "../data/cases";
 import { useT } from "../i18n/context";
 import type { TranslationKey } from "../i18n/es";
 import type { PanelAnchor } from "../types/panelAnchor";
@@ -7,6 +7,7 @@ import EditorialShell from "./EditorialShell";
 import {
   InfocardCoverPage,
   InfocardFactsPage,
+  InfocardHeroCredit,
   InfocardHighlightedPhrasePage,
   InfocardProsePage,
   InfocardSpecimenPage,
@@ -65,9 +66,10 @@ const SECTION_LABEL_KEY: Record<Exclude<InfocardPageId, "cover">, TranslationKey
   "building-facts": "caseSheet.section.facts",
   "building-highlight": "caseSheet.section.quote",
   "building-prose": "caseSheet.section.building",
-  // Pass F1C: both Arquitectura internal steps carry the same footer-pill
-  // label — the split is a step-model change, not a second chapter.
-  "architecture-movement": "caseSheet.section.architecture",
+  // TG028 (ADGARC-FB-110 page grammar): the movement-only step is its own
+  // "Moviment" page, not a second "Arquitectura" — the running-text step
+  // below keeps the Arquitectura label.
+  "architecture-movement": "caseSheet.section.movement",
   "architecture-prose": "caseSheet.section.architecture",
   typography: "caseSheet.section.typography",
   dialogue: "caseSheet.section.dialogue",
@@ -219,6 +221,15 @@ export default function InfocardDossier({
     activeCase.architecture.movementStatus === "verified" && activeCase.architecture.movement
       ? activeCase.architecture.movement
       : null;
+  // FB-117 (TG033 Prompt 073 corrective): the case's own structured
+  // building-name/typeface-name terms, shared by every editorial prose page
+  // below so a verbatim occurrence in any of them renders with the same
+  // inline emphasis — never recomputed per page, never parsed from the
+  // running copy itself.
+  const emphasisTerms = {
+    boldTerm: activeCase.typography.primaryFamily,
+    underlineTerm: activeCase.identity.name,
+  };
 
   const renderPage = () => {
     if (!currentPage) return null;
@@ -236,7 +247,10 @@ export default function InfocardDossier({
           <InfocardFactsPage
             dateLabel={activeCase.identity.date.displayLabel}
             architect={activeCase.identity.architect}
-            address={activeCase.identity.address ?? null}
+            // FB-109 (TG029): prefer the verified Catalan display-canon
+            // form where one exists; `identity.address` (the preserved
+            // source-evidence value) is the fallback, never overwritten.
+            address={activeCase.identity.addressDisplay ?? activeCase.identity.address ?? null}
             labels={{
               year: t("caseSheet.fact.year"),
               architect: t("caseSheet.fact.architect"),
@@ -257,6 +271,7 @@ export default function InfocardDossier({
           <InfocardProsePage
             className="infocard-page--building"
             copy={activeCase.infocard.buildingProse}
+            emphasis={emphasisTerms}
           />
         );
       case "architecture-movement":
@@ -283,17 +298,29 @@ export default function InfocardDossier({
           <InfocardProsePage
             className="infocard-page--architecture infocard-page--architecture-prose"
             copy={activeCase.infocard.architectureCopy}
+            emphasis={emphasisTerms}
           />
         );
       case "typography":
         // No in-body heading — the large typeface treatment carries the page.
+        // TG033 Prompt 073 corrective (ADGARC-FB-117): the typeface-name
+        // meta line is back to its pre-TG033 form — just the family name,
+        // the page's own existing display-size/bold presentation. The prior
+        // pass additionally showed the building name here as a second,
+        // underlined meta line; the OPERATOR runtime review clarified that
+        // was a misreading — FB-117's bold/underline requirement targets
+        // verbatim occurrences inside the existing editorial running copy,
+        // not a new title/meta row, so that line is removed and `emphasis`
+        // (below) carries the real requirement into the page's own running
+        // text instead. The page's own CSS (`.infocard-page--typography`)
+        // still left-aligns this meta block to the same edge as the body
+        // copy beneath it.
         return (
           <InfocardProsePage
             className="infocard-page--typography"
             copy={activeCase.infocard.typographyCopy}
-            meta={
-              <p className="infocard-page__meta-typeface">{activeCase.typography.primaryFamily}</p>
-            }
+            emphasis={emphasisTerms}
+            meta={<p className="infocard-page__meta-typeface">{activeCase.typography.primaryFamily}</p>}
           />
         );
       case "dialogue":
@@ -304,12 +331,14 @@ export default function InfocardDossier({
           <InfocardProsePage
             className="infocard-page--dialogue"
             copy={activeCase.infocard.dialogueCopy}
+            emphasis={emphasisTerms}
           />
         );
       case "specimen":
-        // TG020-R2 specimen clean-slate: a deliberately vacant, case-
-        // independent canvas — no props, see InfocardPages.tsx.
-        return <InfocardSpecimenPage />;
+        // TG033 (ADGARC-FB-115): resolved from the locked slug lookup —
+        // `undefined` (no locked specimen for this case) normalizes to
+        // `null` so InfocardSpecimenPage renders its honest empty frame.
+        return <InfocardSpecimenPage media={SPECIMEN_MEDIA[activeCase.slug] ?? null} />;
       default:
         return null;
     }
@@ -333,11 +362,25 @@ export default function InfocardDossier({
           <div className="infocard-dossier__row">
             {/* TG018 Pass C (operator decision): the former third-slot
                 hairline is removed with no replacement — the row is now a
-                two-slot identity row, the number circle and building title
-                sharing one balanced, vertically-centered baseline. */}
+                two-slot identity row.
+                TG028 (ADGARC-FB-107): the number circle and title now share
+                a top-aligned edge (was vertically centered) — see
+                `.infocard-dossier__row-left` in global.css. */}
             <div className="infocard-dossier__row-left">
               <span className="infocard-dossier__ordinal">{ordinalLabel}</span>
-              <span className="infocard-dossier__case-name">{activeCase.identity.name}</span>
+              {/* TG028 (ADGARC-FB-107): renders `identity.displayNameLines`
+                  when a case supplies a deterministic editorial break,
+                  falling back to the plain name otherwise — a 20-case
+                  system, not a one-off per-case override. */}
+              <span className="infocard-dossier__case-name">
+                {(activeCase.identity.displayNameLines ?? [activeCase.identity.name]).map(
+                  (line, index) => (
+                    <span key={index} className="infocard-dossier__case-name-line">
+                      {line}
+                    </span>
+                  )
+                )}
+              </span>
             </div>
           </div>
 
@@ -377,11 +420,31 @@ export default function InfocardDossier({
                   freed height back to the hero-media slot above
                   (`.infocard-page__hero`'s own `flex: 1 1 auto` absorbs it). */}
               {currentPage && (
-                <nav className="infocard-dossier__nav" aria-label={t("caseSheet.navLabel")}>
+                <nav
+                  className={`infocard-dossier__nav${
+                    isCover ? " infocard-dossier__nav--cover" : ""
+                  }`}
+                  aria-label={t("caseSheet.navLabel")}
+                >
                   {isCover ? (
-                    <button type="button" className="infocard-dossier__explore" onClick={goNext}>
-                      Explora <NavArrowGlyph direction="next" />
-                    </button>
+                    <>
+                      <button type="button" className="infocard-dossier__explore" onClick={goNext}>
+                        {/* Operator corrective: the label/arrow gap is now
+                            the shared pill rule's own `gap` (global.css) —
+                            structural, not an incidental JSX whitespace
+                            character between these two children. */}
+                        <span>Explora</span>
+                        <NavArrowGlyph direction="next" />
+                      </button>
+                      {/* TG033 Prompt 073 corrective (ADGARC-FB-114): the
+                          image credit now shares this same footer row with
+                          Explora — using the remaining horizontal space —
+                          instead of a second centered row below the hero
+                          frame (InfocardCoverPage no longer renders it). */}
+                      {activeCase.heroMedia && (
+                        <InfocardHeroCredit credits={activeCase.heroMedia.credits} />
+                      )}
+                    </>
                   ) : (
                     <>
                       <span className="infocard-dossier__nav-pill">{sectionLabel}</span>
@@ -466,21 +529,31 @@ export default function InfocardDossier({
           {step === "passport-stamp" && (
             <>
               <div className="infocard-dossier__content infocard-dossier__content--page infocard-dossier__content--stamp">
-                <button
-                  type="button"
-                  className="infocard-dossier__stamp-target"
-                  onClick={handleStampActivate}
-                  disabled={!stampEnabled}
-                  aria-disabled={!stampEnabled}
-                  aria-label={stampEnabled ? t("passport.stampInstruction") : stampDisabledReason ?? undefined}
-                >
-                  <span className="infocard-dossier__stamp-tick" aria-hidden="true">
-                    &#10003;
-                  </span>
-                </button>
-                <p className="infocard-dossier__stamp-instruction">
-                  {stampEnabled ? t("passport.stampInstruction") : stampDisabledReason}
-                </p>
+                {/* TG033 Prompt 077 corrective (Figma spacing / frame-contract
+                    authority): this wrapper is the Passport content frame —
+                    the minimal structural addition needed so the outer
+                    `--dossier-space-x` inset (on the content div above) and
+                    an additional inner `--dossier-space-x` content padding
+                    (on this frame) can both apply; see
+                    `.infocard-dossier__stamp-frame`'s own comment in
+                    global.css for why one element can't carry both. */}
+                <div className="infocard-dossier__stamp-frame">
+                  <button
+                    type="button"
+                    className="infocard-dossier__stamp-target"
+                    onClick={handleStampActivate}
+                    disabled={!stampEnabled}
+                    aria-disabled={!stampEnabled}
+                    aria-label={stampEnabled ? t("passport.stampInstruction") : stampDisabledReason ?? undefined}
+                  >
+                    <span className="infocard-dossier__stamp-tick" aria-hidden="true">
+                      &#10003;
+                    </span>
+                  </button>
+                  <p className="infocard-dossier__stamp-instruction">
+                    {stampEnabled ? t("passport.stampInstruction") : stampDisabledReason}
+                  </p>
+                </div>
               </div>
               <nav className="infocard-dossier__nav" aria-label={t("caseSheet.navLabel")}>
                 <span className="infocard-dossier__nav-pill">{t("passport.railLabel")}</span>
