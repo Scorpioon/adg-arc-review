@@ -1,5 +1,5 @@
 import { useCallback, useMemo, useRef, useState } from "react";
-import { cases } from "../data/cases";
+import { activeCases } from "../data/cases";
 
 const STORAGE_KEY = "adgarc.passport.v1";
 
@@ -36,20 +36,20 @@ export interface PassportState {
   reset: () => void;
 }
 
-// TG010: single passport-progress authority (DEC-006). The physical set is
-// derived fresh from `cases` on every call — never a second hardcoded
-// count/list. `visited` mirrors localStorage["adgarc.passport.v1"], read
-// once at mount and filtered against the *current* physical set so a
-// stale/unknown/non-physical slug can never inflate progress.
+// TG010/TG039: single passport-progress authority (DEC-006, FB-126). The
+// eligible set is derived fresh from `activeCases` on every call — never a
+// second hardcoded count/list, and never narrowed to the physical-only
+// cohort (cases.ts's `experienceType` governs physical-proof gating in
+// App.tsx's `canStampCase`, a separate concern from Passport membership).
+// `visited` mirrors localStorage["adgarc.passport.v1"], read once at mount
+// and filtered against the *current* 20-case active set so a
+// stale/unknown/hidden slug can never inflate progress.
 export function usePassport(): PassportState & { stamp: (slug: string) => StampResult } {
-  const physicalSlugs = useMemo(
-    () => new Set(cases.filter((c) => c.experienceType === "physical_digital").map((c) => c.slug)),
-    []
-  );
-  const total = physicalSlugs.size;
+  const eligibleSlugs = useMemo(() => new Set(activeCases.map((c) => c.slug)), []);
+  const total = eligibleSlugs.size;
 
   const [visited, setVisited] = useState<Set<string>>(
-    () => new Set(readStoredSlugs().filter((slug) => physicalSlugs.has(slug)))
+    () => new Set(readStoredSlugs().filter((slug) => eligibleSlugs.has(slug)))
   );
   // Synchronous mirror of `visited` — `stamp()` must return an up-to-date
   // count/stamped decision immediately, not after React's batched/async
@@ -60,7 +60,7 @@ export function usePassport(): PassportState & { stamp: (slug: string) => StampR
   const stamp = useCallback(
     (slug: string): StampResult => {
       const current = visitedRef.current;
-      if (!physicalSlugs.has(slug) || current.has(slug)) {
+      if (!eligibleSlugs.has(slug) || current.has(slug)) {
         return { stamped: false, count: current.size, total };
       }
       const next = new Set(current);
@@ -70,7 +70,7 @@ export function usePassport(): PassportState & { stamp: (slug: string) => StampR
       persistSlugs([...next]);
       return { stamped: true, count: next.size, total };
     },
-    [physicalSlugs, total]
+    [eligibleSlugs, total]
   );
 
   const reset = useCallback(() => {

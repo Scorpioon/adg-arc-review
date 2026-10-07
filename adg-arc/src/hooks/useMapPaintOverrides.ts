@@ -144,7 +144,6 @@ export function useMapPaintOverrides() {
   useEffect(() => {
     const root = document.documentElement.style;
     root.setProperty("--map-ink", paintToCss(effective["map.caseMarker.default"]));
-    root.setProperty("--map-white", paintToCss(effective["map.caseMarker.hover"]));
     root.setProperty("--map-accent", paintToCss(effective["map.caseMarker.selected"]));
   }, [effective]);
 

@@ -210,7 +210,16 @@ export interface CaseHeroCredit {
 }
 
 export interface CaseHeroMedia {
+  // Base/normal state — shown before the case's canonical pass/visited
+  // completion (TG039 authority), and in Passport while undiscovered
+  // (rendered grayscale by code, not a second source asset).
   src: string;
+  // TG040 (ADGARC-FB-121/FB-116, Prompt 083 — q82 WebP delivery canon):
+  // visited/pass-complete state, same subject/credits/provenance as `src`,
+  // shown once the existing TG039 visited authority marks the case
+  // pass-complete. Never a parallel metadata record — see `credits`/
+  // `provenance`/`rightsStatus` below, which cover both state images.
+  srcPass: string;
   alt: string;
   // One or more structured, independently linkable credits (TG023: replaces
   // the prior single optional `credit` string — GreenH@use's authorization
@@ -329,7 +338,8 @@ export const cases: CaseRecord[] = [
       precision: "building",
     },
     heroMedia: {
-      src: `${PHYSICAL_MEDIA_BASE}casa-caracoles.jpg`,
+      src: `${PHYSICAL_MEDIA_BASE}casa-caracoles-base.webp`,
+      srcPass: `${PHYSICAL_MEDIA_BASE}casa-caracoles-pass.webp`,
       alt: "Cases dels Cargols",
       credits: [
         {
@@ -435,7 +445,8 @@ export const cases: CaseRecord[] = [
       precision: "building",
     },
     heroMedia: {
-      src: `${PHYSICAL_MEDIA_BASE}casa-rodriguez-arias.jpg`,
+      src: `${PHYSICAL_MEDIA_BASE}casa-rodriguez-arias-base.webp`,
+      srcPass: `${PHYSICAL_MEDIA_BASE}casa-rodriguez-arias-pass.webp`,
       alt: "Casa Rodríguez Arias",
       credits: [
         {
@@ -550,7 +561,8 @@ export const cases: CaseRecord[] = [
       precision: "building",
     },
     heroMedia: {
-      src: `${PHYSICAL_MEDIA_BASE}casa-de-la-marina.jpg`,
+      src: `${PHYSICAL_MEDIA_BASE}casa-de-la-marina-base.webp`,
+      srcPass: `${PHYSICAL_MEDIA_BASE}casa-de-la-marina-pass.webp`,
       alt: "009 Habitatges Barceloneta, pg. Joan de Borbó",
       credits: [
         {
@@ -658,7 +670,8 @@ export const cases: CaseRecord[] = [
       precision: "architectural ensemble",
     },
     heroMedia: {
-      src: `${PHYSICAL_MEDIA_BASE}cocheras-de-sarria.jpg`,
+      src: `${PHYSICAL_MEDIA_BASE}cocheras-de-sarria-base.webp`,
+      srcPass: `${PHYSICAL_MEDIA_BASE}cocheras-de-sarria-pass.webp`,
       alt: "Grup d'habitatges de les cotxeres de Sarrià - 20200828 164140",
       credits: [
         {
@@ -782,7 +795,8 @@ export const cases: CaseRecord[] = [
       precision: "building",
     },
     heroMedia: {
-      src: `${PHYSICAL_MEDIA_BASE}hotel-arts.jpg`,
+      src: `${PHYSICAL_MEDIA_BASE}hotel-arts-base.webp`,
+      srcPass: `${PHYSICAL_MEDIA_BASE}hotel-arts-pass.webp`,
       alt: "028 Hotel Arts (Barcelona), des del c. Salvador Espriu",
       credits: [
         {
@@ -900,7 +914,8 @@ export const cases: CaseRecord[] = [
       precision: "architectural ensemble",
     },
     heroMedia: {
-      src: `${PHYSICAL_MEDIA_BASE}illa-diagonal.jpg`,
+      src: `${PHYSICAL_MEDIA_BASE}illa-diagonal-base.webp`,
+      srcPass: `${PHYSICAL_MEDIA_BASE}illa-diagonal-pass.webp`,
       alt: "Barcelona - L’illa Diagonal (Avinguda Diagonal, 579-585) 1",
       credits: [
         {
@@ -1025,7 +1040,8 @@ export const cases: CaseRecord[] = [
       precision: "institution/building",
     },
     heroMedia: {
-      src: `${PHYSICAL_MEDIA_BASE}dhub.jpg`,
+      src: `${PHYSICAL_MEDIA_BASE}dhub-base.webp`,
+      srcPass: `${PHYSICAL_MEDIA_BASE}dhub-pass.webp`,
       alt: "Barcelona - Disseny Hub Barcelona, Museu del Disseny de Barcelona 7",
       credits: [
         {
@@ -1142,7 +1158,8 @@ export const cases: CaseRecord[] = [
       precision: "building",
     },
     heroMedia: {
-      src: `${PHYSICAL_MEDIA_BASE}la-borda.jpg`,
+      src: `${PHYSICAL_MEDIA_BASE}la-borda-base.webp`,
+      srcPass: `${PHYSICAL_MEDIA_BASE}la-borda-pass.webp`,
       alt: "La Borda housing cooperative building in Barcelona - rear facade, whole building",
       credits: [
         {
@@ -1273,7 +1290,8 @@ export const cases: CaseRecord[] = [
       precision: "building",
     },
     heroMedia: {
-      src: `${PHYSICAL_MEDIA_BASE}biblioteca-ggm.jpg`,
+      src: `${PHYSICAL_MEDIA_BASE}biblioteca-ggm-base.webp`,
+      srcPass: `${PHYSICAL_MEDIA_BASE}biblioteca-ggm-pass.webp`,
       alt: "Biblioteca Gabriel García Márquez (Sant Martí, BCN - 2022)",
       credits: [
         {
@@ -1408,7 +1426,8 @@ export const cases: CaseRecord[] = [
     // links are shown, and both mandatory linked credits below must always
     // render together.
     heroMedia: {
-      src: `${PHYSICAL_MEDIA_BASE}green-use-22.jpg`,
+      src: `${PHYSICAL_MEDIA_BASE}green-use-22-base.webp`,
+      srcPass: `${PHYSICAL_MEDIA_BASE}green-use-22-pass.webp`,
       alt: "GreenH@use, Barcelona — façana",
       credits: [
         { label: "© José Hevia", url: "https://josehevia.es" },
@@ -1510,12 +1529,21 @@ export const cases: CaseRecord[] = [
         "La tipografia Futura, contemporània al pavelló, tradueix aquesta mateixa voluntat de simplicitat i ordre a través de formes geomètriques pures. És una tipografia sense floritures, precisa i atemporal. Arquitectura i lletra caminen aquí en paral·lel cap a la modernitat.",
       provenance: TG020_SOURCE,
     },
-    coordinates: null,
+    coordinates: {
+      longitude: 2.15,
+      latitude: 41.37055556,
+      zoom: 17,
+      provenance:
+        "Wikidata Q807915 — coordinate location 41°22'14\"N, 2°9'0\"E for Pavelló Mies van der Rohe (Barcelona Pavilion).",
+      status: "verified_external_building",
+      precision: "building",
+    },
     // TG033 (ADGARC-FB-104), TG032 source-intake mapping, Prompt 071
     // ordinal-11 corrective (renamed source file, SHA-256-verified
     // unchanged).
     heroMedia: {
-      src: `${DIGITAL_MEDIA_BASE}pavello-mies-van-der-rohe.jpg`,
+      src: `${DIGITAL_MEDIA_BASE}pavello-mies-van-der-rohe-base.webp`,
+      srcPass: `${DIGITAL_MEDIA_BASE}pavello-mies-van-der-rohe-pass.webp`,
       alt: "The Barcelona Pavilion, Barcelona, 2010",
       credits: [
         {
@@ -1595,10 +1623,19 @@ export const cases: CaseRecord[] = [
         "Brut Grotesque trasllada aquesta contundència a la lletra: formes robustes, directes i de gran presència que funcionen gairebé com blocs construïts. El diàleg no depèn de l'ornament, sinó del pes, la repetició i la força estructural compartida entre edifici i tipografia.",
       provenance: TG020_SOURCE,
     },
-    coordinates: null,
+    coordinates: {
+      longitude: 2.07,
+      latitude: 41.38,
+      zoom: 17,
+      provenance:
+        "Wikidata Q3043523 — coordinate location 41°22'48\"N, 2°4'12\"E for Walden 7.",
+      status: "verified_external_building",
+      precision: "building",
+    },
     // TG033 (ADGARC-FB-104), TG032 source-intake mapping.
     heroMedia: {
-      src: `${DIGITAL_MEDIA_BASE}walden-7.jpg`,
+      src: `${DIGITAL_MEDIA_BASE}walden-7-base.webp`,
+      srcPass: `${DIGITAL_MEDIA_BASE}walden-7-pass.webp`,
       alt: "Sant Just Desvern - Walden 7 (14)",
       credits: [
         {
@@ -1676,10 +1713,19 @@ export const cases: CaseRecord[] = [
         "La tipografia Zaha Hadid Typeface, igualment orgànica i fluida, tradueix en lletra aquest esperit: traços que flueixen com les façanes de l'edifici, allunyant-se de la rigidesa i celebrant el moviment.",
       provenance: TG020_SOURCE,
     },
-    coordinates: null,
+    coordinates: {
+      longitude: 2.1619,
+      latitude: 41.39544167,
+      zoom: 17,
+      provenance:
+        'Wikipedia (fr) "Casa Milà" — Latitude 41.39544167, Longitude 2.1619 for La Pedrera / Casa Milà, Barcelona; cross-checked to avoid ambiguity with other buildings sharing the "Casa Milà" name.',
+      status: "verified_external_building",
+      precision: "building",
+    },
     // TG033 (ADGARC-FB-104), TG032 source-intake mapping.
     heroMedia: {
-      src: `${DIGITAL_MEDIA_BASE}la-pedrera-casa-mila.jpg`,
+      src: `${DIGITAL_MEDIA_BASE}la-pedrera-casa-mila-base.webp`,
+      srcPass: `${DIGITAL_MEDIA_BASE}la-pedrera-casa-mila-pass.webp`,
       alt: "Casa Milà, Barcelona, Spain",
       credits: [
         {
@@ -1757,10 +1803,19 @@ export const cases: CaseRecord[] = [
         "Eurostile és una tipografia d'esperit futurista, molt utilitzada en contextos tecnològics i industrials. Les seves formes quadrades i la seva aparença sòlida la fan idònia per representar aquest símbol high-tech de Barcelona.",
       provenance: TG020_SOURCE,
     },
-    coordinates: null,
+    coordinates: {
+      longitude: 2.11416944,
+      latitude: 41.41721944,
+      zoom: 17,
+      provenance:
+        "Wikidata Q1147977 — coordinate location 41°25'1.99\"N, 2°6'51.01\"E for Torre de Collserola.",
+      status: "verified_external_building",
+      precision: "building",
+    },
     // TG033 (ADGARC-FB-104), TG032 source-intake mapping.
     heroMedia: {
-      src: `${DIGITAL_MEDIA_BASE}torre-de-collserola.jpg`,
+      src: `${DIGITAL_MEDIA_BASE}torre-de-collserola-base.webp`,
+      srcPass: `${DIGITAL_MEDIA_BASE}torre-de-collserola-pass.webp`,
       alt: "Torre de Collserola, Barcelona - panoramio",
       credits: [
         {
@@ -1838,10 +1893,19 @@ export const cases: CaseRecord[] = [
         "La tipografia FF Blur, creada per Neville Brody als anys 90, té una aparença fluida, borrosa i experimental que evoca molt bé l'energia visual del mercat. És una lletra en transformació constant, com l'espai del mercat que viu i es reinventa.",
       provenance: TG020_SOURCE,
     },
-    coordinates: null,
+    coordinates: {
+      longitude: 2.17833889,
+      latitude: 41.38618056,
+      zoom: 17,
+      provenance:
+        "Wikidata Q18007461 — coordinate location 41°23'10.25\"N, 2°10'42.02\"E for Mercat de Santa Caterina.",
+      status: "verified_external_building",
+      precision: "building",
+    },
     // TG033 (ADGARC-FB-104), TG032 source-intake mapping.
     heroMedia: {
-      src: `${DIGITAL_MEDIA_BASE}mercat-de-santa-caterina.jpg`,
+      src: `${DIGITAL_MEDIA_BASE}mercat-de-santa-caterina-base.webp`,
+      srcPass: `${DIGITAL_MEDIA_BASE}mercat-de-santa-caterina-pass.webp`,
       alt: "Mercat de Santa Caterina - 20241105 171011",
       credits: [
         {
@@ -1918,10 +1982,19 @@ export const cases: CaseRecord[] = [
         "La tipografia Helvetica Neue reforça aquesta mateixa idea: llegibilitat, neutralitat i equilibri. És una tipografia institucional i funcional que s'adapta perfectament al llenguatge clar i essencial del MACBA.",
       provenance: TG020_SOURCE,
     },
-    coordinates: null,
+    coordinates: {
+      longitude: 2.16678889,
+      latitude: 41.38311111,
+      zoom: 17,
+      provenance:
+        "Wikidata Q1067140 — coordinate location 41°22'59.20\"N, 2°10'0.44\"E for MACBA (Museu d'Art Contemporani de Barcelona).",
+      status: "verified_external_building",
+      precision: "building",
+    },
     // TG033 (ADGARC-FB-104), TG032 source-intake mapping.
     heroMedia: {
-      src: `${DIGITAL_MEDIA_BASE}macba.jpg`,
+      src: `${DIGITAL_MEDIA_BASE}macba-base.webp`,
+      srcPass: `${DIGITAL_MEDIA_BASE}macba-pass.webp`,
       alt: "2001-12-Museu-d-Art-Contemporani-de-Barcelona-1",
       credits: [
         {
@@ -1998,10 +2071,19 @@ export const cases: CaseRecord[] = [
         "Didot, una tipografia d'alt contrast, refinada i clàssica, reflecteix la mateixa sensibilitat formal i sofisticació que Jujol aconsegueix amb pocs elements. Totes dues expressen una elegància arquitectònica i gràfica sense estridències.",
       provenance: TG020_SOURCE,
     },
-    coordinates: null,
+    coordinates: {
+      longitude: 2.17456889,
+      latitude: 41.40057194,
+      zoom: 17,
+      provenance:
+        "Wikidata Q3661146 — coordinate location 41°24'2.059\"N, 2°10'28.448\"E for Casa Planells.",
+      status: "verified_external_building",
+      precision: "building",
+    },
     // TG033 (ADGARC-FB-104), TG032 source-intake mapping.
     heroMedia: {
-      src: `${DIGITAL_MEDIA_BASE}casa-planells.jpg`,
+      src: `${DIGITAL_MEDIA_BASE}casa-planells-base.webp`,
+      srcPass: `${DIGITAL_MEDIA_BASE}casa-planells-pass.webp`,
       alt: "Casa Planells (2)",
       credits: [
         {
@@ -2077,10 +2159,19 @@ export const cases: CaseRecord[] = [
         "Klim Geometric és una tipografia moderna, precisa i digital, que s'alinea amb el caràcter innovador i experimental de l'edifici. Amb formes netes i simètriques, reflecteix la recerca d'eficiència i equilibri del disseny paramètric.",
       provenance: TG020_SOURCE,
     },
-    coordinates: null,
+    coordinates: {
+      longitude: 2.19455556,
+      latitude: 41.40247222,
+      zoom: 17,
+      provenance:
+        "Wikidata Q5818197 — coordinate location 41°24'8.9\"N, 2°11'40.4\"E for Media-TIC.",
+      status: "verified_external_building",
+      precision: "building",
+    },
     // TG033 (ADGARC-FB-104), TG032 source-intake mapping.
     heroMedia: {
-      src: `${DIGITAL_MEDIA_BASE}media-tic.jpg`,
+      src: `${DIGITAL_MEDIA_BASE}media-tic-base.webp`,
+      srcPass: `${DIGITAL_MEDIA_BASE}media-tic-pass.webp`,
       alt: "Barcelona - Cibernàrium-Edificio MediaTIC 7",
       credits: [
         {
@@ -2156,10 +2247,19 @@ export const cases: CaseRecord[] = [
         "La tipografia DIN (utilitzada en senyalització i normatives industrials) expressa aquests mateixos valors: sobrietat, eficiència, llegibilitat. És la lletra de les estructures clares i directes, com la pròpia Casa Bloc.",
       provenance: TG020_SOURCE,
     },
-    coordinates: null,
+    coordinates: {
+      longitude: 2.19055556,
+      latitude: 41.44138889,
+      zoom: 17,
+      provenance:
+        "Wikidata Q2836969 — coordinate location 41°26'29\"N, 2°11'26\"E for Casa Bloc.",
+      status: "verified_external_building",
+      precision: "building",
+    },
     // TG033 (ADGARC-FB-104), TG032 source-intake mapping.
     heroMedia: {
-      src: `${DIGITAL_MEDIA_BASE}casa-bloc.jpg`,
+      src: `${DIGITAL_MEDIA_BASE}casa-bloc-base.webp`,
+      srcPass: `${DIGITAL_MEDIA_BASE}casa-bloc-pass.webp`,
       alt: "363 Casa Bloc, pg. Torras i Bages 85-105 (Barcelona), façana dels jardins interiors",
       credits: [
         {
@@ -2235,10 +2335,19 @@ export const cases: CaseRecord[] = [
         "La tipografia Broadway, amb formes decoratives i sofisticades, reflecteix perfectament l'esperit del període. Amb contrastos exagerats i formes teatralment geomètriques, transmet la mateixa sensació d'elegància urbana i optimisme.",
       provenance: TG020_SOURCE,
     },
-    coordinates: null,
+    coordinates: {
+      longitude: 2.17176146,
+      latitude: 41.386977,
+      zoom: 17,
+      provenance:
+        "Wikidata Q108685595 — coordinate location 41°23'13.11720\"N, 2°10'18.34126\"E for Edifici Telefònica.",
+      status: "verified_external_building",
+      precision: "building",
+    },
     // TG033 (ADGARC-FB-104), TG032 source-intake mapping.
     heroMedia: {
-      src: `${DIGITAL_MEDIA_BASE}edifici-telefonica.jpg`,
+      src: `${DIGITAL_MEDIA_BASE}edifici-telefonica-base.webp`,
+      srcPass: `${DIGITAL_MEDIA_BASE}edifici-telefonica-pass.webp`,
       alt: "13 Edifici Telefònica, av. Portal de l'Àngel - pl. Catalunya (Barcelona)",
       credits: [
         {

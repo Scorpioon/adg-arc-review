@@ -41,7 +41,7 @@ export type EditableMapPaintRoleId =
 
 // Derived roles — CSS-side map-overlay chrome (tether, hover-label border,
 // map-controls chrome) and marker aliases that always mirror one editable
-// role 1:1 (see global.css's --map-ink/--map-white/--map-accent consumers).
+// role 1:1 (see global.css's --map-ink/--map-accent consumers).
 // Never independently stored; resolved by reading `derivedFrom` off the
 // effective config. Listed here so the registry documents every managed
 // color-bearing map role, per the TG006E handoff, even the ones with no

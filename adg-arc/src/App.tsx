@@ -1,6 +1,6 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { lazy, Suspense, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import MapView, { type CameraState, type MapViewHandle } from "./components/MapView";
-import InfocardDossier, { type InfocardDossierAnchor } from "./components/InfocardDossier";
+import type { InfocardDossierAnchor } from "./components/InfocardDossier";
 import AppMenuModal, { type MenuDestination } from "./components/AppMenuModal";
 import PassportMapNavbar from "./components/PassportMapNavbar";
 import LoadingScreen from "./components/LoadingScreen";
@@ -27,6 +27,14 @@ import { useT } from "./i18n/context";
 // comment for why this doesn't count as fake progress.
 const LOADING_EXIT_MS = 400;
 
+// TG040 (ADGARC-FB-121): the dossier (InfocardDossier + InfocardPages + its
+// pagination hook) is only ever needed once a case is actually opened — the
+// map is the real first screen. A dynamic import boundary keeps its source
+// out of the initial entry chunk; `dossierActivated` below (not this lazy()
+// call alone) is what actually defers the fetch, since a lazy component
+// still loads immediately if it is rendered unconditionally on first paint.
+const InfocardDossier = lazy(() => import("./components/InfocardDossier"));
+
 // App owns all editorial/application state. The map is mounted once by
 // MapView and persists across state changes; no React Router is used —
 // ?case=<slug> deep links are read/written directly via the History API.
@@ -38,6 +46,16 @@ export default function App() {
   const deviceClass = useViewportClass();
   const { dismissed: coachmarkDismissed, dismiss: dismissCoachmark } = useGestureCoachmark();
   const [panelAnchor, setPanelAnchor] = useState<InfocardDossierAnchor | null>(null);
+  // TG040 (ADGARC-FB-121): sticky latch, not a mirror of `activeCase` — once
+  // a case has been opened (including on first render via a `?case=` deep
+  // link), InfocardDossier mounts and, per TG039's lifecycle contract, is
+  // never unmounted again for the rest of the session merely because the
+  // user closes back to the map. Only the period before the very first case
+  // selection is actually deferred.
+  const [dossierActivated, setDossierActivated] = useState(() => !!activeCase);
+  useEffect(() => {
+    if (activeCase) setDossierActivated(true);
+  }, [activeCase]);
 
   const readiness = useReadiness();
   useEffect(() => {
@@ -131,16 +149,6 @@ export default function App() {
     }
     return result;
   }, [activeCase, passport, canStampCase]);
-  // TG009 R1 corrective §1: the case selected immediately before the menu's
-  // closed->open transition. TG010 Final Experience P1-R1
-  // (ADGARC-DEC-010/Companion C3): the manual "Introducción" menu re-entry
-  // shortcut that used to read this ref is retired (no root-menu row for it
-  // in the canonical mockup) — the ref is now a write-only shadow of "what
-  // was selected before the menu opened" with no current reader, kept only
-  // because removing it is outside this corrective's authorized scope (see
-  // the paired report's out-of-scope findings).
-  const preMenuCaseSlugRef = useRef<string | null>(null);
-
   // TG006E corrective pass §3 — overlay exclusivity rule: opening the
   // application menu always clears the canonical case selection first, so
   // an open CaseSheet closes through the same App-owned setter the map and
@@ -152,7 +160,6 @@ export default function App() {
   // hotkey below explicitly requests `"devtools"`.
   const handleToggleMenu = () => {
     if (!menuOpen) {
-      preMenuCaseSlugRef.current = caseSlug;
       setCaseSlug(null);
       setMenuActive(null);
     }
@@ -249,7 +256,6 @@ export default function App() {
       // active pane — so DevTools reachability never depends on inferring
       // intent from whatever `menuActive` happened to already be.
       if (!menuOpen) {
-        preMenuCaseSlugRef.current = caseSlug;
         setCaseSlug(null);
       }
       setMenuActive("devtools");
@@ -261,7 +267,7 @@ export default function App() {
   }, [menuOpen, menuActive, caseSlug, setCaseSlug]);
 
   return (
-    <div className="app" data-reduced-motion={reducedMotion}>
+    <div className="app">
       <a className="skip-link" href="#main">
         {t("app.skipToContent")}
       </a>
@@ -341,24 +347,29 @@ export default function App() {
         {deviceClass !== "desktop" && !activeCase && !coachmarkDismissed && (
           <GestureCoachmark onDismiss={dismissCoachmark} />
         )}
-        <InfocardDossier
-          activeCase={activeCase}
-          onClose={() => setCaseSlug(null)}
-          onAnchorChange={setPanelAnchor}
-          stampFeedback={
-            stampFeedback && activeCase?.slug === stampFeedback.slug
-              ? t("passport.stampFeedback", { count: stampFeedback.count, total: stampFeedback.total })
-              : null
-          }
-          onStampCurrentCase={handleStampCurrentCase}
-          stampEnabled={activeCase ? canStampCase(activeCase) : false}
-          stampDisabledReason={
-            activeCase && !canStampCase(activeCase) ? t("passport.stampBlockedPhysical") : null
-          }
-          proofStatus={
-            proofStatus && activeCase?.slug === proofStatus.slug ? t("passport.proofInvalid") : null
-          }
-        />
+        {dossierActivated && (
+          <Suspense fallback={null}>
+            <InfocardDossier
+              activeCase={activeCase}
+              onClose={() => setCaseSlug(null)}
+              onAnchorChange={setPanelAnchor}
+              stampFeedback={
+                stampFeedback && activeCase?.slug === stampFeedback.slug
+                  ? t("passport.stampFeedback", { count: stampFeedback.count, total: stampFeedback.total })
+                  : null
+              }
+              onStampCurrentCase={handleStampCurrentCase}
+              stampEnabled={activeCase ? canStampCase(activeCase) : false}
+              stampDisabledReason={
+                activeCase && !canStampCase(activeCase) ? t("passport.stampBlockedPhysical") : null
+              }
+              proofStatus={
+                proofStatus && activeCase?.slug === proofStatus.slug ? t("passport.proofInvalid") : null
+              }
+              isVisited={activeCase ? passport.visited.has(activeCase.slug) : false}
+            />
+          </Suspense>
+        )}
       </main>
       {loadingVisible && (
         <LoadingScreen progress={readiness.progress} error={readiness.error} exiting={readiness.ready} />

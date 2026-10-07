@@ -1,15 +1,25 @@
-import { useEffect, useRef, type RefObject } from "react";
+import { lazy, Suspense, useEffect, useRef, type RefObject } from "react";
 import type { CaseHeroMedia, CaseRecord } from "../data/cases";
 import { DEVTOOLS_ENABLED } from "../config/devtools";
 import { useDialogA11y } from "../hooks/useDialogA11y";
 import type { PassportState } from "../hooks/usePassport";
 import { useLocale, useT } from "../i18n/context";
 import type { TranslationKey } from "../i18n/es";
-import DevTools, { type DevToolsProps } from "./DevTools";
+import type { DevToolsProps } from "./DevTools";
 import EditorialShell from "./EditorialShell";
 import NavArrowGlyph from "./NavArrowGlyph";
 import PassportPane from "./PassportPane";
 import { InfoIcon } from "./icons";
+
+// TG040 (ADGARC-FB-121): DevTools is review/debug-only code (DEC-012) and is
+// only ever rendered behind `active === "devtools" && DEVTOOLS_ENABLED`, never
+// on the initial render path. A dynamic import boundary keeps it out of the
+// main entry chunk's parse/eval cost structurally (not merely via minifier
+// dead-code elimination), and defers its ~25KB source + camera/paint/LOD
+// devtools-config imports until the destination is actually opened — in both
+// the canonical-production build (where it is never requested at all) and
+// the review build (DevTools ON), where it is still fetched only on demand.
+const DevTools = lazy(() => import("./DevTools"));
 
 export type MenuDestination = "info" | "about" | "settings" | "devtools" | "passport" | "credits";
 
@@ -472,7 +482,9 @@ function AppMenuDialog({
               none of the six gated DevTools sections. */}
           {active === "devtools" &&
             (DEVTOOLS_ENABLED ? (
-              <DevTools {...devTools} />
+              <Suspense fallback={null}>
+                <DevTools {...devTools} />
+              </Suspense>
             ) : (
               <p className="dev-settings-unavailable">{t("devtools.unavailable")}</p>
             ))}

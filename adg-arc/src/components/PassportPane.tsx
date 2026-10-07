@@ -441,10 +441,18 @@ export default function PassportPane({ passport, cases, onSelectCase }: Passport
                 >
                   <span className="passport-carousel__media">
                     {c.heroMedia ? (
+                      // TG040 (ADGARC-FB-121/FB-116, Prompt 083): undiscovered
+                      // -> base image, grayscale by code (data attribute +
+                      // CSS filter below, never a duplicate B&W source
+                      // asset); visited/pass-complete -> pass image, normal
+                      // color. `isVisited` is the same existing TG039
+                      // authority already driving this card's text block
+                      // below — no second visit-state source.
                       <img
                         className="passport-carousel__img"
-                        src={c.heroMedia.src}
+                        src={isVisited ? c.heroMedia.srcPass : c.heroMedia.src}
                         alt={c.heroMedia.alt}
+                        data-visited={isVisited ? "true" : "false"}
                       />
                     ) : (
                       <span className="passport-carousel__media-empty">

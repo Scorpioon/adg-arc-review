@@ -13,6 +13,12 @@ import type {
 export interface InfocardCoverPageProps {
   caseName: string;
   heroMedia: CaseHeroMedia | null;
+  // TG040 (ADGARC-FB-121/FB-116, Prompt 083): the existing TG039
+  // visited/pass-complete authority (passed through from InfocardDossier,
+  // never recomputed here) — selects `heroMedia.srcPass` once true, the
+  // base `heroMedia.src` otherwise. Defaults to false so this stays the
+  // pre-TG040 "always base" behavior for any caller that omits it.
+  isVisited?: boolean;
 }
 
 // TG023 (ADGARC-FB-006 case-media integration): the discreet,
@@ -56,12 +62,16 @@ export function InfocardHeroCredit({ credits }: { credits: CaseHeroMedia["credit
 // renders here. It now shares the dossier's bottom nav row with `Explora`
 // (InfocardDossier.tsx composes `InfocardHeroCredit` there directly) rather
 // than forcing a second centered row below the hero frame.
-export function InfocardCoverPage({ caseName, heroMedia }: InfocardCoverPageProps) {
+export function InfocardCoverPage({ caseName, heroMedia, isVisited = false }: InfocardCoverPageProps) {
   return (
     <section className="infocard-page infocard-page--cover" aria-label={caseName}>
       <div className="infocard-page__hero" data-empty={heroMedia ? undefined : "true"}>
         {heroMedia && (
-          <img className="infocard-page__hero-image" src={heroMedia.src} alt={heroMedia.alt} />
+          <img
+            className="infocard-page__hero-image"
+            src={isVisited ? heroMedia.srcPass : heroMedia.src}
+            alt={heroMedia.alt}
+          />
         )}
       </div>
     </section>

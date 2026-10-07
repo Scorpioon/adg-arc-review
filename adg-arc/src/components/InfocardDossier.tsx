@@ -56,6 +56,11 @@ export interface InfocardDossierProps {
   // Pre-resolved restrained status text for an invalid/mismatched physical
   // proof token — never blocks reading, never stamps, never persists proof.
   proofStatus?: string | null;
+  // TG039 (FB-126 browser-smoke corrective): App-resolved
+  // `passport.visited.has(activeCase.slug)` for the current case. The sole
+  // signal the passport-stamp step uses to recognize an already-registered
+  // visit on re-entry — InfocardDossier never reads `usePassport` itself.
+  isVisited?: boolean;
 }
 
 // Pass F1 (Prompt 045 §8): the five canonical chapter section labels plus
@@ -114,6 +119,7 @@ export default function InfocardDossier({
   stampEnabled = true,
   stampDisabledReason,
   proofStatus,
+  isVisited = false,
 }: InfocardDossierProps) {
   const t = useT();
   const { descriptors, currentPage, pageIndex, canGoPrevious, canGoNext, goPrevious, goNext, goToPage } =
@@ -143,12 +149,20 @@ export default function InfocardDossier({
   // the active case changes — never persisted to URL/storage, mirroring how
   // `useInfocardPagination` itself resets `pageIndex` on the same dependency.
   const [step, setStep] = useState<DossierStep>("pages");
-  useEffect(() => {
-    setStep("pages");
-  }, [activeCase?.slug]);
   // Guards against a double-fire of the stamp target between the click and
   // the resulting `setStep("finish")` re-render actually unmounting it.
   const stampingRef = useRef(false);
+  // TG039 (FB-126 browser-smoke corrective): InfocardDossier is mounted
+  // once by App and never remounted as `activeCase` changes (only this
+  // prop changes), so both `step` and `stampingRef` are shared across every
+  // case the user opens in a session. Without resetting `stampingRef` here
+  // too, the guard set by the very first successful stamp stayed `true`
+  // forever and silently no-opped `handleStampActivate` for every later
+  // case — the root cause of "only one stamp can ever be collected."
+  useEffect(() => {
+    setStep("pages");
+    stampingRef.current = false;
+  }, [activeCase?.slug]);
   const handleStampActivate = () => {
     if (stampingRef.current || !stampEnabled) return;
     stampingRef.current = true;
@@ -237,7 +251,11 @@ export default function InfocardDossier({
     switch (currentPage.id) {
       case "cover":
         return (
-          <InfocardCoverPage caseName={activeCase.identity.name} heroMedia={activeCase.heroMedia} />
+          <InfocardCoverPage
+            caseName={activeCase.identity.name}
+            heroMedia={activeCase.heroMedia}
+            isVisited={isVisited}
+          />
         );
       case "building-facts":
         // TG018 Pass C (correction matrix §D): Moviment is not passed to
@@ -433,7 +451,7 @@ export default function InfocardDossier({
                             the shared pill rule's own `gap` (global.css) —
                             structural, not an incidental JSX whitespace
                             character between these two children. */}
-                        <span>Explora</span>
+                        <span>{t("caseSheet.explore")}</span>
                         <NavArrowGlyph direction="next" />
                       </button>
                       {/* TG033 Prompt 073 corrective (ADGARC-FB-114): the
@@ -538,20 +556,45 @@ export default function InfocardDossier({
                     `.infocard-dossier__stamp-frame`'s own comment in
                     global.css for why one element can't carry both. */}
                 <div className="infocard-dossier__stamp-frame">
-                  <button
-                    type="button"
-                    className="infocard-dossier__stamp-target"
-                    onClick={handleStampActivate}
-                    disabled={!stampEnabled}
-                    aria-disabled={!stampEnabled}
-                    aria-label={stampEnabled ? t("passport.stampInstruction") : stampDisabledReason ?? undefined}
-                  >
-                    <span className="infocard-dossier__stamp-tick" aria-hidden="true">
-                      &#10003;
-                    </span>
-                  </button>
+                  {isVisited ? (
+                    // TG039 (FB-126 browser-smoke corrective): re-entering an
+                    // already-stamped case must recognize that fact in the
+                    // dossier itself, not just via the external map navbar/
+                    // Menu > Passport projections — reuses the existing
+                    // "Visita registrada" finish copy rather than a second,
+                    // divergent completion string. A non-interactive `div`
+                    // (not `button`) keeps the same box/border sizing as the
+                    // actionable target with no click handler, so no repeat
+                    // stamp attempt (and no duplicate persistence) is
+                    // possible from this step.
+                    <div className="infocard-dossier__stamp-target">
+                      <span
+                        className="infocard-dossier__stamp-tick infocard-dossier__stamp-tick--visited"
+                        aria-hidden="true"
+                      >
+                        &#10003;
+                      </span>
+                    </div>
+                  ) : (
+                    <button
+                      type="button"
+                      className="infocard-dossier__stamp-target"
+                      onClick={handleStampActivate}
+                      disabled={!stampEnabled}
+                      aria-disabled={!stampEnabled}
+                      aria-label={stampEnabled ? t("passport.stampInstruction") : stampDisabledReason ?? undefined}
+                    >
+                      <span className="infocard-dossier__stamp-tick" aria-hidden="true">
+                        &#10003;
+                      </span>
+                    </button>
+                  )}
                   <p className="infocard-dossier__stamp-instruction">
-                    {stampEnabled ? t("passport.stampInstruction") : stampDisabledReason}
+                    {isVisited
+                      ? t("caseSheet.finishHeading")
+                      : stampEnabled
+                        ? t("passport.stampInstruction")
+                        : stampDisabledReason}
                   </p>
                 </div>
               </div>

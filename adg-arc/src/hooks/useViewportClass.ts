@@ -24,18 +24,17 @@ function computeDeviceClass(): DeviceClass {
 export function useViewportClass(): DeviceClass {
   const [deviceClass, setDeviceClass] = useState<DeviceClass>(() => computeDeviceClass());
 
+  // TG013-012 / TG036 (FB-119) corrective: was three independent listeners
+  // (two matchMedia "change" + one window "resize") all wired to the same
+  // handler. Any width change that crosses the tablet/desktop breakpoint
+  // also fires a native "resize" event, so the two matchMedia listeners
+  // were a redundant second/third source for the same recomputation — one
+  // coherent source now drives every update, with identical classification
+  // output for every width change.
   useEffect(() => {
-    const mqTablet = window.matchMedia(`(min-width: ${TABLET_MIN}px)`);
-    const mqDesktop = window.matchMedia(`(min-width: ${DESKTOP_MIN}px)`);
     const update = () => setDeviceClass(computeDeviceClass());
-    mqTablet.addEventListener("change", update);
-    mqDesktop.addEventListener("change", update);
     window.addEventListener("resize", update);
-    return () => {
-      mqTablet.removeEventListener("change", update);
-      mqDesktop.removeEventListener("change", update);
-      window.removeEventListener("resize", update);
-    };
+    return () => window.removeEventListener("resize", update);
   }, []);
 
   return deviceClass;

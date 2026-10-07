@@ -263,7 +263,7 @@ export default function DevTools({
           type="color"
           className="dev-tools__color-input"
           value={value.hex}
-          aria-label={`${role.label} color picker`}
+          aria-label={t("devtools.colorPicker.ariaLabel", { role: role.label })}
           onChange={(e) => handleHexInput(role.id, e.target.value)}
         />
         <input

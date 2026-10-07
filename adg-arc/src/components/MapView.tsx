@@ -7,7 +7,7 @@ import type { Map as MapLibreMap, GeoJSONSource } from "maplibre-gl";
 // style-spec`, the public style-spec type surface maplibre-gl@6.4.1 depends
 // on (`^26.2.1`, already installed transitively per package-lock.json).
 // Type-only import, erased at build time — no new runtime dependency.
-import type { ExpressionSpecification } from "@maplibre/maplibre-gl-style-spec";
+import type { CircleLayerSpecification, ExpressionSpecification } from "@maplibre/maplibre-gl-style-spec";
 import "maplibre-gl/dist/maplibre-gl.css";
 import maplibreWorkerUrl from "maplibre-gl/dist/maplibre-gl-worker.mjs?worker&url";
 
@@ -341,7 +341,10 @@ function applyMarkerLod(map: MapLibreMap, lod: EffectiveLodConfig): void {
 // here so the initial `addLayer` calls and the live-update paths (color:
 // applyPaintLive; radius/opacity: applyMarkerLod) can never disagree on
 // shape.
-function buildMarkerPaint(paint: EffectiveMapPaint, lod: EffectiveLodConfig): { halo: any; dot: any } {
+function buildMarkerPaint(
+  paint: EffectiveMapPaint,
+  lod: EffectiveLodConfig
+): { halo: CircleLayerSpecification["paint"]; dot: CircleLayerSpecification["paint"] } {
   const color = buildMarkerColorPaint(paint);
   const { dotRadius, dotOpacity, haloRadius, haloOpacityExpr } = buildMarkerLodExpressions(lod);
   return {
@@ -1025,7 +1028,7 @@ const MapView = forwardRef<MapViewHandle, MapViewProps>(function MapView(
   }, [mapReady, reducedMotion]);
 
   return (
-    <div ref={containerRef} role="application" aria-label="Map" className="map-view">
+    <div ref={containerRef} role="application" aria-label={t("mapView.ariaLabel")} className="map-view">
       <MapControls
         mode={deviceClass}
         disabled={!mapReady}

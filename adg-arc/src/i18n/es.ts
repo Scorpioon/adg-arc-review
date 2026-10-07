@@ -35,7 +35,6 @@ export const es = {
   "menu.back": "Volver al menú principal",
   "menu.dialogLabel": "Menú de la aplicación",
   "menu.navLabel": "Destinos de la aplicación",
-  "menu.introAction": "Introducción",
   // TG010 Final Experience P1 (ADGARC-DEC-010 §3-4): the menu shell's
   // canonical yellow-topbar title, transcribed verbatim from
   // ADGARC_FINAL_MOCKUP_01_main_menu.png — not translated/paraphrased.
@@ -45,7 +44,6 @@ export const es = {
   // text never changed.
   "menu.rootTitle": "Arquitectura i tipografia en diàleg",
 
-  "nav.cases": "Casos",
   // TG010 Final Experience P1 (ADGARC-DEC-010 §3-4): these two row labels
   // are transcribed verbatim from mockup 01 rather than kept as their prior
   // Spanish translations — the canonical mockup wins per DEC-010 §2 even
@@ -96,6 +94,9 @@ export const es = {
   "caseSheet.navLabel": "Navegación de casos",
   "caseSheet.previous": "Anterior",
   "caseSheet.next": "Siguiente",
+  // TG013-010 / TG036 (FB-119): the cover page's forward control — was a
+  // bare JSX literal bypassing i18n. Same navLabel/previous/next family.
+  "caseSheet.explore": "Explora",
   // TG012 Pass F1C: label normalization — no article on any footer/chapter
   // label except "L'edifici" (prompt 047 §C). These six section labels are
   // deliberately Catalan, matching the dossier's own Catalan title/content
@@ -132,8 +133,6 @@ export const es = {
   // these circles are, and no longer referenced anywhere.
   "caseSheet.chapterOrdinal": "Capítulo %{index} de %{total}",
 
-  // TG010 S4 (ADGARC-FB-024): Casos carousel.
-  "cases.carouselLabel": "Casos de la colección",
   "cases.mediaPending": "Imagen pendiente de verificación",
 
   // TG023 corrective (ADGARC-FB-105, prompt 057): the `Crèdits` destination
@@ -218,6 +217,9 @@ export const es = {
 
   "mapView.errorTimeout": "El mapa no terminó de cargar a tiempo. Recarga la página.",
   "mapView.errorLoad": "No se pudo cargar el mapa. Recarga la página.",
+  // TG013-010 / TG036 (FB-119): the map container's own accessible name —
+  // was a bare JSX literal (`aria-label="Map"`) bypassing i18n.
+  "mapView.ariaLabel": "Mapa",
 
   // TG011 Pass B (ADGARC-FB-045 / DEC-010 §11.5): the whole visible copy of
   // the safe unavailable state shown at row 05 when the DEVTOOLS_ENABLED
@@ -233,6 +235,11 @@ export const es = {
   "devtools.mapOverlays.note": "Estados del marcador de caso renderizados en el mapa.",
   "devtools.derivedPrefix":
     "Derivado (no editable de forma independiente — refleja el rol entre paréntesis):",
+  // TG013-010 / TG036 (FB-119): the per-role color-picker's accessible name
+  // — was a bare template-literal suffix (`${role.label} color picker`)
+  // bypassing i18n. The adjacent hex-text input's own "%{role} hex value"
+  // suffix is unchanged — out of this finding's scope.
+  "devtools.colorPicker.ariaLabel": "%{role} — selector de color",
   "devtools.zoomLod.title": "Zoom / nivel de detalle",
   "devtools.zoomLod.note":
     "Densidad semántica por banda de zoom (FB031) — CIUDAD / DISTRITO / EDIFICIO. Controla el tratamiento ADG-ARC aplicado sobre el mapa base; los roles dejados en «heredado» no modifican el comportamiento de zoom propio de la capa base.",

@@ -98,7 +98,6 @@ export function useMapLodOverrides() {
       return { thresholds: prev.thresholds, roles: nextRoles };
     });
     return true;
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [effectiveRoles]);
 
   const setThresholds = useCallback((candidate: ZoomBandThresholds): boolean => {
