@@ -1,4 +1,4 @@
-import { forwardRef, useEffect, useImperativeHandle, useRef, useState } from "react";
+import { forwardRef, useEffect, useImperativeHandle, useRef, useState, type RefObject } from "react";
 import * as maplibregl from "maplibre-gl";
 import type { Map as MapLibreMap, GeoJSONSource } from "maplibre-gl";
 // ADGARC 030-S2 (MapLibre v6 type-contract corrective): `maplibre-gl` itself
@@ -17,6 +17,7 @@ import maplibreWorkerUrl from "maplibre-gl/dist/maplibre-gl-worker.mjs?worker&ur
 // module scope, ahead of the mount effect below.
 maplibregl.setWorkerUrl(maplibreWorkerUrl);
 import type { CaseRecord } from "../data/cases";
+import { CATALOG_R2_APPROVED_VISITPOINTS_BY_SLUG } from "../data/catalogR2ApprovedVisitPoints";
 import type { PanelAnchor } from "../types/panelAnchor";
 import { usePrefersReducedMotion } from "../hooks/usePrefersReducedMotion";
 import { useViewportClass } from "../hooks/useViewportClass";
@@ -74,12 +75,35 @@ interface MapViewProps {
   // which MapLibre only ever populates for interaction-driven events — see
   // the [mapReady] effect below.
   onUserInteraction?: () => void;
+  // TG042 (ADGARC-FB-116/FB-127): the application-menu trigger now renders
+  // inside MapControls' left stack (directly above the compass/reset
+  // button) instead of its own standalone top-left control — App remains
+  // the single owner of menu open/close state and the trigger's focus-
+  // return ref (AppMenuModal's dialog still receives the same ref for its
+  // own focus-trap/return), MapView holds none of it independently.
+  menuOpen: boolean;
+  onToggleMenu: () => void;
+  menuTriggerRef: RefObject<HTMLButtonElement>;
 }
 
 const SOURCE_ID = "cases";
 const LAYER_HALO_ID = "cases-taint-halo";
 const LAYER_DOT_ID = "cases-taint-dot";
 const BACKGROUND_LAYER_ID = "atlas-background";
+
+// TG045 (ADGARC-FB-113) Gate B1 — LOCAL DEVELOPMENT ONLY. Source/layer for
+// the three-pilot manual-route prototype (see ../dev-pilot/). Added and
+// updated only behind `import.meta.env.DEV` so a production build neither
+// creates this layer nor ever receives route geometry through it — see the
+// mount effect and `setPilotRoute` below. Carries no case-identifying data
+// of its own; the actual pilot geometry/labels live exclusively in the
+// DEV-gated dynamically-imported dev-pilot module.
+const ROUTE_PILOT_SOURCE_ID = "route-pilot";
+const LAYER_ROUTE_PILOT_ID = "route-pilot-line";
+const EMPTY_LINE_FEATURE_COLLECTION: GeoJSON.FeatureCollection<GeoJSON.LineString> = {
+  type: "FeatureCollection",
+  features: [],
+};
 
 // Categories to always suppress even when they share a kept source-layer —
 // rail/transit geometry and route-shield symbols live in the same
@@ -548,16 +572,63 @@ function mappableCases(cases: CaseRecord[]): Array<CaseRecord & { coordinates: N
   );
 }
 
-function toFeatureCollection(cases: CaseRecord[]): GeoJSON.FeatureCollection<GeoJSON.Point> {
+// `visitPointOverrides` (Prompt 096, TG045/FB-113 Gate B1 marker/visitPoint
+// alignment; extended Prompt 046-11) is the single coordinate-override seam
+// both the DEV-only pilot overlay and the production approved-visitPoint map
+// share — never changing a feature's `id`/`properties` (slug, title), never
+// touching `cases.ts`, and never affecting a case with no override, which
+// always falls through to its ordinary `cases.ts` coordinate.
+function toFeatureCollection(
+  cases: CaseRecord[],
+  visitPointOverrides?: ReadonlyMap<string, [number, number]> | null
+): GeoJSON.FeatureCollection<GeoJSON.Point> {
   return {
     type: "FeatureCollection",
-    features: mappableCases(cases).map((c, i) => ({
-      type: "Feature",
-      id: i,
-      geometry: { type: "Point", coordinates: [c.coordinates.longitude, c.coordinates.latitude] },
-      properties: { slug: c.slug, title: c.identity.name },
-    })),
+    // ADGARC-FB-120 F1: feature identity is the canonical case slug, not the
+    // filtered array's ordinal — stable regardless of future reordering or
+    // filtering of `cases`. See the selection effect below for the matching
+    // setFeatureState producer.
+    features: mappableCases(cases).map((c) => {
+      const override = visitPointOverrides?.get(c.slug);
+      const coordinates: [number, number] = override ?? [c.coordinates.longitude, c.coordinates.latitude];
+      return {
+        type: "Feature",
+        id: c.slug,
+        geometry: { type: "Point", coordinates },
+        properties: { slug: c.slug, title: c.identity.name },
+      };
+    }),
   };
+}
+
+// Prompt 046-11: merges the OPERATOR-accepted 20-point production
+// visitPoint snapshot (`CATALOG_R2_APPROVED_VISITPOINTS_BY_SLUG`) with the
+// DEV-only pilot overlay's per-route endpoint overrides. The pilot map wins
+// on a shared slug — it is `null`/empty in every production build (see the
+// mount effect's `import.meta.env.DEV` gate below), so this only ever
+// matters locally, and it keeps the four reviewed pilot routes' marker
+// geometry visually unchanged (route line endpoint == marker position).
+// Everywhere else — including every normal production render — the
+// approved map applies, and a case with neither override keeps falling
+// through to its `cases.ts` editorial `coordinates`, exactly as before.
+function combinedVisitPointOverrides(
+  pilotOverrides: ReadonlyMap<string, [number, number]> | null
+): ReadonlyMap<string, [number, number]> {
+  if (!pilotOverrides || pilotOverrides.size === 0) {
+    return CATALOG_R2_APPROVED_VISITPOINTS_BY_SLUG;
+  }
+  return new Map([...CATALOG_R2_APPROVED_VISITPOINTS_BY_SLUG, ...pilotOverrides]);
+}
+
+// Resolves the exact same effective coordinate `toFeatureCollection` draws a
+// case's marker at, for the two effects (camera focus, dossier tether) that
+// otherwise read `coordinates` directly — so a selected case's camera/tether
+// target never silently diverges from where its marker is actually drawn.
+function resolveEffectiveCoordinate(
+  c: CaseRecord & { coordinates: NonNullable<CaseRecord["coordinates"]> },
+  overrides: ReadonlyMap<string, [number, number]>
+): [number, number] {
+  return overrides.get(c.slug) ?? [c.coordinates.longitude, c.coordinates.latitude];
 }
 
 // Single persistent map instance for the app's lifetime. Mounted once at the
@@ -577,6 +648,13 @@ export interface MapViewHandle {
   reset: () => void;
   setNorthUp: () => void;
   setEditorialOrientation: () => void;
+  // TG045 (ADGARC-FB-113) Gate B1 — LOCAL DEVELOPMENT ONLY. `null` clears
+  // the currently drawn pilot route (including the identical-origin/
+  // destination case, which the dev-pilot panel already resolves to
+  // `null`). A no-op outside `import.meta.env.DEV` — see the mount effect
+  // above for why the underlying source never exists in a production
+  // build.
+  setPilotRoute: (feature: GeoJSON.Feature<GeoJSON.LineString> | null) => void;
 }
 
 const MapView = forwardRef<MapViewHandle, MapViewProps>(function MapView(
@@ -593,12 +671,20 @@ const MapView = forwardRef<MapViewHandle, MapViewProps>(function MapView(
     onMapWarning,
     onCameraChange,
     onUserInteraction,
+    menuOpen,
+    onToggleMenu,
+    menuTriggerRef,
   },
   ref
 ) {
   const containerRef = useRef<HTMLDivElement | null>(null);
   const mapRef = useRef<MapLibreMap | null>(null);
   const lastFocusedRef = useRef<string | null>(null);
+  // TG045 (ADGARC-FB-113) Prompt 096 — LOCAL DEVELOPMENT ONLY. Populated
+  // exclusively by the mount effect's DEV-gated dynamic import below;
+  // `null` always in production and until that import resolves. See
+  // toFeatureCollection's own comment for how this is applied.
+  const pilotVisitPointOverridesRef = useRef<ReadonlyMap<string, [number, number]> | null>(null);
   // TG006F: captured once per map instance, immediately after the initial
   // atlas style's layers are active — see captureLodBaselines' comment.
   const lodBaselinesRef = useRef<LodBaselines>({ zoomRange: {}, opacity: {} });
@@ -646,7 +732,30 @@ const MapView = forwardRef<MapViewHandle, MapViewProps>(function MapView(
       ? { center: initialCenter, zoom: DEFAULT_ZOOM, bearing: HOME_BEARING, pitch: 0 }
       : homeView(cases);
 
-    const data = toFeatureCollection(cases);
+    // TG045 (ADGARC-FB-113) Prompt 096 — LOCAL DEVELOPMENT ONLY. Started in
+    // parallel with the style fetch below (not awaited sequentially) so the
+    // six pilot visitPoint overrides are almost always already resolved by
+    // the time `map.once("load", ...)` first builds the cases source.
+    // `import.meta.env.DEV` is a literal Vite build-time constant — exactly
+    // like App.tsx's `RoutePilotPanel` lazy-load and this file's own
+    // `ROUTE_PILOT_SOURCE_ID` gate below, a production build statically
+    // resolves this to `Promise.resolve(null)` and Rollup dead-code-
+    // eliminates the unreachable `import()` branch (and the dev-pilot
+    // module graph — four raw GeoJSON strings — it would otherwise pull
+    // in) rather than merely skipping it at runtime.
+    const pilotVisitPointsPromise: Promise<ReadonlyMap<string, [number, number]> | null> = import.meta.env.DEV
+      ? import("../dev-pilot/routePilotRegistry").then((mod) => mod.ROUTE_PILOT_VISIT_POINTS)
+      : Promise.resolve(null);
+    pilotVisitPointsPromise.then((overrides) => {
+      if (cancelled) return;
+      pilotVisitPointOverridesRef.current = overrides;
+      // Covers the rare ordering where this resolves AFTER the cases source
+      // already exists (map.once("load") already fired) — the common-case
+      // ordering is instead picked up directly where `data` is built below.
+      const map = mapRef.current;
+      const source = map?.getSource(SOURCE_ID) as GeoJSONSource | undefined;
+      source?.setData(toFeatureCollection(cases, combinedVisitPointOverrides(overrides)));
+    });
 
     fetch(OPENFREEMAP_STYLE_URL)
       .then((res) => res.json())
@@ -741,7 +850,39 @@ const MapView = forwardRef<MapViewHandle, MapViewProps>(function MapView(
           window.clearTimeout(initTimeoutId);
           onReadinessMilestone?.("styleLoaded");
 
-          map.addSource(SOURCE_ID, { type: "geojson", data });
+          // TG045 (ADGARC-FB-113) Prompt 096 — computed here (not earlier,
+          // at the top of this effect) so the DEV-only pilot visitPoint
+          // overrides above have the best chance of already being resolved;
+          // see pilotVisitPointsPromise's own comment for the rare-ordering
+          // fallback that still applies them correctly if not.
+          map.addSource(SOURCE_ID, {
+            type: "geojson",
+            data: toFeatureCollection(cases, combinedVisitPointOverrides(pilotVisitPointOverridesRef.current)),
+          });
+
+          // TG045 (ADGARC-FB-113) Gate B1 — LOCAL DEVELOPMENT ONLY. Added
+          // before the marker layers below so draw order alone (same trick
+          // already used for halo-under-dot) keeps the pilot route beneath
+          // every existing case marker — no beforeId needed, no existing
+          // click/hover handler touches this layer id, so case selection,
+          // hover, pan and zoom are all unaffected. `import.meta.env.DEV` is
+          // a Vite build-time constant: a production build never executes
+          // this branch, so it never creates the source/layer and
+          // `setPilotRoute` below becomes a no-op.
+          if (import.meta.env.DEV) {
+            map.addSource(ROUTE_PILOT_SOURCE_ID, { type: "geojson", data: EMPTY_LINE_FEATURE_COLLECTION });
+            map.addLayer({
+              id: LAYER_ROUTE_PILOT_ID,
+              type: "line",
+              source: ROUTE_PILOT_SOURCE_ID,
+              layout: { "line-cap": "round", "line-join": "round" },
+              paint: {
+                "line-color": "#2a6df5",
+                "line-width": 3,
+                "line-dasharray": [2, 1.4],
+              },
+            });
+          }
 
           const markerPaint = buildMarkerPaint(paint, lod);
 
@@ -873,7 +1014,7 @@ const MapView = forwardRef<MapViewHandle, MapViewProps>(function MapView(
     const map = mapRef.current;
     if (!map || !mapReady) return;
     const source = map.getSource(SOURCE_ID) as GeoJSONSource | undefined;
-    source?.setData(toFeatureCollection(cases));
+    source?.setData(toFeatureCollection(cases, combinedVisitPointOverrides(pilotVisitPointOverridesRef.current)));
   }, [cases, mapReady]);
 
   // TG006E Scope D: live devtools palette edits repaint the already-loaded
@@ -909,15 +1050,16 @@ const MapView = forwardRef<MapViewHandle, MapViewProps>(function MapView(
     if (!map || !mapReady) return;
 
     const mappable = mappableCases(cases);
-    mappable.forEach((c, i) => {
-      map.setFeatureState({ source: SOURCE_ID, id: i }, { selected: c.slug === selectedSlug });
+    mappable.forEach((c) => {
+      map.setFeatureState({ source: SOURCE_ID, id: c.slug }, { selected: c.slug === selectedSlug });
     });
 
     if (selectedSlug && selectedSlug !== lastFocusedRef.current) {
       const target = mappable.find((c) => c.slug === selectedSlug);
       if (target) {
+        const overrides = combinedVisitPointOverrides(pilotVisitPointOverridesRef.current);
         map.easeTo({
-          center: [target.coordinates.longitude, target.coordinates.latitude],
+          center: resolveEffectiveCoordinate(target, overrides),
           zoom: target.coordinates.zoom,
           duration: reducedMotion ? 0 : FOCUS_EASE_MS,
         });
@@ -946,8 +1088,9 @@ const MapView = forwardRef<MapViewHandle, MapViewProps>(function MapView(
       return;
     }
 
+    const overrides = combinedVisitPointOverrides(pilotVisitPointOverridesRef.current);
     const update = () => {
-      const p = map.project([target.coordinates.longitude, target.coordinates.latitude]);
+      const p = map.project(resolveEffectiveCoordinate(target, overrides));
       setTetherPoint({ x: p.x, y: p.y });
     };
 
@@ -1001,6 +1144,16 @@ const MapView = forwardRef<MapViewHandle, MapViewProps>(function MapView(
       setEditorialOrientation: () => {
         mapRef.current?.easeTo({ bearing: HOME_BEARING, duration: reducedMotion ? 0 : RESET_EASE_MS });
       },
+      setPilotRoute: (feature) => {
+        if (!import.meta.env.DEV) return;
+        const map = mapRef.current;
+        if (!map) return;
+        const source = map.getSource(ROUTE_PILOT_SOURCE_ID) as GeoJSONSource | undefined;
+        const nextData: GeoJSON.FeatureCollection<GeoJSON.LineString> = feature
+          ? { type: "FeatureCollection", features: [feature] }
+          : EMPTY_LINE_FEATURE_COLLECTION;
+        source?.setData(nextData);
+      },
     }),
     // eslint-disable-next-line react-hooks/exhaustive-deps
     [reducedMotion, cases]
@@ -1032,6 +1185,9 @@ const MapView = forwardRef<MapViewHandle, MapViewProps>(function MapView(
       <MapControls
         mode={deviceClass}
         disabled={!mapReady}
+        menuOpen={menuOpen}
+        onToggleMenu={onToggleMenu}
+        menuTriggerRef={menuTriggerRef}
         onZoomIn={handleZoomIn}
         onZoomOut={handleZoomOut}
         onRotate={handleRotate}

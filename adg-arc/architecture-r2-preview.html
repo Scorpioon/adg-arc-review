@@ -1,0 +1,26 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="robots" content="noindex, nofollow" />
+    <title>R2 architecture provisional — local review only</title>
+  </head>
+  <body>
+    <!--
+      TG046 Prompt 046-13 — standalone, local DEV-only review entry.
+
+      Deliberately NOT referenced by index.html or any app route, and NOT
+      added to vite.config.ts's build input (there is none configured
+      beyond Vite's own default single `index.html` entry, so this file is
+      served by `vite`/`vite preview` in dev but is not discoverable or
+      emitted by a plain `vite build` — see the TG046 report's 046-13
+      section for the exact evidence this was checked against before
+      writing this file). Do not copy this file into public/**, do not add
+      it to an additional Rollup input, and do not link it from any
+      production-reachable page.
+    -->
+    <main id="r2-architecture-preview-root"></main>
+    <script type="module" src="/src/dev-pilot/catalogR2ArchitectureOnlyPreview.entry.tsx"></script>
+  </body>
+</html>

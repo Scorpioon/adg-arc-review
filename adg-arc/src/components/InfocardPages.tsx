@@ -2,6 +2,7 @@ import type { ReactNode } from "react";
 import type {
   CaseHeroMedia,
   CaseSpecimenMedia,
+  CaseTypographyPhoto,
   InfocardEditorialCopy,
   InfocardHighlightedPhrase,
 } from "../data/cases";
@@ -78,17 +79,20 @@ export function InfocardCoverPage({ caseName, heroMedia, isVisited = false }: In
   );
 }
 
-// TG018 Pass C (operator decision, correction matrix §D): `Moviment` is
-// removed from this presentation entirely — not hidden, not TBD-labeled.
-// The architecture movement fact still exists and is still shown elsewhere
-// (the dossier's own "architecture-movement" page), so no source content is
-// lost; this component simply no longer renders it. Its former `movement`/
-// `movementStatus`/`labels.movement`/`labels.movementTbd` props are dropped
-// as a direct consequence rather than left as unused dead parameters.
+// TG018 Pass C (operator decision, correction matrix §D) retired `Moviment`
+// from this presentation, moving it onto its own dedicated
+// "architecture-movement" page instead. TG049 Stage 1 Phase C
+// (OPERATOR-approved) relocates it back here as a fourth fact row — the
+// dedicated page is removed in the same pass (useInfocardPagination.ts) —
+// rather than left duplicated on two pages. The fact's resolution
+// (`resolvedMovement ?? movementTbdInline`) is unchanged; only its position
+// moves, from InfocardDossier.tsx's own architecture-movement switch case
+// onto this one.
 export interface InfocardFactsPageLabels {
   year: string;
   architect: string;
   address: string;
+  movement: string;
 }
 
 export interface InfocardFactsPageProps {
@@ -97,24 +101,42 @@ export interface InfocardFactsPageProps {
   // ("1929", "1906 - 1912", "~S. XX", "Anys 60").
   dateLabel: string;
   architect: string;
+  // Pre-resolved by the caller exactly as the former architecture-movement
+  // page resolved it (`resolvedMovement ?? t("caseSheet.movementTbdInline")`)
+  // — this component never re-derives or TBD-labels it itself.
+  movement: string;
   address: string | null;
   labels: InfocardFactsPageLabels;
 }
 
-export function InfocardFactsPage({ dateLabel, architect, address, labels }: InfocardFactsPageProps) {
+export function InfocardFactsPage({
+  dateLabel,
+  architect,
+  movement,
+  address,
+  labels,
+}: InfocardFactsPageProps) {
   return (
     <section className="infocard-page infocard-page--facts">
       {/* TG018 Pass C (correction matrix §D): explicit top separator above
           the first row — every row already carried its own border-bottom,
-          but nothing closed the top edge above `Any`. */}
+          but nothing closed the top edge above `Any`.
+          TG049 Stage 1: row order is Autor, Moviment, Any, Adreça per the
+          handoff's desired page-1 sequence — Any/Autor/Adreça keep their
+          pre-existing resolved values; only the order and the added
+          Moviment row change. */}
       <dl className="infocard-page__facts">
-        <div className="infocard-page__fact">
-          <dt>{labels.year}</dt>
-          <dd>{dateLabel}</dd>
-        </div>
         <div className="infocard-page__fact">
           <dt>{labels.architect}</dt>
           <dd>{architect}</dd>
+        </div>
+        <div className="infocard-page__fact">
+          <dt>{labels.movement}</dt>
+          <dd>{movement}</dd>
+        </div>
+        <div className="infocard-page__fact">
+          <dt>{labels.year}</dt>
+          <dd>{dateLabel}</dd>
         </div>
         {address && (
           <div className="infocard-page__fact">
@@ -276,6 +298,39 @@ export function InfocardProsePage({ heading, copy, meta, className, emphasis }: 
       {heading && <h3 className="infocard-page__heading">{heading}</h3>}
       {meta && <div className="infocard-page__meta">{meta}</div>}
       {copy && <p className="infocard-page__body">{renderEditorialCopy(copy.displayText, emphasis)}</p>}
+    </section>
+  );
+}
+
+// TG049 Stage 1 Phase C A01 (OPERATOR-approved): shared "Fotografia de la
+// tipografia" page — the case-specific typography family name plus a
+// cover-equivalent photo slot. No typography photograph exists for any of
+// the 20 active cases yet (TG049 Prompt 01 preflight §4, unchanged by this
+// pass), so `photo` is always null today: this renders the same honest,
+// pure-white empty frame `InfocardCoverPage`/`InfocardSpecimenPage` already
+// establish for missing media, never a fabricated placeholder, broken
+// `<img>`, or "pending" wording inside the frame itself.
+export interface InfocardTypographyPhotoPageProps {
+  primaryFamily: string;
+  photo: CaseTypographyPhoto | null;
+}
+
+export function InfocardTypographyPhotoPage({ primaryFamily, photo }: InfocardTypographyPhotoPageProps) {
+  return (
+    <section className="infocard-page infocard-page--typography-photo">
+      <p className="infocard-page__meta-typeface">{primaryFamily}</p>
+      <div
+        className="infocard-page__typography-photo-frame"
+        data-empty={photo ? undefined : "true"}
+      >
+        {photo && (
+          <img
+            className="infocard-page__typography-photo-image"
+            src={photo.src}
+            alt={photo.alt}
+          />
+        )}
+      </div>
     </section>
   );
 }

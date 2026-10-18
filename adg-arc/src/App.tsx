@@ -35,6 +35,21 @@ const LOADING_EXIT_MS = 400;
 // still loads immediately if it is rendered unconditionally on first paint.
 const InfocardDossier = lazy(() => import("./components/InfocardDossier"));
 
+// TG045 (ADGARC-FB-113) Gate B1 — LOCAL DEVELOPMENT ONLY, OPERATOR-approved
+// local pilot prototype (see _wrkops/handoffs/..._route.gate_b1.local_pilot_
+// prototype.md). Unlike InfocardDossier's unconditional lazy() above, the
+// `import()` call here only exists inside the `true` branch of a ternary
+// whose condition is `import.meta.env.DEV` — a literal Vite build-time
+// constant. In a production build this is statically `false ? lazy(...) :
+// null`, so Rollup's dead-code elimination removes the unreachable `lazy`
+// call (and therefore the whole dev-pilot module graph it would otherwise
+// pull in — route geometry, pilot UI copy, everything under
+// src/dev-pilot/) from the bundle entirely, not merely from what gets
+// fetched at runtime. This is the actual exclusion mechanism the Gate B1
+// handoff requires ("must not ship in the normal production build"), not
+// just a hidden/disabled UI affordance.
+const RoutePilotPanel = import.meta.env.DEV ? lazy(() => import("./dev-pilot/RoutePilotPanel")) : null;
+
 // App owns all editorial/application state. The map is mounted once by
 // MapView and persists across state changes; no React Router is used —
 // ?case=<slug> deep links are read/written directly via the History API.
@@ -275,7 +290,6 @@ export default function App() {
         <AppMenuModal
           open={menuOpen}
           active={menuActive}
-          onToggle={handleToggleMenu}
           onClose={() => setMenuOpen(false)}
           onSelectDestination={setMenuActive}
           triggerRef={menuTriggerRef}
@@ -325,6 +339,9 @@ export default function App() {
           onMapWarning={readiness.warn}
           onCameraChange={devToolsPaneVisible ? handleCameraChange : undefined}
           onUserInteraction={dismissCoachmark}
+          menuOpen={menuOpen}
+          onToggleMenu={handleToggleMenu}
+          menuTriggerRef={menuTriggerRef}
         />
         {/* TG016 (ADGARC-FB-046 / DEC-010 §11.2, §11.6): windowed circle-
             navigation control replacing the dropped S5B PassportMapOverlay —
@@ -346,6 +363,20 @@ export default function App() {
             arrival's reading surface is never covered (ADGARC-FB-008). */}
         {deviceClass !== "desktop" && !activeCase && !coachmarkDismissed && (
           <GestureCoachmark onDismiss={dismissCoachmark} />
+        )}
+        {/* TG045 (ADGARC-FB-113) Gate B1 — LOCAL DEVELOPMENT ONLY. `null`
+            outside `import.meta.env.DEV` (see RoutePilotPanel's lazy()
+            definition above), so this never renders anything — and never
+            even holds a reference to the dev-pilot module — in a
+            production build. Routes through MapView's own `setPilotRoute`
+            handle, never a second map-drawing authority. */}
+        {RoutePilotPanel && (
+          <Suspense fallback={null}>
+            <RoutePilotPanel
+              cases={activeCases}
+              onRouteChange={(feature) => mapViewRef.current?.setPilotRoute(feature)}
+            />
+          </Suspense>
         )}
         {dossierActivated && (
           <Suspense fallback={null}>

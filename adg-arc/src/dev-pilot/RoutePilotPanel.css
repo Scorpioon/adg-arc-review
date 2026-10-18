@@ -1,0 +1,65 @@
+/* TG045 (ADGARC-FB-113) Gate B1 — LOCAL DEVELOPMENT ONLY. Styles for the
+   dev-pilot panel (RoutePilotPanel.tsx), which is only ever mounted behind
+   `import.meta.env.DEV` (see App.tsx). Prompt 095 correction: this file was
+   moved out of src/styles/global.css (which is always part of the main
+   stylesheet) specifically because global.css is not code-split by the
+   `DEV` condition — every rule appended there ships in the production CSS
+   bundle regardless. This file is imported with a plain `import
+   "./RoutePilotPanel.css";` from inside RoutePilotPanel.tsx itself, the
+   same module that is only ever reached through the DEV-gated dynamic
+   `import()` in App.tsx; when that import is dead-code-eliminated in a
+   production build, this stylesheet is eliminated along with it rather
+   than being pulled into the always-loaded main CSS chunk. Resolves
+   `var(--z-map-chrome)`, `var(--surface)`, `var(--hairline)`, `var(--ink)`
+   and `var(--ink-muted)` from global.css's `:root` block, which remains
+   loaded in every build (including dev) regardless of this file's own
+   isolation. Positioned in the map-chrome tier, offset from the
+   bottom-left MapControls dock and the top-center PassportMapNavbar so it
+   never overlaps either. Selectors/rule bodies/ordering unchanged from the
+   original global.css block — this is a relocation, not a restyle. */
+.route-pilot {
+  position: fixed;
+  right: 0.75rem;
+  bottom: 0.75rem;
+  z-index: var(--z-map-chrome);
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  width: min(18rem, calc(100vw - 1.5rem));
+  padding: 0.75rem;
+  background: var(--surface);
+  border: 1px solid var(--hairline);
+  border-radius: 0.5rem;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.18);
+  font-size: 0.8rem;
+  color: var(--ink);
+}
+
+.route-pilot__badge {
+  margin: 0;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
+  font-size: 0.68rem;
+  color: #a3330b;
+}
+
+.route-pilot__field {
+  display: flex;
+  flex-direction: column;
+  gap: 0.2rem;
+}
+
+.route-pilot__field select {
+  font: inherit;
+  padding: 0.3rem;
+  border: 1px solid var(--hairline);
+  border-radius: 0.3rem;
+  background: var(--surface);
+  color: var(--ink);
+}
+
+.route-pilot__status {
+  line-height: 1.3;
+  color: var(--ink-muted);
+}

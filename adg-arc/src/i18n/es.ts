@@ -107,12 +107,25 @@ export const es = {
   // sharing `caseSheet.section.building` with building-prose, so both pages
   // read the same word in the footer. Proven key gap (prompt 046 §5).
   "caseSheet.section.facts": "Fitxa",
-  "caseSheet.section.architecture": "Arquitectura",
+  // TG049 Stage 1 Phase C A01 (OPERATOR-approved): renamed from "Arquitectura"
+  // — the standalone Moviment step is gone (folded into `building-facts`),
+  // so this running-text step is now named "Forma" per the handoff's desired
+  // page sequence. Single call site (InfocardDossier.tsx's SECTION_LABEL_KEY),
+  // confirmed before renaming the value — no other screen reuses this key.
+  "caseSheet.section.architecture": "Forma",
   // TG028 (ADGARC-FB-110 page grammar): the movement-only step is labelled
   // "Moviment", not "Arquitectura" — distinct from the key above, which
   // stays the running-text Arquitectura step's label.
   "caseSheet.section.movement": "Moviment",
-  "caseSheet.section.typography": "Tipografia",
+  // TG049 Stage 1 Phase C A01 (OPERATOR-approved): new shared "Fotografia de
+  // la tipografia" step's footer-pill/section label, between Forma and
+  // Caràcters. Same deliberately-Catalan register as its sibling keys above.
+  "caseSheet.section.typographyPhoto": "Fotografia de la tipografia",
+  // TG049 Stage 1 Phase C A01 (OPERATOR-approved): renamed from "Tipografia"
+  // now that the photo half of the former single page has its own page/key
+  // above — this one single call site (SECTION_LABEL_KEY) confirmed before
+  // renaming, so no other screen's label was affected.
+  "caseSheet.section.typography": "Caràcters",
   "caseSheet.section.dialogue": "Diàleg",
   "caseSheet.section.specimen": "Espécimen",
   // TG012 Pass F1: footer-pill label for the highlighted-phrase sub-page —
@@ -122,16 +135,23 @@ export const es = {
   // `passport.completed` below, which names the all-stops-visited state.
   "caseSheet.finishHeading": "Visita registrada",
   "caseSheet.fact.year": "Año",
-  "caseSheet.fact.architect": "Arquitecto/a",
+  // TG049 Stage 1 Phase C A01 (OPERATOR-approved): renamed from "Arquitecto/a"
+  // per the handoff's "correctly localized Autor" — single call site
+  // (InfocardDossier.tsx's `building-facts` labels), confirmed before
+  // renaming.
+  "caseSheet.fact.architect": "Autor",
   "caseSheet.fact.address": "Dirección",
   "caseSheet.movementPrefix": "Movimiento:",
   "caseSheet.movementTbdInline": "Pendiente — no consta en el material fuente",
-  // TG020-R3 (FB-065/FB-066, chapter-nav accessibility correction): accessible
-  // name for one of the five canonical chapter circles (see CHAPTER_OF_PAGE
-  // in InfocardDossier.tsx). Replaces the retired TG018 `caseSheet.
-  // pageOrdinal` key, which named a raw page/subpage index — no longer what
-  // these circles are, and no longer referenced anywhere.
-  "caseSheet.chapterOrdinal": "Capítulo %{index} de %{total}",
+  // TG041 (ADGARC-FB-110/FB-128, page-nav accessibility): accessible name
+  // for one of the dossier's numbered page-nav circles — one per real
+  // rendered page (InfocardDossier.tsx's page-window), not a chapter group.
+  // Supersedes the TG020-R3 `caseSheet.chapterOrdinal` key (itself a
+  // revival of the original TG018 `caseSheet.pageOrdinal` key this reuses
+  // the name of): FB-110/FB-128 retire the five-chapter grouping the R3 key
+  // named, so the per-page semantics this key now carries are current
+  // again, not a reopened naming conflict.
+  "caseSheet.pageOrdinal": "Página %{index} de %{total}",
 
   "cases.mediaPending": "Imagen pendiente de verificación",
 
@@ -191,6 +211,13 @@ export const es = {
   "passport.mapNavLabel": "Navegación del pasaporte en el mapa",
   "passport.mapNavPrevious": "Ver paradas anteriores",
   "passport.mapNavNext": "Ver paradas siguientes",
+  // TG042 (ADGARC-FB-116, 2026-10-07 OPERATOR mobile-smoke update): explicit
+  // previous/next controls for the Pasaporte card carousel — singular,
+  // one-card-at-a-time wording, distinct from the map navbar's windowed
+  // `mapNavPrevious/Next` above (which shifts a multi-circle window, not a
+  // single card).
+  "passport.carouselPrevious": "Ver parada anterior",
+  "passport.carouselNext": "Ver parada siguiente",
 
   "mapControls.groupLabel": "Navegación del mapa",
   "mapControls.panUp": "Desplazar arriba",

@@ -6,8 +6,8 @@ export type InfocardPageId =
   | "building-facts"
   | "building-highlight"
   | "building-prose"
-  | "architecture-movement"
   | "architecture-prose"
+  | "typography-photo"
   | "typography"
   | "dialogue"
   | "specimen";
@@ -35,12 +35,19 @@ function buildPageDescriptors(activeCase: CaseRecord | undefined): InfocardPageD
 
   descriptors.push(
     { id: "building-prose" },
-    // Pass F1C: Arquitectura is a movement-only composition, then a
-    // running-text composition — two distinct pages, never merged onto one
-    // (prompt 047 §F); TG018 now also gives each its own nav number rather
-    // than sharing a single chapter dot.
-    { id: "architecture-movement" },
+    // TG049 Stage 1 Phase C (OPERATOR-approved): the former standalone
+    // movement-only step (Pass F1C's "architecture-movement") is retired —
+    // Moviment is now one of the four fact rows on `building-facts` instead
+    // (see InfocardDossier.tsx's "building-facts" case and
+    // InfocardPages.tsx's `InfocardFactsPage`), so Arquitectura is a single
+    // running-text page again.
     { id: "architecture-prose" },
+    // TG049 Stage 1 Phase C A01 (OPERATOR-approved): new shared "Fotografia
+    // de la tipografia" step between Forma and Caràcters — same descriptor
+    // for every case, no per-case branching; the case-specific family name
+    // and the (currently always-empty) photo slot are resolved by the
+    // caller, same as every other descriptor here.
+    { id: "typography-photo" },
     { id: "typography" },
     { id: "dialogue" },
     { id: "specimen" }

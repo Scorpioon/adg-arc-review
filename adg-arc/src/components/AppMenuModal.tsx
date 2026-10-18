@@ -9,7 +9,6 @@ import type { DevToolsProps } from "./DevTools";
 import EditorialShell from "./EditorialShell";
 import NavArrowGlyph from "./NavArrowGlyph";
 import PassportPane from "./PassportPane";
-import { InfoIcon } from "./icons";
 
 // TG040 (ADGARC-FB-121): DevTools is review/debug-only code (DEC-012) and is
 // only ever rendered behind `active === "devtools" && DEVTOOLS_ENABLED`, never
@@ -22,6 +21,11 @@ import { InfoIcon } from "./icons";
 const DevTools = lazy(() => import("./DevTools"));
 
 export type MenuDestination = "info" | "about" | "settings" | "devtools" | "passport" | "credits";
+
+// ADGARC-FB-120 F6: single declared owner of the menu panel's DOM id, shared
+// with MapControls.tsx's toggle button so the `aria-controls`/`id` ARIA
+// relationship can never drift between two independent string literals.
+export const APP_MENU_PANEL_ID = "app-menu-panel";
 
 const NAV_ITEMS: Array<{ id: MenuDestination; labelKey: TranslationKey }> = [
   { id: "passport", labelKey: "nav.passport" },
@@ -117,7 +121,6 @@ function padOrdinal(n: number): string {
 interface AppMenuModalProps {
   open: boolean;
   active: MenuDestination | null;
-  onToggle: () => void;
   onClose: () => void;
   // TG011 Pass A (ADGARC-FB-042): widened to accept `null` so an internal
   // destination's back control can unwind to the root menu through the state
@@ -138,11 +141,20 @@ interface AppMenuModalProps {
 }
 
 // TG006E corrective pass: replaces the left-edge AppSidebar overlay with a
-// centered floating application-menu modal. The trigger button stays
-// permanently mounted (so it is always reachable, closed or open); the
-// dialog itself (backdrop + panel) only mounts while `open` — this keeps
+// centered floating application-menu modal — this component owns only the
+// dialog itself (backdrop + panel), mounted while `open`. This keeps
 // AppMenuDialog's useDialogA11y call unconditional within its own component
 // tree, never a hook called behind a runtime `if`.
+//
+// TG042 (ADGARC-FB-116/FB-127): the trigger button that opens/closes this
+// dialog is no longer rendered here — it moved into MapControls' left
+// control stack (directly above the compass/reset button), reusing that
+// stack's existing circular button geometry rather than its own standalone
+// top-left `.app-menu-trigger` treatment. `triggerRef` is still threaded
+// through to AppMenuDialog unchanged: it is the same ref object the trigger
+// button (now in MapControls) attaches to, so useDialogA11y's focus-return
+// on close and EntryCurtain's manual-reopen target both keep working
+// without this component needing to render or own the button itself.
 //
 // TG010 Final Experience P1-R1 (Companion C2): `active` is rendered
 // straight through from the lifted App state — App.tsx is the single place
@@ -152,7 +164,6 @@ interface AppMenuModalProps {
 export default function AppMenuModal({
   open,
   active,
-  onToggle,
   onClose,
   onSelectDestination,
   triggerRef,
@@ -164,43 +175,21 @@ export default function AppMenuModal({
   devTools,
   passport,
 }: AppMenuModalProps) {
-  const { t } = useLocale();
-
-  return (
-    <>
-      <button
-        type="button"
-        ref={triggerRef}
-        className="app-menu-trigger"
-        aria-haspopup="dialog"
-        aria-expanded={open}
-        aria-controls="app-menu-panel"
-        aria-label={open ? t("menu.trigger.close") : t("menu.trigger.open")}
-        onClick={onToggle}
-      >
-        {/* TG020-R3 (FB-075): information glyph replaces the hamburger — same
-            trigger, same open/close application-menu behavior, same
-            accessible name pair above. */}
-        <InfoIcon />
-      </button>
-
-      {open && (
-        <AppMenuDialog
-          triggerRef={triggerRef}
-          onClose={onClose}
-          active={active}
-          onSelectDestination={onSelectDestination}
-          cases={cases}
-          onSelectCase={onSelectCase}
-          onResetMap={onResetMap}
-          onNorthUp={onNorthUp}
-          onEditorialOrientation={onEditorialOrientation}
-          devTools={devTools}
-          passport={passport}
-        />
-      )}
-    </>
-  );
+  return open ? (
+    <AppMenuDialog
+      triggerRef={triggerRef}
+      onClose={onClose}
+      active={active}
+      onSelectDestination={onSelectDestination}
+      cases={cases}
+      onSelectCase={onSelectCase}
+      onResetMap={onResetMap}
+      onNorthUp={onNorthUp}
+      onEditorialOrientation={onEditorialOrientation}
+      devTools={devTools}
+      passport={passport}
+    />
+  ) : null;
 }
 
 interface AppMenuDialogProps {
@@ -316,7 +305,7 @@ function AppMenuDialog({
       }}
     >
       <div
-        id="app-menu-panel"
+        id={APP_MENU_PANEL_ID}
         ref={dialogRef}
         className="app-menu"
         // TG020-R3 (FB-067): scopes the content-sized/no-scrollbar-when-it-

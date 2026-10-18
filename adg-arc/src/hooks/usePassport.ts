@@ -41,41 +41,53 @@ export interface PassportState {
 // second hardcoded count/list, and never narrowed to the physical-only
 // cohort (cases.ts's `experienceType` governs physical-proof gating in
 // App.tsx's `canStampCase`, a separate concern from Passport membership).
-// `visited` mirrors localStorage["adgarc.passport.v1"], read once at mount
-// and filtered against the *current* 20-case active set so a
-// stale/unknown/hidden slug can never inflate progress.
+//
+// TG046 P1 (FB-113/archival-safety finding): storage now holds the full
+// *known* set of every slug ever stamped, unfiltered — never just the
+// active ones. Previously `visited` itself was the persisted state, already
+// filtered to `eligibleSlugs` before being written back; the next `stamp()`
+// after any case left the active roster silently rewrote localStorage with
+// that filtered set, permanently erasing the older stamp. `visited` is now
+// a derived, active-only view for display/count, so existing consumers
+// (App.tsx, PassportPane, PassportMapNavbar) see unchanged behavior while
+// `known` — and the archived stamps inside it — survive roster changes.
 export function usePassport(): PassportState & { stamp: (slug: string) => StampResult } {
   const eligibleSlugs = useMemo(() => new Set(activeCases.map((c) => c.slug)), []);
   const total = eligibleSlugs.size;
 
-  const [visited, setVisited] = useState<Set<string>>(
-    () => new Set(readStoredSlugs().filter((slug) => eligibleSlugs.has(slug)))
-  );
-  // Synchronous mirror of `visited` — `stamp()` must return an up-to-date
+  const [known, setKnown] = useState<Set<string>>(() => new Set(readStoredSlugs()));
+  // Synchronous mirror of `known` — `stamp()` must return an up-to-date
   // count/stamped decision immediately, not after React's batched/async
-  // commit of the `setVisited` updater.
-  const visitedRef = useRef(visited);
-  visitedRef.current = visited;
+  // commit of the `setKnown` updater.
+  const knownRef = useRef(known);
+  knownRef.current = known;
+
+  const visited = useMemo(
+    () => new Set([...known].filter((slug) => eligibleSlugs.has(slug))),
+    [known, eligibleSlugs]
+  );
 
   const stamp = useCallback(
     (slug: string): StampResult => {
-      const current = visitedRef.current;
+      const current = knownRef.current;
+      const activeCount = (set: Set<string>) =>
+        [...set].filter((s) => eligibleSlugs.has(s)).length;
       if (!eligibleSlugs.has(slug) || current.has(slug)) {
-        return { stamped: false, count: current.size, total };
+        return { stamped: false, count: activeCount(current), total };
       }
       const next = new Set(current);
       next.add(slug);
-      visitedRef.current = next;
-      setVisited(next);
+      knownRef.current = next;
+      setKnown(next);
       persistSlugs([...next]);
-      return { stamped: true, count: next.size, total };
+      return { stamped: true, count: activeCount(next), total };
     },
     [eligibleSlugs, total]
   );
 
   const reset = useCallback(() => {
-    visitedRef.current = new Set();
-    setVisited(new Set());
+    knownRef.current = new Set();
+    setKnown(new Set());
     persistSlugs([]);
   }, []);
 

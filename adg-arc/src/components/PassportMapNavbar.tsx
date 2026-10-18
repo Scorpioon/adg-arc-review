@@ -1,4 +1,4 @@
-import { useEffect, useState, type CSSProperties } from "react";
+import { useEffect, useRef, useState, type CSSProperties } from "react";
 import type { CaseRecord } from "../data/cases";
 import type { PassportState } from "../hooks/usePassport";
 import { useWindowedIndex } from "../hooks/useWindowedIndex";
@@ -22,27 +22,46 @@ interface PassportMapNavbarProps {
 // this receives is App's public/active set (`activeCases`), not the full
 // authored dataset, so this window's own total is always the public count.
 
-// TG018 correction matrix §A: compact Passport-scale chrome, so the visible
-// window still tops out at 5 — kept as a sibling constant here rather than
+// TG018 correction matrix §A: compact Passport-scale chrome caps the
+// tablet/desktop pill at 5 — that tier is self-sizing (width: fit-content,
+// centered pill; see global.css), so its own count still drives its width
+// rather than the reverse. Kept as a sibling constant here rather than
 // imported since CSS cannot read a TS value (same split as
-// config/breakpoints.ts). Mirrored by the matching CSS
-// (.passport-map-navbar / __window rules in global.css) at each breakpoint.
-const MAX_VISIBLE = 5;
+// config/breakpoints.ts).
+const DESKTOP_VISIBLE = 5;
 
-// Mirrors config/breakpoints.ts's TABLET_MIN (768) plus the file's existing
-// 480px coarse-pointer tier (global.css) — deliberately not a new value
-// invented for this control. Below 768px the bar's own padding/gap (see
-// global.css) are what yield first; the compacted circle/arrow diameter
-// itself does not shrink further at these two tiers.
+// Mirrors config/breakpoints.ts's TABLET_MIN (768) — below it the bar is no
+// longer a self-sizing pill (TG042/FB-116: it spans the available top
+// width instead, arrows pinned to its true left/right edges), so unlike the
+// pill tier above, real on-screen space exists there to measure.
 const NARROW_MAX = 767;
-const COMPACT_MAX = 480;
 
-function computeVisibleCount(): number {
-  if (typeof window === "undefined") return MAX_VISIBLE;
-  const width = window.innerWidth;
-  if (width <= COMPACT_MAX) return 2;
-  if (width <= NARROW_MAX) return 3;
-  return MAX_VISIBLE;
+// TG042 Prompt 087 corrective (FB-116): below NARROW_MAX, `visibleCount`
+// must track how many whole circles the bar's now-real available width can
+// hold — a fixed 2/3-by-breakpoint guess left a near-full-width bar mostly
+// empty once the bar itself was widened to fill the screen. This reads the
+// bar's actual rendered width plus its own live `--circle-map-diameter`/
+// `--map-nav-gap`/padding/gap custom properties (never a value re-typed by
+// hand here), so it can never drift from whatever global.css currently says
+// at this breakpoint, and recomputes correctly if those tokens ever change.
+// The arrow's own width is never measured separately — `.passport-map-
+// navbar__arrow` is declared `width: var(--circle-map-diameter)` (global.css),
+// so it is exactly the circle diameter by construction.
+function computeNarrowVisibleCount(nav: HTMLElement, totalPositions: number): number {
+  const style = getComputedStyle(nav);
+  const diameter = parseFloat(style.getPropertyValue("--circle-map-diameter")) || 28;
+  const circleGap = parseFloat(style.getPropertyValue("--map-nav-gap")) || 6;
+  const paddingLeft = parseFloat(style.paddingLeft) || 0;
+  const paddingRight = parseFloat(style.paddingRight) || 0;
+  const outerGapRaw = style.columnGap && style.columnGap !== "normal" ? style.columnGap : style.gap;
+  const outerGap = parseFloat(outerGapRaw) || 0;
+
+  const available =
+    nav.getBoundingClientRect().width - paddingLeft - paddingRight - 2 * diameter - 2 * outerGap;
+  const step = diameter + circleGap;
+  const fit = step > 0 ? Math.floor((available + circleGap) / step) : 1;
+
+  return Math.max(1, Math.min(fit, Math.max(1, totalPositions)));
 }
 
 export default function PassportMapNavbar({
@@ -57,13 +76,36 @@ export default function PassportMapNavbar({
   // this rail for free. TG020-R1: that's now App's public/active case list.
   const totalPositions = cases.length;
 
-  const [visibleCount, setVisibleCount] = useState(computeVisibleCount);
+  const navRef = useRef<HTMLElement | null>(null);
+  const [visibleCount, setVisibleCount] = useState(DESKTOP_VISIBLE);
 
+  // TG042 Prompt 087 corrective (FB-116): a ResizeObserver on the bar itself
+  // (not `window`'s "resize") — below NARROW_MAX the bar's own box changes
+  // size with safe-area-inset/viewport changes that do not always fire a
+  // plain window resize (e.g. mobile browser chrome show/hide), and this
+  // also catches the one breakpoint-crossing case that matters here: tablet/
+  // desktop keeps the fixed self-sizing pill count (that tier's width is
+  // *derived from* the count, so measuring it back would be circular — see
+  // computeNarrowVisibleCount's doc comment), so only the narrow branch ever
+  // measures. Re-running on `totalPositions` change too (TG020: a Phase 2
+  // catalog resize), not just on layout size changes.
   useEffect(() => {
-    const onResize = () => setVisibleCount(computeVisibleCount());
-    window.addEventListener("resize", onResize);
-    return () => window.removeEventListener("resize", onResize);
-  }, []);
+    const nav = navRef.current;
+    if (!nav) return;
+
+    const recompute = () => {
+      if (window.innerWidth > NARROW_MAX) {
+        setVisibleCount(Math.min(DESKTOP_VISIBLE, Math.max(1, totalPositions)));
+        return;
+      }
+      setVisibleCount(computeNarrowVisibleCount(nav, totalPositions));
+    };
+
+    recompute();
+    const observer = new ResizeObserver(recompute);
+    observer.observe(nav);
+    return () => observer.disconnect();
+  }, [totalPositions]);
 
   // TG018 correction matrix §A/§J: arrows shift the visible window by
   // exactly one position (`1 2 3 4 5` -> `2 3 4 5 6`), never a
@@ -91,7 +133,7 @@ export default function PassportMapNavbar({
   const viewportStyle = { "--visible-count": visibleCount } as CSSProperties;
 
   return (
-    <nav className="passport-map-navbar" aria-label={t("passport.mapNavLabel")}>
+    <nav ref={navRef} className="passport-map-navbar" aria-label={t("passport.mapNavLabel")}>
       <button
         type="button"
         className="passport-map-navbar__arrow"

@@ -6,7 +6,8 @@
 export const DEVTOOLS_ENABLED: boolean =
   import.meta.env.DEV === true || import.meta.env.VITE_ENABLE_DEVTOOLS === "true";
 
-// Debug-state / export display only — not read from package.json (that
-// file sits outside this project's `src` TypeScript root). Keep this in
-// sync with package.json's "version" field whenever either changes.
-export const PRODUCT_VERSION = "0.0.18";
+// Debug-state / export display only. ADGARC-FB-120 F2: derived once at
+// build time from package.json's "version" field via Vite's `define` (see
+// vite.config.ts) rather than hand-duplicated as a literal here.
+declare const __PRODUCT_VERSION__: string;
+export const PRODUCT_VERSION: string = __PRODUCT_VERSION__;

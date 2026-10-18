@@ -1,5 +1,6 @@
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { activeCases, SPECIMEN_MEDIA, type CaseRecord } from "../data/cases";
+import { usePrefersReducedMotion } from "../hooks/usePrefersReducedMotion";
 import { useT } from "../i18n/context";
 import type { TranslationKey } from "../i18n/es";
 import type { PanelAnchor } from "../types/panelAnchor";
@@ -11,6 +12,7 @@ import {
   InfocardHighlightedPhrasePage,
   InfocardProsePage,
   InfocardSpecimenPage,
+  InfocardTypographyPhotoPage,
 } from "./InfocardPages";
 import NavArrowGlyph from "./NavArrowGlyph";
 import { useInfocardPagination, type InfocardPageId } from "../hooks/useInfocardPagination";
@@ -71,37 +73,28 @@ const SECTION_LABEL_KEY: Record<Exclude<InfocardPageId, "cover">, TranslationKey
   "building-facts": "caseSheet.section.facts",
   "building-highlight": "caseSheet.section.quote",
   "building-prose": "caseSheet.section.building",
-  // TG028 (ADGARC-FB-110 page grammar): the movement-only step is its own
-  // "Moviment" page, not a second "Arquitectura" — the running-text step
-  // below keeps the Arquitectura label.
-  "architecture-movement": "caseSheet.section.movement",
   "architecture-prose": "caseSheet.section.architecture",
+  // TG049 Stage 1 Phase C A01 (OPERATOR-approved): new shared footer-pill
+  // label for the "Fotografia de la tipografia" step — a dedicated key, not
+  // a reuse of `caseSheet.section.typography` below (which is renamed to
+  // "Caràcters" this same pass and labels a different, existing page).
+  "typography-photo": "caseSheet.section.typographyPhoto",
   typography: "caseSheet.section.typography",
   dialogue: "caseSheet.section.dialogue",
   specimen: "caseSheet.section.specimen",
 };
 
-// TG020-R3 (FB-065/FB-066): the lower navbar's five numbered circles are
-// canonical *chapters*, not a moving window over the real page/subpage list
-// useInfocardPagination.ts builds (cover, building-facts, building-highlight?,
-// building-prose, architecture-movement, architecture-prose, typography,
-// dialogue, specimen — up to nine entries). This table is the one place that
-// groups those page ids under their chapter; `cover` is deliberately absent
-// (Explora is page 0, outside the numbered sequence per the R3 authority).
-// Arrows keep paging through every real page/subpage exactly as before —
-// only the five circles read through this grouping instead of indexing
-// `descriptors` directly.
-const CHAPTER_OF_PAGE: Partial<Record<InfocardPageId, number>> = {
-  "building-facts": 1,
-  "building-highlight": 1,
-  "building-prose": 1,
-  "architecture-movement": 2,
-  "architecture-prose": 2,
-  typography: 3,
-  dialogue: 4,
-  specimen: 5,
-};
-const CHAPTER_COUNT = 5;
+// TG041 (ADGARC-FB-110/FB-128): the lower navbar's numbered circles are one
+// per *real rendered page*, not a fixed five-chapter grouping — TG020-R3's
+// own chapter window (which collapsed every subpage of a chapter onto one
+// shared circle) is retired per FB-110's locked page grammar ("number pages
+// individually, not by chapter group") and FB-128's explicit requirement
+// ("one rendered dossier page = one sequential numbered navigation item").
+// `descriptors` (useInfocardPagination.ts) is already the one real-page
+// authority — `pageIndex`/`goToPage` index it directly, so this nav no
+// longer needs a second grouping table or a derived "current chapter";
+// `cover` stays outside the numbered rail exactly as it did under the
+// chapter model (Explora is page 0, not part of the numbered sequence).
 
 // Pass F1 §3: the specimen page is the terminal numbered-chapter page. Past
 // it, the dossier moves through two post-chapter steps that live outside
@@ -124,26 +117,21 @@ export default function InfocardDossier({
   const t = useT();
   const { descriptors, currentPage, pageIndex, canGoPrevious, canGoNext, goPrevious, goNext, goToPage } =
     useInfocardPagination(activeCase);
-
-  // TG020-R3 (FB-065/FB-066): first real-page index per chapter, derived
-  // from whatever `descriptors` this case actually has (the optional
-  // building-highlight page shifts every chapter after it by one — this
-  // reads that live rather than assuming a fixed layout). Clicking a
-  // chapter circle jumps to this index; the arrows are untouched and keep
-  // paging through every descriptor, subpages included.
-  const chapterStartIndex = useMemo(() => {
-    const map = new Map<number, number>();
-    descriptors.forEach((descriptor, index) => {
-      const chapter = CHAPTER_OF_PAGE[descriptor.id];
-      if (chapter !== undefined && !map.has(chapter)) map.set(chapter, index);
-    });
-    return map;
-  }, [descriptors]);
-  const currentChapter = currentPage ? CHAPTER_OF_PAGE[currentPage.id] ?? 0 : 0;
+  const reducedMotion = usePrefersReducedMotion();
 
   const panelRef = useRef<HTMLDivElement | null>(null);
   const closeButtonRef = useRef<HTMLButtonElement | null>(null);
   const contentRef = useRef<HTMLDivElement | null>(null);
+  // TG041 (ADGARC-FB-128): the single horizontally scrollable page-nav
+  // rail's own scroll owner, plus a live index->element map of its pips —
+  // same measured-rect-delta pattern PassportPane's `focusStop` already
+  // uses for its circle rail, scoped here to one effect that re-centers
+  // whichever pip is current (see below) rather than a click-triggered
+  // callback, since this rail's one canonical index (`pageIndex`) can also
+  // change via the prev/next arrows or a swipe-driven tap, not just a pip
+  // click.
+  const pageWindowRef = useRef<HTMLDivElement | null>(null);
+  const pagePipRefs = useRef(new Map<number, HTMLButtonElement>());
 
   // Pass F1 §3/§6: local post-chapter step state, reset to "pages" whenever
   // the active case changes — never persisted to URL/storage, mirroring how
@@ -209,6 +197,27 @@ export default function InfocardDossier({
     content.focus({ preventScroll: true });
   }, [pageIndex]);
 
+  // TG041 (ADGARC-FB-128): "active page subtly auto-centers". `pageIndex`
+  // is the one canonical index driving arrows, pips and page content alike
+  // (goPrevious/goNext/a pip click/`goToPage` all funnel through it), so
+  // centering here — on that single value changing — covers every
+  // navigation method with no second trigger. Measured off live rects
+  // (PassportPane's own `focusStop` idiom) rather than `scrollIntoView`,
+  // which would risk scrolling an ancestor too; applied as a delta on the
+  // rail's own `scrollLeft` so a swipe mid-flight is never fought, only
+  // nudged. Missing refs (cover page, where this rail does not render) are
+  // a silent no-op, not an error.
+  useEffect(() => {
+    const track = pageWindowRef.current;
+    const item = pagePipRefs.current.get(pageIndex);
+    if (!track || !item) return;
+    const trackRect = track.getBoundingClientRect();
+    const itemRect = item.getBoundingClientRect();
+    const delta = itemRect.left + itemRect.width / 2 - (trackRect.left + trackRect.width / 2);
+    if (Math.abs(delta) < 1) return;
+    track.scrollTo({ left: track.scrollLeft + delta, behavior: reducedMotion ? "auto" : "smooth" });
+  }, [pageIndex, reducedMotion]);
+
   if (!activeCase) return null;
 
   // TG020-R1: derived from the public/active case list, not the full 31-
@@ -258,13 +267,15 @@ export default function InfocardDossier({
           />
         );
       case "building-facts":
-        // TG018 Pass C (correction matrix §D): Moviment is not passed to
-        // this page at all — it stays live only on the dedicated
-        // "architecture-movement" page below.
+        // TG049 Stage 1 Phase C (OPERATOR-approved): Moviment is now a
+        // fourth fact row here, resolved exactly as the former
+        // "architecture-movement" page resolved it below — the dedicated
+        // page is retired (useInfocardPagination.ts), not duplicated.
         return (
           <InfocardFactsPage
             dateLabel={activeCase.identity.date.displayLabel}
             architect={activeCase.identity.architect}
+            movement={resolvedMovement ?? t("caseSheet.movementTbdInline")}
             // FB-109 (TG029): prefer the verified Catalan display-canon
             // form where one exists; `identity.address` (the preserved
             // source-evidence value) is the fallback, never overwritten.
@@ -273,6 +284,7 @@ export default function InfocardDossier({
               year: t("caseSheet.fact.year"),
               architect: t("caseSheet.fact.architect"),
               address: t("caseSheet.fact.address"),
+              movement: t("caseSheet.section.movement"),
             }}
           />
         );
@@ -292,23 +304,6 @@ export default function InfocardDossier({
             emphasis={emphasisTerms}
           />
         );
-      case "architecture-movement":
-        // Pass F1C §F: movement-only composition — no heading (the footer
-        // pill already reads "Arquitectura") and no running text, so this
-        // step never merges the movement block with the prose block.
-        return (
-          <InfocardProsePage
-            className="infocard-page--architecture infocard-page--architecture-movement"
-            meta={
-              <div className="infocard-page__meta-line">
-                <span className="infocard-page__meta-label">{t("caseSheet.movementPrefix")}</span>
-                <strong className="infocard-page__meta-value">
-                  {resolvedMovement ?? t("caseSheet.movementTbdInline")}
-                </strong>
-              </div>
-            }
-          />
-        );
       case "architecture-prose":
         // Pass F1C §F: running-text-only composition — same footer pill,
         // same chapter dot, no meta block, no heading.
@@ -317,6 +312,20 @@ export default function InfocardDossier({
             className="infocard-page--architecture infocard-page--architecture-prose"
             copy={activeCase.infocard.architectureCopy}
             emphasis={emphasisTerms}
+          />
+        );
+      case "typography-photo":
+        // TG049 Stage 1 Phase C A01 (OPERATOR-approved): shared page, no
+        // per-case branching — `activeCase.typography.photo` resolves to
+        // `null` for every active case today (0/20, unchanged from the
+        // Prompt 01 preflight), so this always renders the honest empty
+        // frame; it will start rendering real photographs the moment any
+        // case record populates that optional field, with no code change
+        // needed here.
+        return (
+          <InfocardTypographyPhotoPage
+            primaryFamily={activeCase.typography.primaryFamily}
+            photo={activeCase.typography.photo ?? null}
           />
         );
       case "typography":
@@ -476,42 +485,49 @@ export default function InfocardDossier({
                         >
                           <NavArrowGlyph direction="previous" />
                         </button>
-                        {/* TG020-R3 (FB-065/FB-066): exactly five canonical
-                            chapter circles, never a moving window over the
-                            real page/subpage count — `chapterStartIndex`
-                            above groups the real `descriptors` list under
-                            each chapter. A circle activates when the current
-                            *page* belongs to that chapter (any of its
-                            subpages), and clicking one jumps straight to the
-                            chapter's first page; the arrows on either side
-                            are unchanged page-flow controls and still walk
-                            every subpage in between. */}
+                        {/* TG041 (ADGARC-FB-110/FB-128): one circle per real
+                            rendered page (`descriptors`, cover excluded —
+                            Explora stays page 0, outside this numbered
+                            rail), never a five-chapter grouping — FB-110's
+                            locked page grammar and FB-128's "one rendered
+                            dossier page = one sequential navigation item"
+                            retire TG020-R3's chapter window. A single
+                            horizontal native-scroll track (mobile-safe,
+                            touch/swipe-capable, no clipping — see
+                            `.infocard-dossier__page-window`'s own
+                            `overflow-x: auto` in global.css) replaces the
+                            former fixed five-slot row; the active pip
+                            subtly auto-centers via the effect above. Prev/
+                            next arrows on either side are unchanged and
+                            still walk every real page in order. */}
                         <div
                           className="infocard-dossier__page-window"
                           role="group"
+                          ref={pageWindowRef}
                           aria-label={t("caseSheet.navLabel")}
                         >
-                          {Array.from({ length: CHAPTER_COUNT }, (_, i) => {
-                            const chapter = i + 1;
-                            const active = chapter === currentChapter;
-                            const targetIndex = chapterStartIndex.get(chapter);
+                          {descriptors.slice(1).map((descriptor, i) => {
+                            const index = i + 1;
+                            const ordinal = i + 1;
+                            const active = index === pageIndex;
                             return (
                               <button
-                                key={chapter}
+                                key={descriptor.id}
                                 type="button"
+                                ref={(el) => {
+                                  if (el) pagePipRefs.current.set(index, el);
+                                  else pagePipRefs.current.delete(index);
+                                }}
                                 className="infocard-dossier__page-pip"
                                 data-active={active ? "true" : "false"}
                                 aria-current={active ? "true" : undefined}
-                                aria-label={t("caseSheet.chapterOrdinal", {
-                                  index: chapter,
-                                  total: CHAPTER_COUNT,
+                                aria-label={t("caseSheet.pageOrdinal", {
+                                  index: ordinal,
+                                  total: descriptors.length - 1,
                                 })}
-                                disabled={targetIndex === undefined}
-                                onClick={() => {
-                                  if (targetIndex !== undefined) goToPage(targetIndex);
-                                }}
+                                onClick={() => goToPage(index)}
                               >
-                                {chapter}
+                                {ordinal}
                               </button>
                             );
                           })}

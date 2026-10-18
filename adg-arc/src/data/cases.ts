@@ -100,8 +100,30 @@ export interface CaseArchitecture {
   traits?: string[];
 }
 
+// TG049 Stage 1 Phase C (OPERATOR-approved): optional per-case typography
+// photograph for the planned "Fotografia de la tipografia" page. No such
+// asset exists for any of the 20 active cases yet (TG049 Prompt 01
+// preflight §4 — confirmed 20/20 missing), so this is additive type support
+// only: no `CaseRecord` object literal below is touched to populate it.
+// Mirrors `CaseHeroMedia`'s own `credits`/`provenance`/`rightsStatus`
+// triad rather than inventing a second shape, minus the `src`/`srcPass`
+// visited-state split that field needs and this single-state photo does
+// not. Absent/null renders an honest empty slot once this page exists,
+// never a fabricated placeholder — see InfocardCoverPage's own
+// `heroMedia: null` convention.
+export interface CaseTypographyPhoto {
+  src: string;
+  alt: string;
+  credits: CaseHeroCredit[];
+  provenance: string;
+  rightsStatus: string;
+}
+
 export interface CaseTypography {
   primaryFamily: string;
+  // See `CaseTypographyPhoto` above. Optional/nullable; every existing
+  // record omits it today.
+  photo?: CaseTypographyPhoto | null;
   // TG020: nullable — most of the 21 digital fiches name a typeface without
   // crediting its designer in the source text, and that fact stays null
   // rather than invented (never rendered in the UI; see cases.ts header).
@@ -168,6 +190,18 @@ export type CoordinateStatus =
   // not yet an independently verified building centroid. Never presented
   // to the user as exact/verified.
   | "provisional_external_street";
+
+// TG046 Prompt 046-05: production-compatible pedestrian waypoint shape,
+// deliberately separate from CaseCoordinates (the editorial/building point
+// above). Optional — every existing CaseRecord has none today. Carries only
+// longitude/latitude: R2 intake's source capture-role label
+// (catalogR2Intake.ts's R2WaypointMarkerRole, e.g. "from"/"approved") is a
+// GeoJSON waypoint-position label, never a production field, quality
+// signal, or route/approval instruction, so it has no place here.
+export interface CaseVisitPoint {
+  longitude: number;
+  latitude: number;
+}
 
 export interface CaseCoordinates {
   longitude: number;
@@ -290,6 +324,11 @@ export interface CaseRecord {
   // future case this evidence pack does not cover. Each case is still
   // fully reachable via `?case=<slug>` regardless of coordinate presence.
   coordinates: CaseCoordinates | null;
+  // TG046 Prompt 046-05: optional pedestrian waypoint, distinct from the
+  // editorial/building `coordinates` above. Absent (undefined) for all 31
+  // existing records — no object literal below was touched to add this
+  // field. See `CaseVisitPoint` for why `marker` is never part of its shape.
+  visitPoint?: CaseVisitPoint;
   // True only for the fuller editorial ficha produced in TG005 (DhUB):
   // architecture `traits` stay scoped to this flag by product decision
   // (ADGARC-DEC-001) — it no longer gates `correlation.rationale`, which

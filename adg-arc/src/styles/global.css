@@ -24,24 +24,24 @@
   --hairline: rgba(90, 42, 18, 0.16);
   /* TG010 S4 (DEC-007 §C) — DELIBERATE LAYER HIERARCHY.
      One declared stacking contract, low → high:
-       map (auto) < map chrome < coachmark < menu trigger < dossier
+       map (auto) < map chrome < coachmark < dossier
        < menu/modal < transient status (curtain, boot) < skip link.
      Every positioned app layer in this file resolves through one of these
      tokens, so the order is reviewable in a single place instead of being
-     reconstructed from a dozen scattered literals. The menu trigger sits
-     deliberately *below* the dossier (DEC-007 §4, ADGARC-FB-013): it is a
-     map-chrome affordance whose own surface is the modal at
-     --z-menu-modal, so it must never paint over an open case sheet. It
-     stays permanently mounted at every state — TG009 uses it as the entry
-     curtain's focus-return target — so this is a paint-order fix, never a
-     conditional unmount. TG013-015 / TG036 (FB-119): --z-skip-link sits
-     above every other tier, including --z-boot — the skip link is a
-     keyboard-only accessibility affordance, not a content layer, and must
-     remain the topmost focus target regardless of what else is mounted. */
+     reconstructed from a dozen scattered literals.
+     TG042 (ADGARC-FB-116/FB-127): the former standalone menu-trigger tier
+     (--z-menu-trigger, between coachmark and dossier) is retired — the
+     trigger button now renders inside `.map-controls` (MapControls.tsx)
+     and resolves through --z-map-chrome like the rest of that stack,
+     rather than owning a dedicated tier for a control that is no longer
+     positioned independently of it. TG013-015 / TG036 (FB-119):
+     --z-skip-link sits above every other tier, including --z-boot — the
+     skip link is a keyboard-only accessibility affordance, not a content
+     layer, and must remain the topmost focus target regardless of what
+     else is mounted. */
   --z-map-tether: 5;
   --z-map-chrome: 6;
   --z-coachmark: 7;
-  --z-menu-trigger: 8;
   --z-dossier: 20;
   --z-app-modal: 50;
   --z-menu-modal: 55;
@@ -176,21 +176,33 @@
      site. */
   --control-height: 32px;
   /* TG019 Pass A (operator feedback §9): the map-top navbar's overall height
-     must equal the existing menu-control height (`.app-menu-trigger`,
-     36px, border-box). `.passport-map-navbar` fixes its own height at 36px
-     and drops its vertical padding to 0 to make that equality exact by
-     construction; this diameter is sized to fit inside the 36px pill (minus
-     its 1px top/bottom border) with a few px of breathing room, compacted
-     further from the former 40px. */
+     was tuned to equal the former standalone menu-trigger control's 36px.
+     TG042: that control no longer exists as a separate entity (it now lives
+     inside `.map-controls`, see MapControls.tsx/ADGARC-FB-116), so this is
+     simply the navbar's own settled compact diameter — fit inside its 36px
+     pill (minus its 1px top/bottom border) with a few px of breathing room,
+     compacted further from the former 40px. TG042 moderately increases this
+     at desktop (ADGARC-FB-116 "desktop circles may be moderately larger")
+     via a `.passport-map-navbar`-scoped override below, not here — the
+     base value stays the one every tier below desktop renders at. */
   --circle-map-diameter: 28px;
   --pill-nav-width: 8rem;
   --pill-corner: 999px;
   --panel-corner: 0;
 
-  /* Stroke weights. `--stroke-selected` is the correction matrix §A/§B
-     lightening of the former 3px selection ring to a lightweight ~1px. */
+  /* Stroke weights. `--stroke-hairline` is the ordinary 1px rule/divider
+     weight used throughout. `--stroke-selected` was the correction matrix
+     §A/§B lightening of a former 3px border-width selection ring down to a
+     ~1px border-width; TG042 (ADGARC-FB-116) retires that border-width
+     mechanism on `.passport-stop-circle` (the border channel is now always
+     the discovery stroke, grey/yellow fill's constant black outline — see
+     that rule) and reinstates a 3px *halo* (box-shadow ring, outside the
+     border, moving no neighbouring circle) as the one distinct current-
+     selection affordance that cannot be confused with the discovery stroke
+     or with :focus-visible's own separate outline. Same token, same
+     selection-channel meaning, new rendering mechanism. */
   --stroke-hairline: 1px;
-  --stroke-selected: 1px;
+  --stroke-selected: 3px;
 
   /* Header heights / separators. `--header-topbar-padding-y` compacts the
      shared EditorialShell yellow topbar; `--separator-width`/`-color` match
@@ -316,7 +328,7 @@ body,
      ADGARC-DEC-009. The rule is back to one ring only: a solid canonical-ink
      outline, offset 2px off the control edge, and no box-shadow of its own —
      so a component that has an ordinary resting box-shadow (e.g.
-     .map-controls__btn, .app-menu-trigger) keeps exactly that shadow while
+     .map-controls__btn) keeps exactly that shadow while
      focused, with nothing here adding a second halo on top of it. Focus
      visibility is strengthened here, never removed — no rule in this file
      sets `outline: none`. */
@@ -402,56 +414,16 @@ body,
   cursor: default;
 }
 
-/* TG006E corrective pass §2: persistent top-left toggle for the centered
-   application-menu modal — the corner intentionally reserved since TG006A.
-   The modal backdrop (opened via this trigger) covers it entirely while
-   open, so it does not need to compete for z-index with the backdrop
-   itself. TG010 S4 corrects where it sits relative to the *dossier* — see
-   the --z-menu-trigger note below. */
-.app-menu-trigger {
-  position: absolute;
-  top: max(16px, env(safe-area-inset-top));
-  left: max(16px, env(safe-area-inset-left));
-  /* TG010 S4 (ADGARC-FB-013 / DEC-007 §4): was 21 — above the dossier's
-     10 — which is exactly why the hamburger rendered over an open case
-     sheet. It now sits in the map-chrome tier, strictly below
-     --z-dossier. The button stays permanently mounted at every state
-     (TG009 uses it as the entry curtain's focus-return target), so this is
-     a paint-order correction, never a conditional unmount: on compact the
-     sheet occupies the lower viewport and the trigger remains visible and
-     tappable in the map sliver above it, and on tablet-landscape/desktop
-     the dossier is a right-side panel that never reaches this corner. */
-  z-index: var(--z-menu-trigger);
-  appearance: none;
-  width: 36px;
-  height: 36px;
-  padding: 0;
-  border: 1px solid rgba(90, 42, 18, 0.25);
-  border-radius: 6px;
-  background: var(--surface);
-  color: var(--ink);
-  box-shadow: 0 2px 8px rgba(40, 24, 12, 0.1);
-  font-size: 1rem;
-  line-height: 1;
-  cursor: pointer;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-}
-
-.app-menu-trigger:hover {
-  /* TG006I corrective: same fix as .map-controls__btn:hover above — this
-     trigger also sits directly on the live map with no opaque backing of
-     its own, so its hover fill must stay opaque too. */
-  background: color-mix(in srgb, var(--surface) 92%, rgb(90, 42, 18) 8%);
-}
-
-/* TG010 S5A R2 (ADGARC-FB-038 / DEC-009): the global :focus-visible rule no
-   longer touches box-shadow at all, so .map-controls__btn and
-   .app-menu-trigger simply keep their own ordinary resting shadow
-   (.map-controls__btn / .app-menu-trigger box-shadow rules above) while
-   focused — this restatement existed only to pair that shadow with the now-
-   retired white outer ring and is removed rather than left as dead CSS. */
+/* TG042 (ADGARC-FB-116/FB-127): the former standalone top-left
+   `.app-menu-trigger` control is retired outright — it now renders as
+   MapControls' first/topmost button (directly above the compass/reset
+   button in that left stack), reusing `.map-controls__btn`'s existing
+   circular geometry/hover/active/disabled treatment rather than a second,
+   parallel button visual language. See MapControls.tsx and
+   `.map-controls`/`.map-controls__btn` above. Its former dedicated
+   `--z-menu-trigger` stacking tier is retired with it (see the :root
+   layer-hierarchy comment) — the control now resolves through
+   --z-map-chrome like the rest of that stack. */
 
 /* TG006E corrective pass §2: centered floating application-menu modal —
    replaces the TG006E-initial AppSidebar left-edge overlay. Dims *and*
@@ -877,7 +849,17 @@ body,
    wide source mark from overflowing its slot on narrow widths instead of
    breaking the footer's `flex-wrap`. */
 .app-menu__partner-logo {
-  --partner-logo-height: 30px;
+  /* TG042 (ADGARC-FB-127 "moderately enlarge partner logos... increase the
+     yellow footer height only as much as needed"): the footer above has no
+     height of its own — it is exactly this logo's height plus its own
+     fixed vertical padding — so raising this one custom property is the
+     entire footer-growth mechanism; the footer never needs a matching edit
+     to "grow only as necessary," because `flex`/`align-items: center`
+     already make that automatic. 30px -> 38px is the moderate step: large
+     enough to read as a real size increase, small enough that `flex-wrap`
+     still keeps all three marks on one row at the narrow widths FB-127
+     requires checked first. */
+  --partner-logo-height: 38px;
   height: var(--partner-logo-height);
   width: auto;
   max-width: 100%;
@@ -1089,8 +1071,8 @@ body,
    controls (map-controls, hamburger); FB-046 explicitly names this surface
    "navigation/status chrome," so the control grammar governs, not the panel
    one. Same floating-card treatment as the rest of that control family
-   (.map-controls__btn / .app-menu-trigger: opaque surface, hairline border,
-   soft shadow) and the same --z-map-chrome tier, so it already sits below
+   (.map-controls__btn: opaque surface, hairline border, soft shadow) and
+   the same --z-map-chrome tier, so it already sits below
    the dossier/menu-modal/curtain/boot layers per the declared stacking
    contract. */
 .passport-map-navbar {
@@ -1210,9 +1192,27 @@ body,
    compacted circle/arrow diameter itself does not shrink again at these
    tiers; visibleCount itself drops to 3 then 2 in PassportMapNavbar.tsx at
    these same two boundaries (mirrors config/breakpoints.ts's TABLET_MIN,
-   not a value invented for this control). */
+   not a value invented for this control).
+   TG042 (ADGARC-FB-116): below this same TABLET_MIN tier the bar also stops
+   being a small width-fit-to-content centered capsule — it now spans the
+   available top width (inset from the safe-area edges, same inset family
+   `.map-controls`/`.gesture-coachmark` already use), with `justify-content:
+   space-between` pinning the two arrows to the bar's own true left/right
+   edges and the circle viewport sitting in the freed middle space. The
+   viewport's own fixed width formula (`--visible-count * diameter + gaps`,
+   above) is deliberately untouched — only the outer bar's position/extent
+   changes, never the windowed-circle-count geometry that formula and the
+   track's translateX math both depend on being exact. Border-radius steps
+   down from the full pill to a moderate rounded-rect at this width, since a
+   999px pill reads as an odd shape once it is no longer a small
+   width-fit-to-content capsule. */
 @media (max-width: 767px) {
   .passport-map-navbar {
+    left: max(12px, env(safe-area-inset-left));
+    right: max(12px, env(safe-area-inset-right));
+    transform: none;
+    justify-content: space-between;
+    border-radius: 16px;
     gap: var(--space-xs);
     /* TG022 P8 (FB-093, P8-D3): symmetric, as above — no per-breakpoint
        height, the bar's natural content height composes from this padding. */
@@ -1228,6 +1228,20 @@ body,
   .passport-map-navbar {
     gap: var(--space-2xs);
     padding: var(--space-xs);
+  }
+}
+
+/* TG042 (ADGARC-FB-116 "desktop circles may be moderately larger"): scoped
+   to this control alone (component-scoped custom property, not :root) so
+   the increase can never leak into unrelated `--circle-map-diameter`/
+   `--control-height` consumers (e.g. the dossier's page-pips share
+   `--control-height` — see InfocardDossier.tsx/TG041 — and must not grow
+   merely because the Passport circle family did). The viewport/track/arrow
+   geometry above all resolve through this same custom property, so they
+   recompute correctly with no further change needed here. */
+@media (min-width: 1024px) {
+  .passport-map-navbar {
+    --circle-map-diameter: 32px;
   }
 }
 
@@ -1422,6 +1436,15 @@ body,
    deliberately NOT returned to `.editorial-shell__body`; either would reopen
    FB-080. */
 .passport-pane__viewport {
+  /* TG042 (ADGARC-FB-116): positioning context for the new explicit
+     previous/next carousel arrows below — they are absolutely positioned
+     siblings of `.passport-carousel` (never a wrapper around it; see their
+     own comment in PassportPane.tsx for why), so this is the only change
+     needed here to host them. Does not alter this box's own layout: it was
+     already the positioned-or-not-irrelevant scroll owner for its in-flow
+     flex children, and `position: relative` changes nothing about how
+     those lay out. */
+  position: relative;
   display: flex;
   flex-direction: column;
   overflow-y: auto;
@@ -1429,6 +1452,64 @@ body,
   scrollbar-gutter: stable;
   margin: 0 -4px;
   padding: 8px 4px 0;
+}
+
+/* TG042 (ADGARC-FB-116, 2026-10-07 OPERATOR mobile-smoke update): explicit
+   previous/next controls for the card carousel, floating over its left/
+   right edges — same circular geometry as `.passport-stop-rail__reload`
+   ("the existing Passport back/number circle geometry" the handoff names
+   as this control's visual/touch reference), not the smaller map-navbar
+   circle family. Horizontally fixed relative to `.passport-pane__viewport`
+   (which does not scroll horizontally — only `.passport-carousel` itself
+   does), so they never drift with the carousel's own native swipe/scroll;
+   vertically centered over whatever height the viewport currently has.
+   Hidden at the desktop grid tier below, where every card renders at once
+   and there is no "next card" to step to. */
+.passport-carousel-nav {
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  z-index: 1;
+  appearance: none;
+  flex: none;
+  width: var(--control-height);
+  height: var(--control-height);
+  padding: 0;
+  border: 1px solid var(--canonical-ink);
+  border-radius: 50%;
+  background: var(--surface);
+  color: var(--canonical-ink);
+  box-shadow: 0 4px 12px rgba(40, 24, 12, 0.14);
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.passport-carousel-nav--prev {
+  left: 2px;
+}
+
+.passport-carousel-nav--next {
+  right: 2px;
+}
+
+.passport-carousel-nav:hover:not(:disabled) {
+  background: rgba(90, 42, 18, 0.08);
+}
+
+/* Clamped at the catalog boundary — same treatment as every other
+   previous/next pair in this file (.passport-map-navbar__arrow,
+   .infocard-dossier__nav-arrow). */
+.passport-carousel-nav:disabled {
+  opacity: 0.4;
+  cursor: default;
+}
+
+@media (min-width: 1024px) {
+  .passport-carousel-nav {
+    display: none;
+  }
 }
 
 .passport-pane__viewport > .passport-carousel {
@@ -1501,6 +1582,20 @@ body,
   align-items: flex-start;
   gap: 0.4rem;
   margin-bottom: 7px;
+}
+
+/* TG042 (ADGARC-FB-116 "desktop circles may be moderately larger"): scoped
+   to this Passport-only ancestor (same pattern the coarse-pointer 44px
+   touch-floor override below already uses for this exact property) so the
+   increase reaches the rail's circles and `.passport-stop-rail__reload`
+   (both `--control-height` consumers nested here) without reaching the
+   dossier's own page-pips, which share the same custom property but are a
+   different control family outside FB-116's scope (see InfocardDossier.tsx/
+   TG041) and must not grow as a side effect of this change. */
+@media (min-width: 1024px) {
+  .passport-stop-rail {
+    --control-height: 36px;
+  }
 }
 
 /* TG022 Session 45 (FB-098 topology fix): the row that owns the horizontal
@@ -1645,12 +1740,17 @@ body,
   width: var(--control-height);
   height: var(--control-height);
   padding: 0;
-  /* Border width is the *selection* channel and nothing else, so it is
-     declared at 0 here and only the current stop raises it (DEC-010 §11.3:
-     fill carries visit state, stroke carries selection, neither derived from
-     the other). `box-sizing: border-box` is global, so raising it to 3px
-     moves no neighbouring circle. */
-  border: 0 solid var(--canonical-ink);
+  /* TG042 (ADGARC-FB-116, 2026-10-06 discovery-state + motion update): the
+     border is now the *discovery* channel's constant black stroke — always
+     1px canonical-ink, on every circle, visited or not. DEC-010 §11.3's
+     original split (fill = visit state, border-width = selection, neither
+     derived from the other) is superseded for the border specifically: a
+     visitor must be able to read "grey + black stroke" / "yellow + black
+     stroke" as the two discovery states on their own, without the stroke's
+     presence depending on which circle happens to be current. Selection
+     moves to its own channel below (box-shadow halo) so it still never
+     overrides or is derived from discovery state. */
+  border: var(--stroke-hairline) solid var(--canonical-ink);
   border-radius: 50%;
   /* Unvisited = grey. No token covers a neutral status fill — the palette's
      greys are reading surfaces (--surface-sunken) or ink alphas — and adding
@@ -1661,24 +1761,32 @@ body,
   font: inherit;
   line-height: 1;
   cursor: pointer;
+  /* Selection halo transition — see `[data-current]` below. Reduced-motion
+     is handled by the existing blanket transition-zeroing rule at the end
+     of this file, same as every other control here. */
+  transition: box-shadow var(--motion-duration) var(--motion-easing);
 }
 
 /* Visited = yellow: the same canonical yellow the rest of the final system
-   uses, never a second accent. */
+   uses, never a second accent. Both fills now carry the same always-on
+   black stroke declared above — this rule only ever swaps the fill. */
 .passport-stop-circle[data-visited="true"] {
   background: var(--canonical-yellow);
 }
 
-/* Current = a lightweight resting stroke, independent of the fill:
-   current+unvisited is grey + stroke, current+visited is yellow + stroke.
-   TG018 correction matrix §A/§B: lightened from a former 3px treatment to
-   ~1px — "selected clear but not dominant." Deliberately NOT a focus style —
-   the global :focus-visible ring (one 2px canonical-ink outline at 2px
-   offset, ADGARC-DEC-009 / ADGARC-FB-038) remains the only focus treatment,
-   and stays visually separate by sitting outside the circle edge while this
-   sits inside it. */
+/* Current = a halo ring outside the circle's own border box, independent of
+   fill: current+unvisited is grey + black stroke + halo, current+visited is
+   yellow + black stroke + halo — the fill (discovery) and the halo
+   (selection) never derive from one another (DEC-010 §11.3's independence
+   principle, preserved even though the border channel above no longer
+   carries selection). `box-shadow` sits entirely outside the border box, so
+   it moves no neighbouring circle and cannot be confused with the always-on
+   discovery stroke it surrounds. Deliberately NOT a focus style — the
+   global :focus-visible ring (one 2px canonical-ink outline at 2px offset,
+   ADGARC-DEC-009 / ADGARC-FB-038) remains the only focus treatment, and
+   stays visually separate by sitting further outside this halo. */
 .passport-stop-circle[data-current="true"] {
-  border-width: var(--stroke-selected);
+  box-shadow: 0 0 0 var(--stroke-selected) color-mix(in srgb, var(--canonical-ink) 22%, transparent);
 }
 
 /* Reserved digital-only positions (FB-043 source discipline / DEC-010 §D4):
@@ -2701,21 +2809,46 @@ body,
   filter: brightness(0.96);
 }
 
+/* TG042 (ADGARC-FB-116, TG041 runtime review: "first-entry map gesture hint
+   is visually crushed / poorly legible on narrow mobile"). At the
+   narrowest supported phone widths (≤380px — iPhone SE class, the same
+   tier this file's dossier page-nav already special-cases) the full 999px
+   pill radius was biting into the two-line text's available width right at
+   the corners — the shape most responsible for the "crushed" read — while
+   the fixed 32px total margin (`100vw - 32px`) and the base 0.82rem text
+   left little room to spare once the dismiss pill sat alongside it. Here
+   the pill eases to a moderate rounded-rect (still clearly a floating
+   chip, not a square card), the available width grows slightly, and the
+   hint text itself steps up a touch — first-entry legibility, not a
+   redesign: `.gesture-coachmark__dismiss`'s own shape/size and this
+   control's position/z-index/attribution clearance are all unchanged. */
+@media (max-width: 380px) {
+  .gesture-coachmark {
+    max-width: calc(100vw - 24px);
+    padding: 0.6rem 0.8rem;
+    border-radius: 16px;
+    gap: 0.5rem;
+  }
+
+  .gesture-coachmark__text {
+    font-size: 0.86rem;
+  }
+}
+
 /* TG006G Scope E: unified pressed/:active feedback. Every one of these
    controls already had a rest state and a :hover background but no
    distinct pressed state — one alpha step darker than each control's own
    :hover, so the step reads consistently across the app without ever
    reducing text/icon legibility (only the background tint changes).
 
-   TG010 S5A (ADGARC-FB-027): .map-controls__btn and .app-menu-trigger have
-   been lifted out of this list — see the rule directly below. Every control
-   still listed here sits on an opaque panel (the dossier, the menu shell, a
-   modal), so a translucent pressed tint composites against that panel and
-   is correct. The two map-mounted controls do not: this fill *replaces*
-   their opaque rest background rather than layering over it, so pressing
-   them revealed the live map through the control. That is the same class of
-   defect TG006I fixed for :hover on these exact two selectors; :active was
-   missed then. */
+   TG010 S5A (ADGARC-FB-027): .map-controls__btn has been lifted out of
+   this list — see the rule directly below. Every control still listed here
+   sits on an opaque panel (the dossier, the menu shell, a modal), so a
+   translucent pressed tint composites against that panel and is correct.
+   The map-mounted control does not: this fill *replaces* its opaque rest
+   background rather than layering over it, so pressing it revealed the
+   live map through the control. That is the same class of defect TG006I
+   fixed for :hover on this exact selector; :active was missed then. */
 .app-menu__row:active,
 .app-modal__close:active,
 .passport-carousel__card:active:not([data-reserved="true"]),
@@ -2733,8 +2866,7 @@ body,
    darker than hover and release returns cleanly to the hover or rest fill
    with nothing to unwind. Same color-mix pattern and same --map-ink token
    the hover rules above already use — no new decorative color. */
-.map-controls__btn:active:not(:disabled),
-.app-menu-trigger:active {
+.map-controls__btn:active:not(:disabled) {
   background: color-mix(in srgb, var(--surface) 84%, var(--map-ink) 16%);
 }
 
@@ -2751,8 +2883,7 @@ body,
    (Scope A's desktop menu-frame work is unaffected — this only touches
    button/control hit areas). */
 @media (max-width: 480px), (pointer: coarse) {
-  .app-modal__close,
-  .app-menu-trigger {
+  .app-modal__close {
     width: 44px;
     height: 44px;
   }
@@ -3021,12 +3152,19 @@ body,
   text-overflow: ellipsis;
 }
 
-/* Pass F1C §B: tighter cluster between the back arrow, chapter dots, and
-   forward arrow. */
+/* Pass F1C §B: tighter cluster between the back arrow, page-nav rail, and
+   forward arrow.
+   TG041 (ADGARC-FB-128): `min-width: 0` so this row can shrink below its
+   unscrolled content width inside `.infocard-dossier__nav`'s own
+   `justify-content: space-between` — the obligation one level up from the
+   page-window's own `min-width: 0` (see that rule's comment), without
+   which the row would force the whole nav to overflow instead of letting
+   the rail scroll internally. */
 .infocard-dossier__nav-controls {
   display: flex;
   align-items: center;
   gap: 0.45rem;
+  min-width: 0;
 }
 
 .infocard-dossier__stamp-feedback {
@@ -3093,7 +3231,12 @@ body,
    nav's own bottom padding (gap 3), so all three render identically without
    a third independently-tuned number anywhere. */
 .infocard-dossier__content--cover,
-.infocard-dossier__content:has(.infocard-page--specimen) {
+.infocard-dossier__content:has(.infocard-page--specimen),
+/* TG049 Stage 1 Phase C A01 (OPERATOR-approved): the new typography-photo
+   page's frame is cover-equivalent media geometry, so it shares cover/
+   specimen's own top/bottom override rather than the generic
+   `--dossier-space-x` padding every other (text-only) page keeps. */
+.infocard-dossier__content:has(.infocard-page--typography-photo) {
   padding-top: var(--dossier-media-gap);
   padding-bottom: 0;
 }
@@ -3158,12 +3301,15 @@ body,
    page types media-fill geometry actually applies to. */
 .infocard-dossier__content:has(.infocard-page--highlight),
 .infocard-dossier__content:has(.infocard-page--typography),
-.infocard-dossier__content:has(.infocard-page--architecture-movement),
 .infocard-dossier__content:has(.infocard-page--facts),
 .infocard-dossier__content:has(.infocard-page--building),
 .infocard-dossier__content:has(.infocard-page--architecture-prose),
 .infocard-dossier__content:has(.infocard-page--dialogue),
-.infocard-dossier__content:has(.infocard-page--specimen) {
+.infocard-dossier__content:has(.infocard-page--specimen),
+/* TG049 Stage 1 Phase C A01 (OPERATOR-approved): added to the shared
+   flex-column activation list alongside --cover/--specimen, since this new
+   page type also owns the filling (not centering) geometry below. */
+.infocard-dossier__content:has(.infocard-page--typography-photo) {
   display: flex;
   flex-direction: column;
 }
@@ -3272,20 +3418,58 @@ body,
   cursor: default;
 }
 
-/* TG020-R3 (FB-065/FB-066): back to a fixed five-chapter set — TG018's own
-   moving window over the raw page/subpage count is retired (it was what
-   made the first real chapter present as "2" once the cover/Explora
-   consumed index 1; see CHAPTER_OF_PAGE in InfocardDossier.tsx). Geometry
-   (gap/sizing) is unchanged from that era, only what the five dots number
-   and when they activate has. */
+/* TG041 (ADGARC-FB-128): the single horizontally scrollable page-nav rail —
+   supersedes the TG020-R3 fixed five-chapter row (which never scrolled and
+   is what clipped past the viewport edge on narrow mobile widths, FB-128's
+   own reported defect). `min-width: 0` is what lets this box actually be
+   the one that shrinks/scrolls: its two flex ancestors
+   (`.infocard-dossier__nav-controls`, below, and this element itself) both
+   need `min-width: 0` for that — a flex item's default `min-width: auto`
+   refuses to shrink below its content's natural width, which is exactly
+   what forced the row to overflow instead of this track scrolling
+   internally. `overflow-x: auto` + the two touch/scrollbar properties below
+   are the same native-scroll idiom `.passport-stop-rail__track` already
+   uses, so horizontal touch/swipe works here for free, with no gesture
+   library. The margin/padding pair keeps a focused pip's ring off the clip
+   edge and pays itself back, same idiom as that same track.
+   TG041 Prompt 085 (OPERATOR runtime corrective): `flex: 1 1 auto` let this
+   track fill whatever space happened to remain in the nav row, which on the
+   OPERATOR's narrow-mobile screenshot was enough for five full pips plus a
+   sliver of a sixth — exposing a partially visible circle at the trailing
+   edge, which the handoff explicitly disallows. `flex: 1 1 auto` is now
+   `flex: 0 1 auto` (still allowed to shrink, never to grow past its own
+   sizing), and an explicit `width` deterministically fits exactly five pips
+   plus the four gaps between them (`--page-window-gap`, overridden
+   alongside `--control-height` at the ≤380px tier below so the two always
+   recompute together) — the padding's own 3px-per-side is folded in since
+   `box-sizing: border-box` (global) makes `width` the pip-track's full
+   border-box, padding included. `max-width: 100%` is the shrink floor for
+   a container narrower than five pips' worth of space. A sixth-and-later
+   pip is still fully reachable, just via scroll, never a partial reveal at
+   rest. */
 .infocard-dossier__page-window {
+  --page-window-gap: 6px;
   display: flex;
   align-items: center;
-  gap: 6px;
+  gap: var(--page-window-gap);
+  flex: 0 1 auto;
+  min-width: 0;
+  width: calc(5 * var(--control-height) + 4 * var(--page-window-gap) + 6px);
+  max-width: 100%;
+  overflow-x: auto;
+  overscroll-behavior-x: contain;
+  scrollbar-width: none;
+  margin: 0 -3px;
+  padding: 3px;
+}
+
+.infocard-dossier__page-window::-webkit-scrollbar {
+  display: none;
 }
 
 .infocard-dossier__page-pip {
   appearance: none;
+  flex: none;
   width: var(--control-height);
   height: var(--control-height);
   border-radius: 50%;
@@ -3315,15 +3499,6 @@ body,
   background: var(--surface);
   color: var(--canonical-ink);
   font-weight: 700;
-}
-
-/* Defensive only — every case's descriptor list always covers all five
-   chapters (see CHAPTER_OF_PAGE / chapterStartIndex in InfocardDossier.tsx),
-   so a chapter circle with no resolvable target page should not occur in
-   practice. */
-.infocard-dossier__page-pip:disabled {
-  opacity: 0.4;
-  cursor: default;
 }
 
 /* Pass F1 §6 — passport-stamp step: post-chapter, outside the numbered
@@ -3558,13 +3733,22 @@ body,
    margin/sizing is for the caption sitting on its own line; the cover
    dossier now instead places it in the footer nav row beside Explora, where
    `.infocard-dossier__nav--cover .infocard-page__hero-credit` above resets
-   the margin and sizing for that context. */
+   the margin and sizing for that context.
+   TG041 (ADGARC-FB-117, 2026-10-07 mobile-smoke §5): `text-wrap: pretty`
+   added — same property `.infocard-page__body` already uses for the same
+   reason (below). The mobile-smoke evidence showed a credit line ("Kent
+   Wang, CC BY 4.0, via Wikimedia Commons") breaking with "Commons" alone
+   on its own second line; the ordinary greedy line-breaking algorithm has
+   no reason to avoid that, `text-wrap: pretty` specifically balances
+   against single-word orphan lines like it. An unsupporting engine simply
+   ignores the declaration and keeps today's wrapping. */
 .infocard-page__hero-credit {
   flex: none;
   margin: 0.4rem 0 0;
   font-size: 0.72rem;
   line-height: 1.35;
   color: var(--canonical-ink);
+  text-wrap: pretty;
 }
 
 .infocard-page__hero-credit a {
@@ -3658,11 +3842,22 @@ body,
    channel) instead of a `vw`-fluid size that let the value dramatically
    outscale the label ("reduce oversized value typography" — 01_OPERATOR_
    FEEDBACK.md). `overflow-wrap` guards a long address/architect name from
-   ever forcing horizontal overflow (Pass D). */
+   ever forcing horizontal overflow (Pass D).
+   TG041 (ADGARC-FB-117, 2026-10-07 mobile-smoke §6): `line-height:
+   var(--type-display-line)` added. `--type-data-value` already resolves to
+   the exact same literal clamp as `--type-emphasis-display` (see that
+   token's own comment), but this row had no line-height of its own, so a
+   two-line architect name (e.g. "Carles Bosch i Negre") fell back to loose
+   ambient body leading — the mobile-smoke evidence's annotated gap between
+   the wrapped lines, and the same class of defect the movement value above
+   carries the identical fix for. Reduces rendered height, never increases
+   it; Any/Año and Dirección rows are normally single-line and are
+   unaffected in practice. */
 .infocard-page__fact dd {
   margin: 0;
   text-align: right;
   font-size: var(--type-data-value);
+  line-height: var(--type-display-line);
   font-weight: 700;
   overflow-wrap: anywhere;
 }
@@ -3720,6 +3915,31 @@ body,
   line-height: var(--type-display-line);
 }
 
+/* TG041 (ADGARC-FB-110): "direct quotes use paired quotation marks" —
+   applied as CSS-generated content on the quote's own `<p>`, never by
+   editing `displayText` in cases.ts: the dataset's `literal_quote` strings
+   are preserved byte-for-byte (same "preserve the source copy exactly"
+   discipline FB-117's emphasis rule already follows), and this stays a
+   style-surface-only change. Paraphrase/synthesis (`.infocard-page__phrase`
+   above) intentionally gets no `quotes`/generated content of its own, so it
+   can never visually read as a literal quotation — the same DEC-010 §D3
+   distinction `InfocardHighlightedPhrasePage` already enforces structurally
+   (blockquote vs. plain `<p>`) by only ever rendering this element for
+   `kind === "literal_quote"`. Curly double quotes match the convention
+   already used for full-phrase quotations elsewhere in the same copy (e.g.
+   "less is more", "la vela" in cases.ts's own running text). */
+.infocard-page__quote p {
+  quotes: "\201C" "\201D";
+}
+
+.infocard-page__quote p::before {
+  content: open-quote;
+}
+
+.infocard-page__quote p::after {
+  content: close-quote;
+}
+
 .infocard-page__phrase {
   margin: 0;
   font-size: clamp(1.3rem, 4.2vw, 1.9rem);
@@ -3731,6 +3951,17 @@ body,
    Corbusier · Vers une architecture, 1923") instead of a stacked two-line
    footer — `row` + `flex-wrap` so a long bibliographic context still wraps
    rather than overflowing on a narrow viewport. */
+/* TG041 Prompt 085 (OPERATOR runtime corrective): the canonical quote page
+   has exactly two typographic style families — the phrase/quote itself,
+   and everything below it. This footer (author + separator +
+   bibliographic-context) is the entire second family and must read as one
+   consistent italic run, not two: `font-style: italic` moves here, onto
+   the shared container, replacing the former `.infocard-page__attribution
+   cite { font-style: italic; }` rule (which left the "·" separator and the
+   bibliographic-context span in the default, non-italic style — a visually
+   distinct third treatment the OPERATOR flagged). `line-height: 1.3` is the
+   controlled compact leading for the (at most) two lines this run wraps to
+   on narrow viewports. */
 .infocard-page__attribution {
   display: flex;
   flex-direction: row;
@@ -3739,10 +3970,8 @@ body,
   justify-content: center;
   gap: 0.35rem;
   font-size: 1rem;
-}
-
-.infocard-page__attribution cite {
   font-style: italic;
+  line-height: 1.3;
 }
 
 /* TG022 P7 (FB-088 / P7-D1): the `opacity: 0.7` de-emphasis channel is
@@ -3945,94 +4174,14 @@ body,
   font-size: 1.2rem;
 }
 
-/* Pass F1C (prompt 047 §F): useInfocardPagination.ts now exposes two
-   Arquitectura page ids (`architecture-movement`, `architecture-prose`) —
-   the movement block and the running text are separate steps under the
-   same chapter dot, never merged on one page. `.infocard-page--architecture`
-   stays a shared base class on both steps for the properties below that
-   apply to either. */
-/* TG022 P7 (FB-091 §21.5/§21.11): the former hardcoded `rgba(29, 29, 27,
-   0.3)` — a duplicate of the pre-P7 `--separator-color` literal at a
-   different alpha — and its `calc(var(--separator-width) + 1px)` thickening
-   are both removed. This divider now shares the same retargeted
-   `--separator-width`/`--separator-color` tokens as `.infocard-page__facts`/
-   `__fact` above, converging all three onto treatment 5's canonical solid
-   `--canonical-ink` weight. The divider is not moved (`border-top`,
-   `padding-top` unchanged). */
-.infocard-page--architecture .infocard-page__meta {
-  margin: 0;
-  padding-top: 1.1rem;
-  border-top: var(--separator-width) solid var(--separator-color);
-}
-
-/* The movement-only step: a label/value row (matching the Facts page's own
-   row grammar). TG033 Prompt 077 corrective (Figma spacing / frame-contract
-   authority): Prompt 076's `flex: 1; justify-content: flex-start` is
-   superseded — Architecture movement is FAMILY A (structural/barred page):
-   outer inset = `--dossier-space-x` from `.infocard-dossier__content`
-   alone; inner additional content padding = 0.
-   TG033 Prompt 078 micro-corrective: `flex: 1 1 auto; min-height: 0;`
-   restored — see `.infocard-page--facts`'s own comment for why dropping
-   `flex` entirely, not just `justify-content`, reopened a
-   content-height-dependent bottom-inset defect.
-   TG033 Prompt 079 (OPERATOR runtime direction): `justify-content: center`
-   reintroduced on top of that now-reliable fill — see
-   `.infocard-page--facts`'s own comment for why this is safe now (frame
-   fills first, then centers within itself) and is a product-direction
-   change, not a reversion. Movement label/value structure, the SESSION-7
-   shared display size (`--type-emphasis-display`), horizontal alignment,
-   and the divider treatment (`.infocard-page--architecture .infocard-page__meta`'s own border-top,
-   below) are all unchanged. */
-.infocard-page--architecture-movement {
-  flex: 1 1 auto;
-  min-height: 0;
-  justify-content: center;
-}
-
-.infocard-page--architecture .infocard-page__meta-line {
-  flex-direction: row;
-  align-items: baseline;
-  justify-content: space-between;
-  gap: 1.25rem;
-}
-
-/* Reference composition shows a regular-weight, sentence-case label — not
-   the uppercase/letter-spaced treatment `.infocard-page__meta-label` uses
-   elsewhere — paired with the already-bold (`<strong>`) value.
-   TG022 P7 (FB-089): `min-width: 0` overrides the flex-item default of
-   `min-width: auto`, which was refusing to let this label shrink below its
-   own content width inside the `__meta-line` row above — the actual
-   mechanism of the reported overflow, not the row's own flex properties. */
-.infocard-page--architecture .infocard-page__meta-label {
-  text-transform: none;
-  letter-spacing: normal;
-  font-weight: 400;
-  font-size: var(--type-data-label);
-  min-width: 0;
-}
-
-/* TG022 P7 (FB-089): same `min-width: 0` shrink correction as the label
-   above. The former `4.5vw` preferred term scaled against the *viewport*,
-   not this dossier panel (`clamp(433px, 34vw, 480px)` fixed-width at
-   desktop, full-viewport only below 1024px) — at any desktop width the term
-   resolves well past the 1.9rem ceiling, so the value rendered at a size
-   sized for a viewport several times the panel's own width. Replaced with a
-   static preferred term so the accepted `1.4rem`/`1.9rem` bounds stay
-   explicit in the `clamp()` itself with no viewport dependency; introducing
-   a container-query unit to keep continuous scaling would require a new
-   sizing-context owner this file does not have (out of P7's authorized
-   scope).
-   TG033 Prompt 075 corrective (ADGARC-FB-117 §B): `font-size` now reads
-   `--type-emphasis-display` instead of `--type-data-value` directly — same
-   literal value (the token was introduced at exactly this value, so the
-   movement value's own rendered size is unchanged), but now via the named
-   token the quote headline and typeface title also share, making this
-   surface the explicit visual reference it already was in practice. */
-.infocard-page--architecture .infocard-page__meta-value {
-  font-size: var(--type-emphasis-display);
-  text-align: right;
-  min-width: 0;
-}
+/* TG049 Stage 1 Phase C (OPERATOR-approved): the former standalone
+   "architecture-movement" page/class and its `.infocard-page--architecture
+   .infocard-page__meta*` label/value row rules (Pass F1C / TG022 P7 /
+   TG033 / TG041) are removed — Moviment now renders as a fourth
+   `.infocard-page__fact` row on the Facts page instead (InfocardPages.tsx),
+   reusing that page's own existing row grammar, so this page-specific
+   meta-row treatment has no remaining renderer. `architecture-prose` keeps
+   its unrelated shared rule below unchanged. */
 
 /* Pass F1C (prompt 047 §G) / TG028 (ADGARC-FB-110): Tipografia's own
    `flex`/`justify-content`/`align-items` now come from the shared
@@ -4054,6 +4203,24 @@ body,
   min-height: 0;
 }
 
+/* TG049 Stage 1 Phase C A01 (OPERATOR-approved): "Fotografia de la
+   tipografia" — the one page that is neither pure media (cover/specimen)
+   nor pure centered text (every prose/facts page): a fixed-size family-name
+   line (`.infocard-page__meta-typeface`, reused as-is, `flex: none` below)
+   followed by a cover-equivalent photo frame that fills whatever space is
+   left. Owns the same `flex: 1 1 auto; min-height: 0;` filling geometry as
+   `--cover`/`--specimen` for that reason. */
+.infocard-page--typography-photo {
+  flex: 1 1 auto;
+  min-height: 0;
+  width: 100%;
+  gap: 0.75rem;
+}
+
+.infocard-page--typography-photo .infocard-page__meta-typeface {
+  flex: none;
+}
+
 /* TG033 Prompt 073 corrective (ADGARC-FB-115): the outer specimen box
    shares the exact same layout contract as `.infocard-page__hero` above
    (one shared rule, not case-specific/page-specific CSS). Only the
@@ -4073,7 +4240,15 @@ body,
    compute to the exact same final footprint at any viewport — not two
    independently guessed numbers that happen to agree today. */
 .infocard-page__hero,
-.infocard-page__specimen-frame {
+.infocard-page__specimen-frame,
+/* TG049 Stage 1 Phase C A01 (OPERATOR-approved): shares the exact same
+   outer frame contract as the hero/specimen boxes above — only the
+   background (pure white, per the handoff's explicit "pure white empty
+   photograph rectangle," not the hero's translucent tint or the specimen's
+   surface token) and the image's `object-fit` (cover, matching the cover
+   page's own crop behavior, not the specimen's contain) stay specific to
+   this page below. */
+.infocard-page__typography-photo-frame {
   flex: 1 1 auto;
   min-height: 0;
   width: 100%;
@@ -4092,8 +4267,17 @@ body,
   background: var(--surface);
 }
 
+/* Pure white, deliberately distinct from `.infocard-page__hero`'s
+   translucent-ink tint — the handoff's explicit requirement for this
+   page's supplier-pending frame, not a reused tint that would read as a
+   dimmer version of the cover slot. */
+.infocard-page__typography-photo-frame {
+  background: #ffffff;
+}
+
 .infocard-page__hero[data-empty="true"],
-.infocard-page__specimen-frame[data-empty="true"] {
+.infocard-page__specimen-frame[data-empty="true"],
+.infocard-page__typography-photo-frame[data-empty="true"] {
   border-style: dashed;
 }
 
@@ -4101,6 +4285,13 @@ body,
   width: 100%;
   height: 100%;
   object-fit: contain;
+  display: block;
+}
+
+.infocard-page__typography-photo-image {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
   display: block;
 }
 
@@ -4117,6 +4308,27 @@ body,
     z-index: var(--z-dossier);
     border-left: 1px solid var(--canonical-ink);
     box-shadow: -8px 0 28px rgba(20, 12, 6, 0.16);
+  }
+}
+
+/* TG049 Stage 1 Phase C (OPERATOR-approved): the rule above plateaus at a
+   flat 480px for every viewport past ~1412px (`34vw` already exceeds
+   480px there), so an ultrawide/large-desktop viewport — the handoff's
+   named effective 3008x1692 target, and the 1920/2560 review tiers below
+   it — rendered the same narrow strip as an ordinary 1024px laptop: the
+   confirmed "underscaled ultrawide Passport geometry" this stage exists to
+   correct. This tier only raises the ceiling the existing `clamp()` already
+   established, with no new sizing mechanism: at exactly 1920px, `24vw`
+   (460.8px) still clamps to this rule's own 480px floor, so there is no
+   visible jump at the boundary with the 1024px-tier rule above; it then
+   scales continuously up to a 680px cap at 2833px+ (3008px resolves to
+   680px) — wide enough to read as proportional on a very large display
+   while leaving most of a 3008px-wide viewport for the map beneath it.
+   Reading measure inside the panel is untouched (`.infocard-dossier__content`
+   and the prose pages' own `max-width`/font clamps, unchanged). */
+@media (min-width: 1920px) {
+  .infocard-dossier {
+    width: clamp(480px, 24vw, 680px);
   }
 }
 
@@ -4143,15 +4355,17 @@ body,
 }
 
 /* TG018 Pass D (correction matrix §I "Bottom navigation must remain usable
-   at supported widths" / "No horizontal dossier scrolling"): at the
-   narrowest supported phone widths (≤380px — iPhone SE class), the fixed
-   pill plus two arrows plus a `visibleCount: 2` page-window (see
-   `computeDossierVisibleCount` in InfocardDossier.tsx) at their default
-   sizes leaves too little of the row width to guarantee no overflow, so the
-   chrome (never the pill's own fixed-width invariant across labels —
-   §H — which this preserves at every size) steps down one notch. Verified
-   arithmetically against a 320px viewport; not confirmed by eye
-   (NO_RUNTIME) — see this pass's report for the runtime-review ask. */
+   at supported widths"): at the narrowest supported phone widths (≤380px —
+   iPhone SE class), the fixed pill plus two arrows plus the page-nav rail
+   at their default sizes leaves too little of the row width for a
+   comfortable touch target, so the chrome (never the pill's own
+   fixed-width invariant across labels — §H — which this preserves at every
+   size) steps down one notch. TG041 (ADGARC-FB-128): the rail itself no
+   longer depends on this breakpoint to avoid overflow — it scrolls
+   natively at any width now (`.infocard-dossier__page-window`'s own
+   `overflow-x: auto`, above) — this tier only shrinks the shared
+   `--control-height` token so the arrows/pips/pill stay comfortably
+   touchable rather than merely non-clipping. */
 @media (max-width: 380px) {
   /* TG019 Pass A: was two literals (34px arrow / 28px pip) that mismatched
      each other exactly like the base-size bug above. Scoped through the
@@ -4174,8 +4388,12 @@ body,
     font-size: 0.78rem;
   }
 
+  /* TG041 Prompt 085: overriding the custom property (not `gap` directly)
+     so the page-window's own `width` formula above recomputes against the
+     same 4px this tier already used, keeping the five-pip window exact at
+     this breakpoint too instead of drifting out of sync with its gap. */
   .infocard-dossier__page-window {
-    gap: 4px;
+    --page-window-gap: 4px;
   }
 
   .infocard-dossier__nav-controls {

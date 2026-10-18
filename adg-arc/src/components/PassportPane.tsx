@@ -5,6 +5,7 @@ import type { PassportState } from "../hooks/usePassport";
 import { usePrefersReducedMotion } from "../hooks/usePrefersReducedMotion";
 import { useT } from "../i18n/context";
 import { RotateCcwIcon } from "./icons";
+import NavArrowGlyph from "./NavArrowGlyph";
 import PassportStopCircle from "./PassportStopCircle";
 
 interface PassportPaneProps {
@@ -336,6 +337,18 @@ export default function PassportPane({ passport, cases, onSelectCase }: Passport
     setConfirmingReset(false);
   };
 
+  // TG042 (ADGARC-FB-116, 2026-10-07 OPERATOR mobile-smoke update): explicit
+  // previous/next controls for the card carousel, resolving through the
+  // same canonical `focusedOrdinal` the rail circles and the native-scroll
+  // swipe already share — never a second current-card authority. One step
+  // at a time (not a `visibleCount`-sized jump — there is no windowing here,
+  // every ordinal has its own card), clamped at the catalog boundary the
+  // same way PassportMapNavbar's own arrows clamp at `atStart`/`atEnd`.
+  // Desktop (>=1024px) hides these: the carousel becomes a fixed five-column
+  // grid there (see global.css), so there is no "next card" to step to.
+  const canGoPrevious = focusedOrdinal > 1;
+  const canGoNext = focusedOrdinal < cases.length;
+
   return (
     <div className="passport-pane">
       {/* TG019 Pass D (operator feedback §13): the wrapper around the numbered
@@ -373,9 +386,39 @@ export default function PassportPane({ passport, cases, onSelectCase }: Passport
           three passes strengthened and which still leaked) and becomes
           topology — a card has no legal layout position up there to be hidden
           from. Its geometry lives in `.passport-pane__viewport` in global.css.
-          It wraps the carousel and nothing else: the rail stays in the band
-          above, and the optional completed-status line stays a sibling. */}
+          It wraps the carousel plus the TG042 explicit prev/next arrows
+          below (absolutely positioned, so they add no layout box of their
+          own): the rail stays in the band above, and the optional
+          completed-status line stays a sibling. */}
       <div className="passport-pane__viewport" ref={viewportRef}>
+        {/* TG042 (ADGARC-FB-116): explicit previous/next arrows, overlaid on
+            the carousel viewport rather than inserted as flex siblings of
+            `.passport-carousel` — that box's direct-child relationship to
+            this viewport is load-bearing (P3/P4-OWN's circle<->card-column
+            alignment and the desktop grid re-point both key off it; see
+            global.css), so these are additive siblings of the `<ul>`
+            instead of a wrapper around it. Absolutely positioned at the
+            viewport's own left/right edges; `focusStop` (below) is the same
+            function the rail circles already call, so position/visited/
+            current state can never disagree after either control. */}
+        <button
+          type="button"
+          className="passport-carousel-nav passport-carousel-nav--prev"
+          onClick={() => focusStop(focusedOrdinal - 1)}
+          disabled={!canGoPrevious}
+          aria-label={t("passport.carouselPrevious")}
+        >
+          <NavArrowGlyph direction="previous" />
+        </button>
+        <button
+          type="button"
+          className="passport-carousel-nav passport-carousel-nav--next"
+          onClick={() => focusStop(focusedOrdinal + 1)}
+          disabled={!canGoNext}
+          aria-label={t("passport.carouselNext")}
+        >
+          <NavArrowGlyph direction="next" />
+        </button>
         {/* TG010 S5B (ADGARC-FB-030 / DEC-008 §4): the Pasaporte destination's
             own stop-browsing surface — a horizontal scroll-snap carousel of
             9:16 editorial cards (full card ratio, media + info together),
