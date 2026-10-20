@@ -22,4 +22,13 @@ export const en: Partial<Record<TranslationKey, string>> = {
   "caseSheet.section.typographyPhoto": "Typography photograph",
   "caseSheet.section.typography": "Characters",
   "caseSheet.fact.architect": "Author",
+  // TG051 IMP-01 (OPERATOR-approved): the five keys this pass adds in
+  // `es.ts`, translated here for the same reason as the keys above — the
+  // locale stays "disabled" (unreachable), so these carry no activation risk,
+  // but `t()` resolves them correctly the moment `en` is ever activated.
+  "caseSheet.section.typographySheet": "Typography sheet",
+  "caseSheet.fact.typeface": "Typeface",
+  "caseSheet.fact.designer": "Designer",
+  "caseSheet.fact.classification": "Classification",
+  "caseSheet.typographyLink": "link to typeface",
 };

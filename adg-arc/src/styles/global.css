@@ -3741,8 +3741,17 @@ body,
    on its own second line; the ordinary greedy line-breaking algorithm has
    no reason to avoid that, `text-wrap: pretty` specifically balances
    against single-word orphan lines like it. An unsupporting engine simply
-   ignores the declaration and keeps today's wrapping. */
-.infocard-page__hero-credit {
+   ignores the declaration and keeps today's wrapping.
+   TG051 IMP-01 (OPERATOR-approved): `.infocard-page__source-link` — the
+   Caràcters page's `link a tipografia` — is added to both selectors below
+   rather than given its own rule, because the requirement is that it use the
+   *same* visual style as the image-credit link. Sharing the rule is what
+   makes that true by construction; a copy of these declarations could drift
+   from them. Note this is deliberately NOT added to the cover-nav override at
+   `.infocard-dossier__nav--cover .infocard-page__hero-credit` above, which is
+   scoped to the credit's cover-row context and has no bearing on a page body. */
+.infocard-page__hero-credit,
+.infocard-page__source-link {
   flex: none;
   margin: 0.4rem 0 0;
   font-size: 0.72rem;
@@ -3751,7 +3760,8 @@ body,
   text-wrap: pretty;
 }
 
-.infocard-page__hero-credit a {
+.infocard-page__hero-credit a,
+.infocard-page__source-link a {
   color: inherit;
   text-decoration: underline;
 }

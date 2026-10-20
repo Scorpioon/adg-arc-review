@@ -28,4 +28,15 @@ export const ca: Partial<Record<TranslationKey, string>> = {
   "caseSheet.section.typographyPhoto": "Fotografia de la tipografia",
   "caseSheet.section.typography": "Caràcters",
   "caseSheet.fact.architect": "Autor",
+  // TG051 IMP-01 (OPERATOR-approved): the five keys this pass adds in
+  // `es.ts`, set explicitly here for the same no-activation-risk reason as the
+  // keys above (`en`/`ca` stay "disabled" in locales.ts). The section label
+  // and the link label are already Catalan in `es` by operator instruction, so
+  // the genuine Catalan string is identical; the three fact labels are the
+  // real Catalan forms of their Spanish counterparts.
+  "caseSheet.section.typographySheet": "Fitxa de la tipografia",
+  "caseSheet.fact.typeface": "Tipografia",
+  "caseSheet.fact.designer": "Disseny",
+  "caseSheet.fact.classification": "Classificació",
+  "caseSheet.typographyLink": "link a tipografia",
 };

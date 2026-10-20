@@ -95,6 +95,31 @@ export interface InfocardFactsPageLabels {
   movement: string;
 }
 
+// TG051 IMP-01: the fact-row grammar itself (the `dl`/`dt`/`dd` composition
+// with its separators and label/value type scale) is factored out here so the
+// building sheet below and the new typography sheet further down share ONE
+// definition rather than two parallel copies that can drift. Rows are built
+// by each page from its own already-resolved props; a row whose value is null
+// is dropped by the builder before it reaches this primitive, which is the
+// same "omit, never render empty" rule the `address` row established.
+interface InfocardFactRow {
+  label: string;
+  value: string;
+}
+
+function InfocardFactRows({ rows }: { rows: InfocardFactRow[] }) {
+  return (
+    <dl className="infocard-page__facts">
+      {rows.map((row) => (
+        <div key={row.label} className="infocard-page__fact">
+          <dt>{row.label}</dt>
+          <dd>{row.value}</dd>
+        </div>
+      ))}
+    </dl>
+  );
+}
+
 export interface InfocardFactsPageProps {
   // TG020: the dossier's own display label (CaseIdentity.date.displayLabel),
   // not a raw year — source-faithful for exact/ranged/fuzzy dates alike
@@ -125,26 +150,76 @@ export function InfocardFactsPage({
           handoff's desired page-1 sequence — Any/Autor/Adreça keep their
           pre-existing resolved values; only the order and the added
           Moviment row change. */}
-      <dl className="infocard-page__facts">
-        <div className="infocard-page__fact">
-          <dt>{labels.architect}</dt>
-          <dd>{architect}</dd>
-        </div>
-        <div className="infocard-page__fact">
-          <dt>{labels.movement}</dt>
-          <dd>{movement}</dd>
-        </div>
-        <div className="infocard-page__fact">
-          <dt>{labels.year}</dt>
-          <dd>{dateLabel}</dd>
-        </div>
-        {address && (
-          <div className="infocard-page__fact">
-            <dt>{labels.address}</dt>
-            <dd>{address}</dd>
-          </div>
-        )}
-      </dl>
+      {/* TG051 IMP-01: the same four rows in the same order, now expressed as
+          the shared row data `InfocardFactRows` renders — `address` keeps its
+          established omit-when-null behavior, expressed here as the row simply
+          not being added to the list. */}
+      <InfocardFactRows
+        rows={[
+          { label: labels.architect, value: architect },
+          { label: labels.movement, value: movement },
+          { label: labels.year, value: dateLabel },
+          ...(address ? [{ label: labels.address, value: address }] : []),
+        ]}
+      />
+    </section>
+  );
+}
+
+// TG051 IMP-01 (OPERATOR-approved ten-page grammar): "Fitxa de la tipografia"
+// — the typography counterpart of `InfocardFactsPage` above, between the
+// typography photograph and Caràcters. It deliberately carries BOTH
+// `infocard-page--facts` and `infocard-page--typography-sheet`: the former is
+// what makes this the same page family as the building sheet (inheriting every
+// existing facts rule — row separators, label/value type scale, the frame's own
+// fill geometry and the `:has(.infocard-page--facts)` flex-column activation in
+// global.css), the latter exists only as a hook for any future
+// typography-sheet-specific tweak. No new layout family, no duplicated values.
+//
+// Every row resolves from the case's own `CaseTypography` record and is omitted
+// when its field is null — no typeface fact is hard-coded or invented here, and
+// `primaryFamily` (non-nullable in `CaseTypography`) guarantees the page is
+// never empty. `sourceUrl` deliberately gets no row: it is surfaced as the
+// Caràcters link one page later instead (see InfocardDossier.tsx's "typography"
+// case), where a URL reads correctly as a link rather than as right-aligned
+// bold display-type fact value.
+export interface InfocardTypographySheetPageLabels {
+  typeface: string;
+  designer: string;
+  classification: string;
+  year: string;
+}
+
+export interface InfocardTypographySheetPageProps {
+  primaryFamily: string;
+  designer: string | null;
+  classification: string | null;
+  // `CaseTypography.year` is a number; the caller passes it through unchanged
+  // rather than pre-formatting it, and this page does the one `String(...)`
+  // conversion the shared row primitive needs.
+  year: number | null;
+  labels: InfocardTypographySheetPageLabels;
+}
+
+export function InfocardTypographySheetPage({
+  primaryFamily,
+  designer,
+  classification,
+  year,
+  labels,
+}: InfocardTypographySheetPageProps) {
+  return (
+    <section className="infocard-page infocard-page--facts infocard-page--typography-sheet">
+      <InfocardFactRows
+        rows={[
+          { label: labels.typeface, value: primaryFamily },
+          ...(designer ? [{ label: labels.designer, value: designer }] : []),
+          ...(classification ? [{ label: labels.classification, value: classification }] : []),
+          // `year !== null` rather than a truthiness test, so a falsy-but-real
+          // value is never silently dropped the way `{year && …}` would.
+          ...(year !== null ? [{ label: labels.year, value: String(year) }] : []),
+        ]}
+      />
     </section>
   );
 }
@@ -283,6 +358,11 @@ export interface InfocardProsePageProps {
   // FB-117 (TG033 Prompt 073 corrective): optional building-name/typeface-
   // name terms to emphasize inline wherever they occur verbatim in `copy`.
   emphasis?: RunningCopyEmphasis;
+  // TG051 IMP-01: optional trailing slot rendered AFTER the running copy —
+  // added so the Caràcters page can carry its `link a tipografia` below the
+  // paragraph without forking this shared primitive into a second variant.
+  // Every existing caller omits it and renders exactly as before.
+  footer?: ReactNode;
 }
 
 // Shared narrow primitive for building prose / Arquitectura / Tipografia /
@@ -290,7 +370,14 @@ export interface InfocardProsePageProps {
 // editorial copy (Pass F1C: the Arquitectura movement-only step has no
 // running text at all). Deliberately not a generic content-block/render-
 // schema framework.
-export function InfocardProsePage({ heading, copy, meta, className, emphasis }: InfocardProsePageProps) {
+export function InfocardProsePage({
+  heading,
+  copy,
+  meta,
+  className,
+  emphasis,
+  footer,
+}: InfocardProsePageProps) {
   return (
     <section
       className={`infocard-page infocard-page--prose${className ? ` ${className}` : ""}`}
@@ -298,6 +385,7 @@ export function InfocardProsePage({ heading, copy, meta, className, emphasis }: 
       {heading && <h3 className="infocard-page__heading">{heading}</h3>}
       {meta && <div className="infocard-page__meta">{meta}</div>}
       {copy && <p className="infocard-page__body">{renderEditorialCopy(copy.displayText, emphasis)}</p>}
+      {footer}
     </section>
   );
 }

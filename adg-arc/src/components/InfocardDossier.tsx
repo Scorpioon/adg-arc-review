@@ -13,6 +13,7 @@ import {
   InfocardProsePage,
   InfocardSpecimenPage,
   InfocardTypographyPhotoPage,
+  InfocardTypographySheetPage,
 } from "./InfocardPages";
 import NavArrowGlyph from "./NavArrowGlyph";
 import { useInfocardPagination, type InfocardPageId } from "../hooks/useInfocardPagination";
@@ -79,6 +80,10 @@ const SECTION_LABEL_KEY: Record<Exclude<InfocardPageId, "cover">, TranslationKey
   // a reuse of `caseSheet.section.typography` below (which is renamed to
   // "Caràcters" this same pass and labels a different, existing page).
   "typography-photo": "caseSheet.section.typographyPhoto",
+  // TG051 IMP-01 (OPERATOR-approved): footer-pill label for the new "Fitxa de
+  // la tipografia" step. Its own key — not a reuse of `caseSheet.section.facts`
+  // ("Fitxa", the building sheet's label), which labels a different page.
+  "typography-sheet": "caseSheet.section.typographySheet",
   typography: "caseSheet.section.typography",
   dialogue: "caseSheet.section.dialogue",
   specimen: "caseSheet.section.specimen",
@@ -253,6 +258,15 @@ export default function InfocardDossier({
     boldTerm: activeCase.typography.primaryFamily,
     underlineTerm: activeCase.identity.name,
   };
+  // TG051 IMP-01: the Caràcters page's optional typeface link target. Resolved
+  // once here, trimmed so a whitespace-only field counts as absent, and
+  // narrowed to `string | null` — the page below renders the link only when
+  // this is non-null, never a fabricated or empty href.
+  const trimmedTypographySourceUrl = activeCase.typography.sourceUrl?.trim();
+  const typographySourceUrl =
+    trimmedTypographySourceUrl && trimmedTypographySourceUrl.length > 0
+      ? trimmedTypographySourceUrl
+      : null;
 
   const renderPage = () => {
     if (!currentPage) return null;
@@ -328,6 +342,31 @@ export default function InfocardDossier({
             photo={activeCase.typography.photo ?? null}
           />
         );
+      case "typography-sheet":
+        // TG051 IMP-01 (OPERATOR-approved): the typography counterpart of
+        // `building-facts` above — same shared fact-row grammar, resolved
+        // from this case's own `CaseTypography` record. The optional fields
+        // normalize `undefined` to `null` here (the same `?? null` the
+        // typography photo already uses) so the page's own omit-when-null
+        // rule has one unambiguous signal; no value is defaulted or invented
+        // to fill a row. `sourceUrl` is intentionally not passed — it is the
+        // Caràcters link below, not a fact row.
+        return (
+          <InfocardTypographySheetPage
+            primaryFamily={activeCase.typography.primaryFamily}
+            designer={activeCase.typography.designer ?? null}
+            classification={activeCase.typography.classification ?? null}
+            year={activeCase.typography.year ?? null}
+            labels={{
+              typeface: t("caseSheet.fact.typeface"),
+              designer: t("caseSheet.fact.designer"),
+              classification: t("caseSheet.fact.classification"),
+              // Reuses the existing fact-label key the building sheet already
+              // uses for its own date row — same word, one definition.
+              year: t("caseSheet.fact.year"),
+            }}
+          />
+        );
       case "typography":
         // No in-body heading — the large typeface treatment carries the page.
         // TG033 Prompt 073 corrective (ADGARC-FB-117): the typeface-name
@@ -342,12 +381,30 @@ export default function InfocardDossier({
         // text instead. The page's own CSS (`.infocard-page--typography`)
         // still left-aligns this meta block to the same edge as the body
         // copy beneath it.
+        // TG051 IMP-01 (OPERATOR-approved): a small `link a tipografia` below
+        // the running paragraph, in the same visual treatment as the hero
+        // image-credit link (the CSS rule itself is shared — see
+        // `.infocard-page__source-link` in global.css). Rendered when and only
+        // when this case's record carries a non-empty `typography.sourceUrl`;
+        // 6 of the 20 active cases do today, and the other 14 render no link
+        // rather than a fabricated or dead one. The anchor's text is the
+        // localized label, so it always has a discernible accessible name, and
+        // `target`/`rel` match `InfocardHeroCredit` exactly.
         return (
           <InfocardProsePage
             className="infocard-page--typography"
             copy={activeCase.infocard.typographyCopy}
             emphasis={emphasisTerms}
             meta={<p className="infocard-page__meta-typeface">{activeCase.typography.primaryFamily}</p>}
+            footer={
+              typographySourceUrl ? (
+                <p className="infocard-page__source-link">
+                  <a href={typographySourceUrl} target="_blank" rel="noopener noreferrer">
+                    {t("caseSheet.typographyLink")}
+                  </a>
+                </p>
+              ) : null
+            }
           />
         );
       case "dialogue":

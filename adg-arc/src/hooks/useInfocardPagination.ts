@@ -8,6 +8,7 @@ export type InfocardPageId =
   | "building-prose"
   | "architecture-prose"
   | "typography-photo"
+  | "typography-sheet"
   | "typography"
   | "dialogue"
   | "specimen";
@@ -48,6 +49,15 @@ function buildPageDescriptors(activeCase: CaseRecord | undefined): InfocardPageD
     // and the (currently always-empty) photo slot are resolved by the
     // caller, same as every other descriptor here.
     { id: "typography-photo" },
+    // TG051 IMP-01 (OPERATOR-approved ten-page grammar): new shared "Fitxa
+    // de la tipografia" step between Fotografia de la tipografia and
+    // Caràcters — the typography counterpart of `building-facts`, same
+    // descriptor for every case and no per-case branching. Its rows resolve
+    // from the case's existing `CaseTypography` fields and individually
+    // disappear when null, so no case needs new data to reach this page
+    // (`primaryFamily` is non-nullable and always supplies at least one
+    // row). `specimen` stays the terminal page below, unchanged.
+    { id: "typography-sheet" },
     { id: "typography" },
     { id: "dialogue" },
     { id: "specimen" }

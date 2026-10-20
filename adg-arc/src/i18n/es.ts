@@ -125,6 +125,13 @@ export const es = {
   // now that the photo half of the former single page has its own page/key
   // above — this one single call site (SECTION_LABEL_KEY) confirmed before
   // renaming, so no other screen's label was affected.
+  // TG051 IMP-01 (OPERATOR-approved): the new "Fitxa de la tipografia" step's
+  // footer-pill/section label, between Fotografia de la tipografia and
+  // Caràcters. The OPERATOR specified this exact rendered label — the long
+  // form, following the same shorthand-vs-rendered-label pattern as its
+  // sibling `caseSheet.section.typographyPhoto` above, and the same
+  // deliberately-Catalan register as every other section key here.
+  "caseSheet.section.typographySheet": "Fitxa de la tipografia",
   "caseSheet.section.typography": "Caràcters",
   "caseSheet.section.dialogue": "Diàleg",
   "caseSheet.section.specimen": "Espécimen",
@@ -141,6 +148,18 @@ export const es = {
   // renaming.
   "caseSheet.fact.architect": "Autor",
   "caseSheet.fact.address": "Dirección",
+  // TG051 IMP-01 (OPERATOR-approved): the three NEW fact-row labels for the
+  // typography sheet. `caseSheet.fact.year` above is reused for its Any row
+  // rather than duplicated — same word, one definition.
+  "caseSheet.fact.typeface": "Tipografía",
+  "caseSheet.fact.designer": "Diseño",
+  "caseSheet.fact.classification": "Clasificación",
+  // TG051 IMP-01 (OPERATOR-approved): the Caràcters page's optional link to
+  // the typeface's own source. Transcribed verbatim as the OPERATOR specified
+  // the visible label, rather than translated to "enlace a la tipografía" —
+  // the same verbatim-transcription convention `menu.rootTitle` and the
+  // Catalan-register section labels above already carry.
+  "caseSheet.typographyLink": "link a tipografia",
   "caseSheet.movementPrefix": "Movimiento:",
   "caseSheet.movementTbdInline": "Pendiente — no consta en el material fuente",
   // TG041 (ADGARC-FB-110/FB-128, page-nav accessibility): accessible name

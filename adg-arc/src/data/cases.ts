@@ -20,7 +20,19 @@ export type SourceId =
   // ten physical cases (P2Totems_A&T.pdf, sha256
   // a7025a1a51d10ba601de8ea6c5cf1b8f8d96726db0a62df26d4cb146c26038cb). See
   // ADGARC_TG020_R2_PHYSICAL_CANON_RECONCILIATION_v1.0.md §1.
-  | "source:p2totems-final-physical";
+  | "source:p2totems-final-physical"
+  // TG051 IMP-03: the Catalog R2 editorial source set behind the nine new
+  // digital_only records (active slots 11-12, 14-20) — the architecture
+  // dossier `proposta per totems _ Arquitectura i tipografia en diàleg.md`
+  // (FORMA / Descripció WEB / header facts), the typeface credits sheet
+  // `TIPOGRAFIA I ARQUITECTURA (1) credits.rtf`, and the OPERATOR-approved
+  // CARÀCTERS/DIÀLEG set
+  // ADGARC_TG051_IMP03_EDITORIAL_PROPOSALS_CARACTERS_DIALEG_20261020_v0.1.md
+  // (sha256 83488f4148a7172a2ed99f30e6a34be713efec0fb5440ba68701e3732d9e4f17).
+  // One coarse-grained SourceId, matching the granularity of the members
+  // above; the exact per-field locator lives in each record's own
+  // `InfocardEditorialProvenance.sourceLocator`.
+  | "source:tg051-r2-catalog";
 
 // TG020-R2: no physical case's `correlation.provenance` cites
 // "source:csv-tipografia-arquitectura" any longer (PDF_SOURCE supersedes it
@@ -30,6 +42,7 @@ export type SourceId =
 const PROTOTYPE_COORDINATE: SourceId = "product:tg004-prototype-coordinate";
 const TG020_SOURCE: SourceId = "source:tg020-digital-cases";
 const PDF_SOURCE: SourceId = "source:p2totems-final-physical";
+const R2_SOURCE: SourceId = "source:tg051-r2-catalog";
 
 // TG023 (ADGARC-FB-006 case-media integration): single build-time base-path
 // authority for promoted physical-case hero images, matching the pattern
@@ -1638,6 +1651,217 @@ export const cases: CaseRecord[] = [
       },
     },
   },
+  // ---------------------------------------------------------------------
+  // TG051 IMP-03 (OPERATOR-approved): the nine Catalog R2 records, active
+  // slots 11-12 and 14-20. Slot 13 (`walden-7`, immediately below) is the
+  // pre-existing record carried forward unchanged — never duplicated, never
+  // replaced. Roster order is `catalogR2Intake.ts`'s `CATALOG_R2_INTAKE`,
+  // reused verbatim; the nine displaced historical identities are archived
+  // via `HIDDEN_CASE_SLUGS` below, never deleted and never QR-reassigned.
+  //
+  // Header facts (name/date/movement/architect/address), FORMA ->
+  // `architectureCopy` and Descripció WEB ¶1 -> `buildingProse` come from
+  // `work_materials/source_materials/proposta per totems _ Arquitectura i
+  // tipografia en diàleg.md` — the same ¶1 convention the ten physical
+  // records already use (see their "main .md > Descripció WEB ¶1"
+  // locators), so these pages keep the shipped paragraph density rather
+  // than pasting the full multi-paragraph web description. That source's
+  // trailing embedded base64 illustrations are reference-only and are never
+  // ingested as media or copy.
+  //
+  // CARÀCTERS -> `typographyCopy` and DIÀLEG -> `dialogueCopy` are the exact
+  // OPERATOR-approved Catalan paragraphs from
+  // ADGARC_TG051_IMP03_EDITORIAL_PROPOSALS_CARACTERS_DIALEG_20261020_v0.1.md
+  // (sha256 83488f4148a7172a2ed99f30e6a34be713efec0fb5440ba68701e3732d9e4f17),
+  // transcribed verbatim. The approved Spanish counterparts stay in that
+  // document as localization reference — no `src/i18n/**` change here. The
+  // pairing each DIÀLEG describes is a curatorial reading, never a claim of
+  // documented architect/type-designer intent.
+  //
+  // Typeface name/designer/sourceUrl come from
+  // `work_materials/source_materials/TIPOGRAFIA I ARQUITECTURA (1) credits.rtf`;
+  // `classification` and `year` are omitted because that sheet carries
+  // neither for any of the nine — omit-when-null, never a fabricated or
+  // "tbd" row (the typography sheet already drops absent rows).
+  //
+  // `coordinates` is null for all nine: no independent building-coordinate
+  // evidence has been gathered (see catalogR2CaseRecordDrafts.ts's
+  // COORDINATES_BLOCKED), and the OPERATOR-approved pedestrian `visitPoint`
+  // in catalogR2Intake.ts is a deliberately separate authority that is
+  // never copied here. Consequence: these nine carry no map marker until
+  // building coordinates are sourced (MapView's `mappableCases` filters on
+  // `coordinates !== null`) — an open OPERATOR item, not a silent
+  // substitution. Dossier, Passport, ordinals and deep links are unaffected.
+  //
+  // `highlightedPhrase` is null for all nine: neither approved source
+  // supplies a genuine quotation and none is invented. `building-highlight`
+  // is already conditional in useInfocardPagination.ts, so these records
+  // paginate to nine pages where a case with a Cita paginates to ten —
+  // recorded for OPERATOR reconciliation, not resolved in this data pass.
+  // ---------------------------------------------------------------------
+  {
+    slug: "casa-fuster",
+    identity: {
+      name: "Casa Fuster",
+      date: { year: 1911, displayLabel: "1908 - 1911" },
+      architect: "Lluís Domènech i Montaner",
+      address: "Pg. de Gràcia, 132, Gràcia, 08008 Barcelona",
+    },
+    experienceType: "digital_only",
+    architecture: { movement: "Modernisme", movementStatus: "verified" },
+    typography: {
+      primaryFamily: "Arlette",
+      designer: "Pilar Cano, Ferran Milan",
+      sourceUrl: "https://www.typetogether.com/fonts/arlette",
+      secondaryStatus: "parked",
+    },
+    correlation: {
+      sourceRationale:
+        "Arlette és una tipografia sans serif de gest viu i formes corbes que s'allunyen de la neutralitat geomètrica. El dibuix de les lletres aporta moviment i personalitat sense renunciar a una estructura comuna. El seu caràcter expressiu la fa especialment adequada per a composicions on la forma també comunica.\n\n" +
+        "Els arcs, els capitells florals i el volum arrodonit de la cantonada donen a la Casa Fuster una arquitectura marcada pel gest ornamental. Arlette hi dialoga a través de la corba i l'energia del traç: no reprodueix el llenguatge modernista, però comparteix amb la façana la voluntat de fer de la forma un signe d'identitat.",
+      provenance: R2_SOURCE,
+    },
+    coordinates: null,
+    heroMedia: {
+      src: `${DIGITAL_MEDIA_BASE}casa-fuster-base.webp`,
+      srcPass: `${DIGITAL_MEDIA_BASE}casa-fuster-pass.webp`,
+      alt: "221 Casa Fuster, carrer de Gràcia",
+      credits: [
+        {
+          label: "Enfo, CC BY-SA 3.0, via Wikimedia Commons",
+          url: "https://commons.wikimedia.org/wiki/File:221_Casa_Fuster,_carrer_de_Gr%C3%A0cia.jpg",
+        },
+      ],
+      provenance: "Wikimedia Commons — File:221_Casa_Fuster,_carrer_de_Gràcia.jpg",
+      rightsStatus: "CC BY-SA 3.0",
+    },
+    editorial: false,
+    infocard: {
+      highlightedPhrase: null,
+      buildingProse: {
+        displayText:
+          "Considerat un dels edificis més emblemàtics del modernisme català, el projecte va ser encarregat a l'arquitecte per la família Fuster el 1908 per a la seva pròpia residència.",
+        provenance: {
+          mappingRef: "TG051 IMP-03 §11 Casa Fuster — L'edifici",
+          sourceLocator:
+            "proposta per totems _ Arquitectura i tipografia en diàleg.md > Casa Fuster > [cat] > Descripció WEB ¶1",
+        },
+      },
+      architectureCopy: {
+        displayText:
+          "La Casa Fuster destaca per la seva façana de marbre blanc i pedra de Montjuïc. Les columnes, capitells amb motius florals, arcs i finestres trilobulades combinen referències gòtiques i formes ornamentals. La galeria porticada del primer pis i el cos cilíndric de la cantonada, a mode de torre, completen el caràcter monumental de l'edifici.",
+        provenance: {
+          mappingRef: "TG051 IMP-03 §11 Casa Fuster — Forma",
+          sourceLocator:
+            "proposta per totems _ Arquitectura i tipografia en diàleg.md > Casa Fuster > [cat] > FORMA",
+        },
+      },
+      typographyCopy: {
+        displayText:
+          "Arlette és una tipografia sans serif de gest viu i formes corbes que s'allunyen de la neutralitat geomètrica. El dibuix de les lletres aporta moviment i personalitat sense renunciar a una estructura comuna. El seu caràcter expressiu la fa especialment adequada per a composicions on la forma també comunica.",
+        provenance: {
+          mappingRef: "TG051 IMP-03 §11 Casa Fuster × Arlette — Caràcters",
+          sourceLocator:
+            "TG051 approved editorial v0.1 sha256 83488f4148a7172a2ed99f30e6a34be713efec0fb5440ba68701e3732d9e4f17 > slot 11 > [CAT] CARÀCTERS",
+        },
+      },
+      dialogueCopy: {
+        displayText:
+          "Els arcs, els capitells florals i el volum arrodonit de la cantonada donen a la Casa Fuster una arquitectura marcada pel gest ornamental. Arlette hi dialoga a través de la corba i l'energia del traç: no reprodueix el llenguatge modernista, però comparteix amb la façana la voluntat de fer de la forma un signe d'identitat.",
+        provenance: {
+          mappingRef: "TG051 IMP-03 §11 Casa Fuster × Arlette — Diàleg",
+          sourceLocator:
+            "TG051 approved editorial v0.1 sha256 83488f4148a7172a2ed99f30e6a34be713efec0fb5440ba68701e3732d9e4f17 > slot 11 > [CAT] DIÀLEG",
+        },
+      },
+    },
+  },
+  {
+    slug: "casa-lopez-sert",
+    identity: {
+      // The Josep Lluís Sert building at C. Muntaner 342-348 — never Casa
+      // Antoni López (pl. Duc de Medinaceli), whose Commons photograph the
+      // R2 credits source explicitly marks "WRONG BUILDING"; that image is
+      // excluded from this pass's media entirely.
+      name: "Casa López",
+      date: { year: 1931, displayLabel: "1931" },
+      architect: "Josep Lluís Sert",
+      address: "C. Muntaner, 342-348, Sarrià-Sant Gervasi, 08021 Barcelona",
+    },
+    experienceType: "digital_only",
+    architecture: { movement: "Racionalisme", movementStatus: "verified" },
+    typography: {
+      primaryFamily: "Futura 100",
+      // The credits sheet attributes this contemporary TypeTogether release
+      // to Burian/Scaglione. Paul Renner's original Futura is named inside
+      // the approved CARÀCTERS copy itself rather than conflated into this
+      // designer field.
+      designer: "Veronika Burian, José Scaglione",
+      sourceUrl: "https://www.typetogether.com/fonts/futura-100",
+      secondaryStatus: "parked",
+    },
+    correlation: {
+      sourceRationale:
+        "Futura 100 reprèn el principi geomètric de la Futura original de Paul Renner i l'adapta a les necessitats tipogràfiques actuals. Les formes essencials i la construcció clara defineixen una sans serif d'aparença precisa, però amb ajustos òptics que afavoreixen la lectura. La seva identitat es basa en la síntesi, no en l'ornament.\n\n" +
+        "A la Casa López, la disposició de finestres, balcons i terrasses respon a l'organització dels habitatges i construeix un ritme mesurat a la façana. Futura 100 comparteix aquesta recerca de claredat: la geometria ordena els elements i elimina allò accessori. Edifici i tipografia mostren com una estructura funcional pot adquirir una expressió visual pròpia.",
+      provenance: R2_SOURCE,
+    },
+    coordinates: null,
+    heroMedia: {
+      src: `${DIGITAL_MEDIA_BASE}casa-lopez-sert-base.webp`,
+      srcPass: `${DIGITAL_MEDIA_BASE}casa-lopez-sert-pass.webp`,
+      alt: "340 Cases Josefa López, c. Muntaner 342-348 - c. Rector Ubach 21 (Barcelona)",
+      credits: [
+        {
+          label: "Enric, CC BY-SA 4.0, via Wikimedia Commons",
+          url: "https://commons.wikimedia.org/wiki/File:340_Cases_Josefa_L%C3%B3pez,_c._Muntaner_342-348_-_c._Rector_Ubach_21_(Barcelona).jpg",
+        },
+      ],
+      provenance:
+        "Wikimedia Commons — File:340_Cases_Josefa_López,_c._Muntaner_342-348_-_c._Rector_Ubach_21_(Barcelona).jpg",
+      rightsStatus: "CC BY-SA 4.0",
+    },
+    editorial: false,
+    infocard: {
+      highlightedPhrase: null,
+      buildingProse: {
+        displayText:
+          "Edifici racionalista en què l'arquitecte Josep Lluís Sert incorpora el llenguatge arquitectònic més purista d'aquest moviment arquitectònic; es pot considerar un dels projectes més significatius d'aquesta època.",
+        provenance: {
+          mappingRef: "TG051 IMP-03 §12 Casa López — L'edifici",
+          sourceLocator:
+            "proposta per totems _ Arquitectura i tipografia en diàleg.md > Casa López > [cat] > Descripció WEB ¶1",
+        },
+      },
+      architectureCopy: {
+        displayText:
+          "La Casa López destaca per la claredat geomètrica del seu volum en cantonada, acabat amb estuc verd suau. L'alternança de finestres allargades, balcons i terrasses enfonsades genera un ritme regular que expressa la distribució interior dels habitatges en duplex. Els elements metàl·lics i els panells de vidre reforcen el seu caràcter funcional i depurat.",
+        provenance: {
+          mappingRef: "TG051 IMP-03 §12 Casa López — Forma",
+          sourceLocator:
+            "proposta per totems _ Arquitectura i tipografia en diàleg.md > Casa López > [cat] > FORMA",
+        },
+      },
+      typographyCopy: {
+        displayText:
+          "Futura 100 reprèn el principi geomètric de la Futura original de Paul Renner i l'adapta a les necessitats tipogràfiques actuals. Les formes essencials i la construcció clara defineixen una sans serif d'aparença precisa, però amb ajustos òptics que afavoreixen la lectura. La seva identitat es basa en la síntesi, no en l'ornament.",
+        provenance: {
+          mappingRef: "TG051 IMP-03 §12 Casa López × Futura 100 — Caràcters",
+          sourceLocator:
+            "TG051 approved editorial v0.1 sha256 83488f4148a7172a2ed99f30e6a34be713efec0fb5440ba68701e3732d9e4f17 > slot 12 > [CAT] CARÀCTERS",
+        },
+      },
+      dialogueCopy: {
+        displayText:
+          "A la Casa López, la disposició de finestres, balcons i terrasses respon a l'organització dels habitatges i construeix un ritme mesurat a la façana. Futura 100 comparteix aquesta recerca de claredat: la geometria ordena els elements i elimina allò accessori. Edifici i tipografia mostren com una estructura funcional pot adquirir una expressió visual pròpia.",
+        provenance: {
+          mappingRef: "TG051 IMP-03 §12 Casa López × Futura 100 — Diàleg",
+          sourceLocator:
+            "TG051 approved editorial v0.1 sha256 83488f4148a7172a2ed99f30e6a34be713efec0fb5440ba68701e3732d9e4f17 > slot 12 > [CAT] DIÀLEG",
+        },
+      },
+    },
+  },
   {
     slug: "walden-7",
     identity: {
@@ -1727,6 +1951,605 @@ export const cases: CaseRecord[] = [
         provenance: {
           mappingRef: "TG020 Authority §Walden 7 — authored completion",
           sourceLocator: "ADGARC_TG020_PHASE1_AUTHORITY_v1.0.md > Walden 7 > Text explicatiu ¶2",
+        },
+      },
+    },
+  },
+  {
+    slug: "edifici-mediapro",
+    identity: {
+      name: "Edifici Mediapro",
+      date: { year: 2009, displayLabel: "2000 - 2009" },
+      architect: "Carlos Ferrater, Patrick Genard i Xavier Martí",
+      address: "Av. Diagonal, 177, Sant Martí, 08018 Barcelona",
+    },
+    experienceType: "digital_only",
+    architecture: {
+      movement: "Arquitectura contemporània d'avantguarda",
+      movementStatus: "verified",
+    },
+    typography: {
+      primaryFamily: "Lo-Res",
+      designer: "Zuzana Licko",
+      sourceUrl: "https://www.emigre.com/Fonts/Lo-Res",
+      secondaryStatus: "parked",
+    },
+    correlation: {
+      sourceRationale:
+        "Lo-Res fa visible la lògica digital que construeix la lletra a partir d'una trama de píxels. Les formes neixen de la suma d'unitats petites i de les limitacions expressives de la baixa resolució. Allò que podria semblar una imperfecció tècnica es converteix en el signe distintiu de la família.\n\n" +
+        "La façana del Mediapro utilitza un model de finestra que es repeteix dins d'una estructura perimetral, mentre el conjunt s'adapta a la geometria urbana. Lo-Res també parteix d'unitats regulars per construir una figura reconeixible. La comparació no és literal: una treballa amb obertures i estructura; l'altra, amb píxels. En totes dues, la repetició esdevé llenguatge.",
+      provenance: R2_SOURCE,
+    },
+    coordinates: null,
+    heroMedia: {
+      src: `${DIGITAL_MEDIA_BASE}edifici-mediapro-base.webp`,
+      srcPass: `${DIGITAL_MEDIA_BASE}edifici-mediapro-pass.webp`,
+      alt: "Barcelona - Edificio Mediapro 3",
+      credits: [
+        {
+          label: "Zarateman, CC0, via Wikimedia Commons",
+          url: "https://commons.wikimedia.org/wiki/File:Barcelona_-_Edificio_Mediapro_3.jpg",
+        },
+      ],
+      provenance: "Wikimedia Commons — File:Barcelona_-_Edificio_Mediapro_3.jpg",
+      rightsStatus: "CC0",
+    },
+    editorial: false,
+    infocard: {
+      highlightedPhrase: null,
+      buildingProse: {
+        displayText:
+          "L'edifici d'oficines, situat al front de la Diagonal, al districte 22@, és un clar exemple de com l'arquitectura pot respondre de manera especial a les característiques de l'entorn urbà i, en aquest cas concret, de com el seu volum s'ha modelat segons les alineacions dels carrers i les directrius visuals.",
+        provenance: {
+          mappingRef: "TG051 IMP-03 §14 Edifici Mediapro — L'edifici",
+          sourceLocator:
+            "proposta per totems _ Arquitectura i tipografia en diàleg.md > Edifici Mediapro > [cat] > Descripció WEB ¶1",
+        },
+      },
+      architectureCopy: {
+        displayText:
+          "L'edifici Mediapro adapta el seu volum a les alineacions i perspectives de la Diagonal, creant una composició escultòrica que integra torre, cos horitzontal i plaça triangular. L'estructura perimetral defineix la imatge exterior i allibera l'interior de pilars, oferint gran flexibilitat d'ús. L'acabat bronzejat i les finestres repetitives reforcen el seu caràcter de gratacel contemporani.",
+        provenance: {
+          mappingRef: "TG051 IMP-03 §14 Edifici Mediapro — Forma",
+          sourceLocator:
+            "proposta per totems _ Arquitectura i tipografia en diàleg.md > Edifici Mediapro > [cat] > FORMA",
+        },
+      },
+      typographyCopy: {
+        displayText:
+          "Lo-Res fa visible la lògica digital que construeix la lletra a partir d'una trama de píxels. Les formes neixen de la suma d'unitats petites i de les limitacions expressives de la baixa resolució. Allò que podria semblar una imperfecció tècnica es converteix en el signe distintiu de la família.",
+        provenance: {
+          mappingRef: "TG051 IMP-03 §14 Edifici Mediapro × Lo-Res — Caràcters",
+          sourceLocator:
+            "TG051 approved editorial v0.1 sha256 83488f4148a7172a2ed99f30e6a34be713efec0fb5440ba68701e3732d9e4f17 > slot 14 > [CAT] CARÀCTERS",
+        },
+      },
+      dialogueCopy: {
+        displayText:
+          "La façana del Mediapro utilitza un model de finestra que es repeteix dins d'una estructura perimetral, mentre el conjunt s'adapta a la geometria urbana. Lo-Res també parteix d'unitats regulars per construir una figura reconeixible. La comparació no és literal: una treballa amb obertures i estructura; l'altra, amb píxels. En totes dues, la repetició esdevé llenguatge.",
+        provenance: {
+          mappingRef: "TG051 IMP-03 §14 Edifici Mediapro × Lo-Res — Diàleg",
+          sourceLocator:
+            "TG051 approved editorial v0.1 sha256 83488f4148a7172a2ed99f30e6a34be713efec0fb5440ba68701e3732d9e4f17 > slot 14 > [CAT] DIÀLEG",
+        },
+      },
+    },
+  },
+  {
+    slug: "habitatges-industrialitzats-marroc",
+    identity: {
+      name: "Habitatges industrialitzats, Marroc 180",
+      sourceName: "Edifici d'habitatges industrialitzats",
+      date: { year: 2024, displayLabel: "2024" },
+      architect: "Vivas Arquitectos i EXE Arquitectura",
+      // Source-evidence value exactly as the dossier prints it (Spanish
+      // street form). No `addressDisplay` is set: the Catalan display-canon
+      // form would need municipal/official verification, which this pass
+      // has not performed — never guessed (see FB-109 convention above).
+      address: "Calle de Marruecos, 180, Sant Martí, 08019 Barcelona",
+    },
+    experienceType: "digital_only",
+    architecture: { movement: "Arquitectura industrialitzada", movementStatus: "verified" },
+    typography: {
+      primaryFamily: "Keania One",
+      designer: "Julia Petretta",
+      sourceUrl: "https://fonts.google.com/specimen/Keania+One",
+      secondaryStatus: "parked",
+    },
+    correlation: {
+      sourceRationale:
+        "Keania One és una tipografia de titular amb una construcció marcada pels talls del traç, les formes compactes i el contrast entre angles i corbes. El seu llenguatge remet a la retolació stencil: la lletra es defineix tant per la matèria com pels buits que la interrompen. El resultat té una presència gràfica robusta i immediata.\n\n" +
+        "A Marroc 180, l'assemblatge de mòduls prefabricats es fa llegible en les franges que ordenen la façana. Keania One també permet observar com unes peces i uns buits configuren el conjunt. L'edifici busca flexibilitat a partir d'un sistema repetible; la tipografia converteix les interrupcions del traç en caràcter visual. Són dues maneres diferents de donar expressió a una lògica constructiva.",
+      provenance: R2_SOURCE,
+    },
+    coordinates: null,
+    heroMedia: {
+      src: `${DIGITAL_MEDIA_BASE}habitatges-industrialitzats-marroc-base.webp`,
+      srcPass: `${DIGITAL_MEDIA_BASE}habitatges-industrialitzats-marroc-pass.webp`,
+      alt: "Habitatges industrialitzats, Marroc 180",
+      credits: [
+        {
+          label: "© Constructora del Cardoner",
+          url: "https://constructoracardoner.com/proyectos/marroc-180/",
+        },
+      ],
+      provenance:
+        "Courtesy Constructora del Cardoner (image provider); architecture Vivas Arquitectos + EXE Arquitectura. Operator-authorized project-specific permission (TG051 handoff §Sources; work_materials/images 11-20 r2/11-20 credits r2.txt requires this link and copyright line) — not Creative Commons or public domain.",
+      rightsStatus: "project-specific",
+    },
+    editorial: false,
+    infocard: {
+      highlightedPhrase: null,
+      buildingProse: {
+        displayText:
+          "Edifici de 45 habitatges de protecció oficial, situat en l'entorn industrial del barri del Poblenou, ha estat projectat seguint principis de sostenibilitat que aposten per l'optimització dels temps d'execució i dels costos.",
+        provenance: {
+          mappingRef: "TG051 IMP-03 §15 Habitatges industrialitzats, Marroc 180 — L'edifici",
+          sourceLocator:
+            "proposta per totems _ Arquitectura i tipografia en diàleg.md > Edifici d'habitatges industrialitzats > [cat] > Descripció WEB ¶1",
+        },
+      },
+      architectureCopy: {
+        displayText:
+          "L'edifici d'habitatges industrialitzats combina construcció modular i sostenibilitat mitjançant 104 mòduls prefabricats acoblats en només quinze dies. La repetició dels mòduls genera una façana horitzontal de caràcter industrial, mentre les passarel·les exteriors creen espais de transició entre el públic i el privat. Les zones comunitàries reforcen la vida veïnal del conjunt.",
+        provenance: {
+          mappingRef: "TG051 IMP-03 §15 Habitatges industrialitzats, Marroc 180 — Forma",
+          sourceLocator:
+            "proposta per totems _ Arquitectura i tipografia en diàleg.md > Edifici d'habitatges industrialitzats > [cat] > FORMA",
+        },
+      },
+      typographyCopy: {
+        displayText:
+          "Keania One és una tipografia de titular amb una construcció marcada pels talls del traç, les formes compactes i el contrast entre angles i corbes. El seu llenguatge remet a la retolació stencil: la lletra es defineix tant per la matèria com pels buits que la interrompen. El resultat té una presència gràfica robusta i immediata.",
+        provenance: {
+          mappingRef: "TG051 IMP-03 §15 Marroc 180 × Keania One — Caràcters",
+          sourceLocator:
+            "TG051 approved editorial v0.1 sha256 83488f4148a7172a2ed99f30e6a34be713efec0fb5440ba68701e3732d9e4f17 > slot 15 > [CAT] CARÀCTERS",
+        },
+      },
+      dialogueCopy: {
+        displayText:
+          "A Marroc 180, l'assemblatge de mòduls prefabricats es fa llegible en les franges que ordenen la façana. Keania One també permet observar com unes peces i uns buits configuren el conjunt. L'edifici busca flexibilitat a partir d'un sistema repetible; la tipografia converteix les interrupcions del traç en caràcter visual. Són dues maneres diferents de donar expressió a una lògica constructiva.",
+        provenance: {
+          mappingRef: "TG051 IMP-03 §15 Marroc 180 × Keania One — Diàleg",
+          sourceLocator:
+            "TG051 approved editorial v0.1 sha256 83488f4148a7172a2ed99f30e6a34be713efec0fb5440ba68701e3732d9e4f17 > slot 15 > [CAT] DIÀLEG",
+        },
+      },
+    },
+  },
+  {
+    slug: "habitatges-socials-824",
+    identity: {
+      name: "Habitatges Socials 824",
+      // Date conflict, recorded not resolved: OPERATOR directs the displayed
+      // year 2025 (TG051 handoff §"Sources and corrected decisions"), while
+      // BOTH local sources print 2008 — the architecture dossier's own
+      // header and `TIPOGRAFIA I ARQUITECTURA (1) credits.rtf`. The directed
+      // value is displayed as instructed; 2025 is NOT independently
+      // verified and the 2008 evidence is preserved here rather than
+      // discarded.
+      date: { year: 2025, displayLabel: "2025" },
+      architect: "H Arquitectes",
+      // Header-fact address from the dossier. Note the same dossier's
+      // Descripció WEB instead says the building is aligned with "el carrer
+      // de Josep Pla" — an internal source inconsistency left for OPERATOR
+      // resolution, not silently reconciled here.
+      address: "C/ Sant Llop, 4, Sant Andreu de la Barca, 08740 Barcelona",
+    },
+    experienceType: "digital_only",
+    architecture: { movement: "Arquitectura sostenible", movementStatus: "verified" },
+    typography: {
+      primaryFamily: "Mon Hugo",
+      designer: "Vika Usmanova",
+      sourceUrl: "https://justfreefonts.com/fonts/mon-hugo/",
+      secondaryStatus: "parked",
+    },
+    correlation: {
+      sourceRationale:
+        "Mon Hugo és una tipografia de visualització de pes contundent i aire tecnològic. El seu alfabet prescindeix de les majúscules convencionals i explora dues maneres de presentar la lletra: amb fons o sense. Aquestes decisions donen una identitat compacta a uns signes que s'aparten de la jerarquia tipogràfica habitual.\n\n" +
+        "A Habitatges Socials 824, el formigó vist i la retícula de finestres estableixen un ordre rigorós, mentre els espais interiors equivalents permeten usos diferents. Mon Hugo introdueix un contrapunt: una lletra d'aparença sòlida que altera una convenció bàsica de l'alfabet, la distinció de majúscules. L'encontre contraposa estructura estable i llibertat d'ús.",
+      provenance: R2_SOURCE,
+    },
+    coordinates: null,
+    heroMedia: {
+      src: `${DIGITAL_MEDIA_BASE}habitatges-socials-824-base.webp`,
+      srcPass: `${DIGITAL_MEDIA_BASE}habitatges-socials-824-pass.webp`,
+      alt: "Habitatges Socials 824, Sant Andreu de la Barca",
+      credits: [
+        {
+          label: "© H Arquitectes",
+          url: "https://www.harquitectes.com/es/proyectos/vivienda-social-824/",
+        },
+      ],
+      provenance:
+        "Courtesy H ARQUITECTES, who are also the project architects; higher-resolution asset supplied by the studio on 2026-10-19 (1200x1600 base). Operator-authorized project-specific permission (TG051 handoff §Sources; work_materials/images 11-20 r2/11-20 credits r2.txt requires this link and copyright line) — not Creative Commons or public domain.",
+      rightsStatus: "project-specific",
+    },
+    editorial: false,
+    infocard: {
+      highlightedPhrase: null,
+      buildingProse: {
+        displayText:
+          "L'edifici, alineat amb el carrer de Josep Pla, s'articula en dos volums de sis plantes units per un sòcol.",
+        provenance: {
+          mappingRef: "TG051 IMP-03 §16 Habitatges Socials 824 — L'edifici",
+          sourceLocator:
+            "proposta per totems _ Arquitectura i tipografia en diàleg.md > Habitatges Socials 824 > [cat] > Descripció WEB ¶1",
+        },
+      },
+      architectureCopy: {
+        displayText:
+          "Habitatges Socials 824 s'organitza en dos volums units per un sòcol, reduint l'impacte visual del conjunt. Els murs de formigó vist i la repetició ordenada de finestres defineixen una imatge austera i geomètrica. A l'interior, una retícula d'espais equivalents permet diferents formes d'ús i aporta flexibilitat als habitatges.",
+        provenance: {
+          mappingRef: "TG051 IMP-03 §16 Habitatges Socials 824 — Forma",
+          sourceLocator:
+            "proposta per totems _ Arquitectura i tipografia en diàleg.md > Habitatges Socials 824 > [cat] > FORMA",
+        },
+      },
+      typographyCopy: {
+        displayText:
+          "Mon Hugo és una tipografia de visualització de pes contundent i aire tecnològic. El seu alfabet prescindeix de les majúscules convencionals i explora dues maneres de presentar la lletra: amb fons o sense. Aquestes decisions donen una identitat compacta a uns signes que s'aparten de la jerarquia tipogràfica habitual.",
+        provenance: {
+          mappingRef: "TG051 IMP-03 §16 Habitatges Socials 824 × Mon Hugo — Caràcters",
+          sourceLocator:
+            "TG051 approved editorial v0.1 sha256 83488f4148a7172a2ed99f30e6a34be713efec0fb5440ba68701e3732d9e4f17 > slot 16 > [CAT] CARÀCTERS",
+        },
+      },
+      dialogueCopy: {
+        displayText:
+          "A Habitatges Socials 824, el formigó vist i la retícula de finestres estableixen un ordre rigorós, mentre els espais interiors equivalents permeten usos diferents. Mon Hugo introdueix un contrapunt: una lletra d'aparença sòlida que altera una convenció bàsica de l'alfabet, la distinció de majúscules. L'encontre contraposa estructura estable i llibertat d'ús.",
+        provenance: {
+          mappingRef: "TG051 IMP-03 §16 Habitatges Socials 824 × Mon Hugo — Diàleg",
+          sourceLocator:
+            "TG051 approved editorial v0.1 sha256 83488f4148a7172a2ed99f30e6a34be713efec0fb5440ba68701e3732d9e4f17 > slot 16 > [CAT] DIÀLEG",
+        },
+      },
+    },
+  },
+  {
+    slug: "escola-massana",
+    identity: {
+      name: "Escola Massana",
+      date: { year: 2017, displayLabel: "2017" },
+      // Catalan display-canon form of the architect's name; the credits
+      // sheet prints the unaccented "Carme Pinos" and the Spanish "Escuela
+      // Massana" — normalized to the site's existing Catalan canon, which
+      // the architecture dossier itself already uses.
+      architect: "Carme Pinós",
+      address: "Plaça de la Gardunya, 9, Ciutat Vella, 08001 Barcelona",
+    },
+    experienceType: "digital_only",
+    architecture: { movement: "Arquitectura contemporània", movementStatus: "verified" },
+    typography: {
+      primaryFamily: "Kanat Latin",
+      // The credits sheet credits Maria Montes for the Latin companion. Lara
+      // Captan's authorship of Kanat Arabic is acknowledged in the approved
+      // CARÀCTERS copy and is deliberately not absorbed into this field.
+      designer: "Maria Montes",
+      sourceUrl: "https://type-o-tones.com/fonts/kanat-latin",
+      secondaryStatus: "parked",
+    },
+    correlation: {
+      sourceRationale:
+        "Kanat Latin és una tipografia display de formes rotundes i segments separats que parteix del llenguatge stencil. Desenvolupada per Maria Montes en diàleg amb Kanat Arabic, combina presència gràfica i joc formal. Les interrupcions visibles no trenquen la lectura: fan que cada lletra es percebi com una construcció de parts relacionades.\n\n" +
+        "La Massana fragmenta i orienta els volums de façana, però els reuneix mitjançant un gran atri de llum i circulació. Kanat Latin juga amb una tensió semblant: separa parts del traç sense perdre la unitat de la lletra. En tots dos casos, el buit no és només absència; ajuda a organitzar relacions i a donar ritme a la composició.",
+      provenance: R2_SOURCE,
+    },
+    coordinates: null,
+    heroMedia: {
+      src: `${DIGITAL_MEDIA_BASE}escola-massana-base.webp`,
+      srcPass: `${DIGITAL_MEDIA_BASE}escola-massana-pass.webp`,
+      alt: "039 Escola Massana, pl. Gardunya 9 - c. Floristes de la Rambla (Barcelona)",
+      credits: [
+        {
+          label: "Enric, CC BY-SA 4.0, via Wikimedia Commons",
+          url: "https://commons.wikimedia.org/wiki/File:039_Escola_Massana,_pl._Gardunya_9_-_c._Floristes_de_la_Rambla_(Barcelona).jpg",
+        },
+      ],
+      provenance:
+        "Wikimedia Commons — File:039_Escola_Massana,_pl._Gardunya_9_-_c._Floristes_de_la_Rambla_(Barcelona).jpg",
+      rightsStatus: "CC BY-SA 4.0",
+    },
+    editorial: false,
+    infocard: {
+      highlightedPhrase: null,
+      buildingProse: {
+        displayText:
+          "Equipament públic que forma part d'un important projecte de renovació urbana de la plaça de la Gardunya, situada en la part posterior de l'antic mercat de la Boquería, en les Rambles de Barcelona.",
+        provenance: {
+          mappingRef: "TG051 IMP-03 §17 Escola Massana — L'edifici",
+          sourceLocator:
+            "proposta per totems _ Arquitectura i tipografia en diàleg.md > Escola Massana > [cat] > Descripció WEB ¶1 (markdown \\* escape artifacts removed)",
+        },
+      },
+      architectureCopy: {
+        displayText:
+          "L'edifici forma part d'un profund projecte de renovació urbana de l'entorn del mercat de la boquería. La seva façana principal s'articula mitjançant volums amb diferent orientació. Està recoberta per un material ceràmic de gran format que li atorga unitat i un caràcter emblemàtic. A l'interior, un gran atri connecta les diferents plantes i agrupa les circulacions i els espais de relació de l'alumnat.",
+        provenance: {
+          mappingRef: "TG051 IMP-03 §17 Escola Massana — Forma",
+          sourceLocator:
+            "proposta per totems _ Arquitectura i tipografia en diàleg.md > Escola Massana > [cat] > FORMA",
+        },
+      },
+      typographyCopy: {
+        displayText:
+          "Kanat Latin és una tipografia display de formes rotundes i segments separats que parteix del llenguatge stencil. Desenvolupada per Maria Montes en diàleg amb Kanat Arabic, combina presència gràfica i joc formal. Les interrupcions visibles no trenquen la lectura: fan que cada lletra es percebi com una construcció de parts relacionades.",
+        provenance: {
+          mappingRef: "TG051 IMP-03 §17 Escola Massana × Kanat Latin — Caràcters",
+          sourceLocator:
+            "TG051 approved editorial v0.1 sha256 83488f4148a7172a2ed99f30e6a34be713efec0fb5440ba68701e3732d9e4f17 > slot 17 > [CAT] CARÀCTERS",
+        },
+      },
+      dialogueCopy: {
+        displayText:
+          "La Massana fragmenta i orienta els volums de façana, però els reuneix mitjançant un gran atri de llum i circulació. Kanat Latin juga amb una tensió semblant: separa parts del traç sense perdre la unitat de la lletra. En tots dos casos, el buit no és només absència; ajuda a organitzar relacions i a donar ritme a la composició.",
+        provenance: {
+          mappingRef: "TG051 IMP-03 §17 Escola Massana × Kanat Latin — Diàleg",
+          sourceLocator:
+            "TG051 approved editorial v0.1 sha256 83488f4148a7172a2ed99f30e6a34be713efec0fb5440ba68701e3732d9e4f17 > slot 17 > [CAT] DIÀLEG",
+        },
+      },
+    },
+  },
+  {
+    slug: "la-escocesa-nau-foseco",
+    identity: {
+      // Display label per TG051 handoff: "Nau Foseco" (supersedes the
+      // earlier "Nau Fonseco" spelling), carried as the compound form so
+      // the complex and the specific nave are both legible. The dossier
+      // describes an intervention on ONE part of the L'Escocesa complex —
+      // whole-complex details must not be attributed to this nave.
+      name: "La Escocesa — Nau Foseco",
+      sourceName: "La Escocesa",
+      date: { year: 2024, displayLabel: "2024" },
+      architect: "Nug",
+      address: "Carrer de Pere IV, 345, Sant Martí, 08020 Barcelona",
+    },
+    experienceType: "digital_only",
+    architecture: {
+      movement: "Rehabilitació Arquitectura industrial",
+      movementStatus: "verified",
+    },
+    typography: {
+      primaryFamily: "Sixten",
+      // The local credits sheet named only María Ramos; the foundry credits
+      // both designers, so both are recorded (TG051 approved editorial
+      // v0.1, slot 18 evidence note).
+      designer: "María Ramos, Noel Pretorius",
+      sourceUrl: "https://www.nmtype.com/sixten/",
+      secondaryStatus: "parked",
+    },
+    correlation: {
+      sourceRationale:
+        "Sixten parteix de l'escriptura espontània d'un infant per qüestionar les formes apreses de l'alfabet. L'amplada variable, les alternatives poc convencionals i els gestos inesperats permeten que les lletres canviïn sense perdre la seva identitat. És una família que entén la norma com un punt de partida, no com un límit immutable.\n\n" +
+        "La intervenció a L'Escocesa conserva l'estructura industrial com a suport per a usos artístics canviants, en lloc de fixar una funció definitiva a cada espai. Sixten també revisa un sistema preexistent: l'alfabet es manté reconeixible, però admet noves formes i combinacions. Arquitectura i tipografia comparteixen aquí una idea d'obertura a allò imprevist.",
+      provenance: R2_SOURCE,
+    },
+    coordinates: null,
+    heroMedia: {
+      src: `${DIGITAL_MEDIA_BASE}la-escocesa-nau-foseco-base.webp`,
+      srcPass: `${DIGITAL_MEDIA_BASE}la-escocesa-nau-foseco-pass.webp`,
+      alt: "Pere IV 345 interior",
+      credits: [
+        {
+          label: "Xavier Badia Castellà, CC BY-SA 3.0, via Wikimedia Commons",
+          url: "https://commons.wikimedia.org/wiki/File:Pere_IV_345_interior.jpg",
+        },
+      ],
+      provenance: "Wikimedia Commons — File:Pere_IV_345_interior.jpg",
+      rightsStatus: "CC BY-SA 3.0",
+    },
+    editorial: false,
+    infocard: {
+      highlightedPhrase: null,
+      buildingProse: {
+        displayText:
+          "Situada en el districte industrial del Poble Nou, la intervenció arquitectònica transforma una part de l'antiga Fàbrica l'Escocesa en un espai per a producció artística i participació ciutadana.",
+        provenance: {
+          mappingRef: "TG051 IMP-03 §18 La Escocesa / Nau Foseco — L'edifici",
+          sourceLocator:
+            "proposta per totems _ Arquitectura i tipografia en diàleg.md > La Escocesa > [cat] > Descripció WEB ¶1",
+        },
+      },
+      architectureCopy: {
+        // Transcribed verbatim, including the source's "avinguda Bolívar":
+        // the same dossier's Descripció WEB says "avinguda Bolívia". The
+        // discrepancy is reported for OPERATOR decision rather than
+        // silently corrected in source-derived display copy.
+        displayText:
+          "La intervenció arquitectònica transforma una part de l'antiga fàbrica L'Escocesa en un espai per a producció artística i participació ciutadana. El projecte estableix una connexió urbana mitjançant un tall que relaciona l'avinguda Bolívar amb el carrer Pere IV. La nau principal conserva un gran espai obert, la configuració interior del qual es pot modificar mitjançant sistemes mòbils.",
+        provenance: {
+          mappingRef: "TG051 IMP-03 §18 La Escocesa / Nau Foseco — Forma",
+          sourceLocator:
+            "proposta per totems _ Arquitectura i tipografia en diàleg.md > La Escocesa > [cat] > FORMA",
+        },
+      },
+      typographyCopy: {
+        displayText:
+          "Sixten parteix de l'escriptura espontània d'un infant per qüestionar les formes apreses de l'alfabet. L'amplada variable, les alternatives poc convencionals i els gestos inesperats permeten que les lletres canviïn sense perdre la seva identitat. És una família que entén la norma com un punt de partida, no com un límit immutable.",
+        provenance: {
+          mappingRef: "TG051 IMP-03 §18 Nau Foseco × Sixten — Caràcters",
+          sourceLocator:
+            "TG051 approved editorial v0.1 sha256 83488f4148a7172a2ed99f30e6a34be713efec0fb5440ba68701e3732d9e4f17 > slot 18 > [CAT] CARÀCTERS",
+        },
+      },
+      dialogueCopy: {
+        displayText:
+          "La intervenció a L'Escocesa conserva l'estructura industrial com a suport per a usos artístics canviants, en lloc de fixar una funció definitiva a cada espai. Sixten també revisa un sistema preexistent: l'alfabet es manté reconeixible, però admet noves formes i combinacions. Arquitectura i tipografia comparteixen aquí una idea d'obertura a allò imprevist.",
+        provenance: {
+          mappingRef: "TG051 IMP-03 §18 Nau Foseco × Sixten — Diàleg",
+          sourceLocator:
+            "TG051 approved editorial v0.1 sha256 83488f4148a7172a2ed99f30e6a34be713efec0fb5440ba68701e3732d9e4f17 > slot 18 > [CAT] DIÀLEG",
+        },
+      },
+    },
+  },
+  {
+    slug: "vpo-torre-baro",
+    identity: {
+      name: "Habitatges VPO de Torre Baró",
+      sourceName: "Vivienda VPO en Torre Baró",
+      date: { year: 2022, displayLabel: "2017 - 2022" },
+      architect: "arquitectura dataAE, NARCH i Maira Arquitectes",
+      address: "Av. Escolapi Càncer, 10-12, Nou Barris, 08033 Barcelona",
+    },
+    experienceType: "digital_only",
+    architecture: { movement: "Arquitectura sostenible", movementStatus: "verified" },
+    typography: {
+      // The credits sheet prints "FF Chamber Sans"; its own URL slug
+      // (ff-chambers-sans), the approved editorial document and the TG051
+      // prompt all give the published plural form, so the typo is corrected
+      // here rather than displayed.
+      primaryFamily: "FF Chambers Sans",
+      designer: "Verena Gerlach",
+      sourceUrl: "https://fonts.adobe.com/fonts/ff-chambers-sans",
+      secondaryStatus: "parked",
+    },
+    correlation: {
+      sourceRationale:
+        "FF Chambers Sans, de Verena Gerlach, neix de posar en relació dues tradicions gràfiques molt diferents: les lletres gravades d'un llibre antic i la retolació sense serifes dels carrers. La família transforma aquest contrast en un dibuix coherent, amb una personalitat que no depèn d'un únic model històric.\n\n" +
+        "A Torre Baró, l'atri i les galeries són alhora espais de trobada, circulació i regulació del clima; els habitatges combinen repetibilitat i possibilitats d'ús diverses. FF Chambers Sans també integra principis aparentment oposats en una sola estructura tipogràfica. El diàleg posa l'accent en aquesta capacitat de conciliar funcions i llenguatges sense esborrar-ne les diferències.",
+      provenance: R2_SOURCE,
+    },
+    coordinates: null,
+    heroMedia: {
+      src: `${DIGITAL_MEDIA_BASE}vpo-torre-baro-base.webp`,
+      srcPass: `${DIGITAL_MEDIA_BASE}vpo-torre-baro-pass.webp`,
+      alt: "Habitatges VPO de Torre Baró",
+      // Two independently linkable credits are required here, exactly as
+      // GreenH@use's authorization already establishes: the photographer and
+      // the studio are never collapsed into one string. Adrià Goula carries
+      // no url — a credit may be named without an independently verifiable
+      // link, and none is fabricated.
+      credits: [
+        { label: "© Adrià Goula", url: null },
+        {
+          label: "DATAAE",
+          url: "https://www.dataae.com/project/social-housing-torre-baro/",
+        },
+      ],
+      provenance:
+        "Photograph © Adrià Goula; architecture DATAAE + NARCH + Maira Arquitectes. DATAAE permitted web-resolution publication (OPERATOR correspondence 2026-10-19, TG051 handoff §Sources). Operator-authorized project-specific permission — not Creative Commons or public domain.",
+      rightsStatus: "project-specific",
+    },
+    editorial: false,
+    infocard: {
+      highlightedPhrase: null,
+      buildingProse: {
+        displayText:
+          "Aquest edifici d'habitatges socials està organitzat al voltant d'un espai central en forma d'atri que optimitza l'eficiència energètica del conjunt i conté amplis replans en l'escala que ofereixen espais de trobada entre els veïns.",
+        provenance: {
+          mappingRef: "TG051 IMP-03 §19 Habitatges VPO de Torre Baró — L'edifici",
+          sourceLocator:
+            "proposta per totems _ Arquitectura i tipografia en diàleg.md > Vivienda VPO en Torre Baró > [cat] > Descripció WEB ¶1",
+        },
+      },
+      architectureCopy: {
+        displayText:
+          "L'edifici està organitzat al voltant d'un espai central que optimitza l'eficiència energètica del conjunt i ofereix espais de trobada entre els veïns. El pati és un gestor tèrmic amb una coberta bioclimática. La configuració interior disposa de mòduls versàtils de 10 metres x 10 metres, tots iguals, per a afavorir la multifuncionalitat.",
+        provenance: {
+          mappingRef: "TG051 IMP-03 §19 Habitatges VPO de Torre Baró — Forma",
+          sourceLocator:
+            "proposta per totems _ Arquitectura i tipografia en diàleg.md > Vivienda VPO en Torre Baró > [cat] > FORMA",
+        },
+      },
+      typographyCopy: {
+        displayText:
+          "FF Chambers Sans, de Verena Gerlach, neix de posar en relació dues tradicions gràfiques molt diferents: les lletres gravades d'un llibre antic i la retolació sense serifes dels carrers. La família transforma aquest contrast en un dibuix coherent, amb una personalitat que no depèn d'un únic model històric.",
+        provenance: {
+          mappingRef: "TG051 IMP-03 §19 Torre Baró × FF Chambers Sans — Caràcters",
+          sourceLocator:
+            "TG051 approved editorial v0.1 sha256 83488f4148a7172a2ed99f30e6a34be713efec0fb5440ba68701e3732d9e4f17 > slot 19 > [CAT] CARÀCTERS",
+        },
+      },
+      dialogueCopy: {
+        displayText:
+          "A Torre Baró, l'atri i les galeries són alhora espais de trobada, circulació i regulació del clima; els habitatges combinen repetibilitat i possibilitats d'ús diverses. FF Chambers Sans també integra principis aparentment oposats en una sola estructura tipogràfica. El diàleg posa l'accent en aquesta capacitat de conciliar funcions i llenguatges sense esborrar-ne les diferències.",
+        provenance: {
+          mappingRef: "TG051 IMP-03 §19 Torre Baró × FF Chambers Sans — Diàleg",
+          sourceLocator:
+            "TG051 approved editorial v0.1 sha256 83488f4148a7172a2ed99f30e6a34be713efec0fb5440ba68701e3732d9e4f17 > slot 19 > [CAT] DIÀLEG",
+        },
+      },
+    },
+  },
+  {
+    slug: "illa-glories-bloc-a",
+    identity: {
+      name: "Illa Glòries, Bloc A",
+      sourceName: "51 Habitatges socials. Bloc A de l'Illa Glòries",
+      date: { year: 2025, displayLabel: "2025" },
+      architect: "Cierto Estudio",
+      address: "Gran Via de les Corts Catalanes, 832, Eixample, 08013 Barcelona",
+    },
+    experienceType: "digital_only",
+    architecture: {
+      movement: "Arquitectura flexible i sostenible",
+      movementStatus: "verified",
+    },
+    typography: {
+      primaryFamily: "Ella Brutalist",
+      designer: "Laura Meseguer",
+      sourceUrl: "https://type-o-tones.com/fonts/ella",
+      secondaryStatus: "parked",
+    },
+    correlation: {
+      sourceRationale:
+        "Ella Brutalist és la variant més experimental d'una família que trasllada gestos cal·ligràfics a una construcció tipogràfica de tipus stencil. Les formes expressives, els talls i les tensions entre ple i buit posen a prova l'estructura de cada lletra. La seva força prové tant del dibuix contundent com de l'espai que el travessa.\n\n" +
+        "Al bloc A d'Illa Glòries, un nucli girat organitza habitatges adaptables i les galeries exteriors amplien la relació entre espais privats i compartits. Ella Brutalist proposa una lectura paral·lela de la forma: una estructura precisa que admet interrupcions, obertures i gest. El vincle no és l'estil «brutalista», sinó la tensió entre ordre constructiu i llibertat d'ús.",
+      provenance: R2_SOURCE,
+    },
+    coordinates: null,
+    heroMedia: {
+      src: `${DIGITAL_MEDIA_BASE}illa-glories-bloc-a-base.webp`,
+      srcPass: `${DIGITAL_MEDIA_BASE}illa-glories-bloc-a-pass.webp`,
+      alt: "Illa Glòries, Bloc A",
+      credits: [
+        { label: "© José Hevia", url: "https://josehevia.es" },
+        { label: "Cierto Estudio", url: "https://ciertoestudio.com/Illa-Glories" },
+      ],
+      provenance:
+        "Photograph © José Hevia; architecture Cierto Estudio. Cierto Estudio authorized this photograph for the ADG-FAD interactive map for the 2026 congress, requiring photographer credit José Hevia and architectural credit Cierto Estudio with link (OPERATOR correspondence 2026-10-19, TG051 handoff §Sources). Operator-authorized project-specific permission — not Creative Commons or public domain.",
+      rightsStatus: "project-specific",
+    },
+    editorial: false,
+    infocard: {
+      highlightedPhrase: null,
+      buildingProse: {
+        displayText:
+          "El bloc A de 51 habitatges forma part de la poma Glòries destinada a VPO, que s'organitza en una illa compacta travessada per un passatge per als vianants. Cada parell de blocs s'articula entorn de patis veïnals, promovent la convivència i la vida comunitària.",
+        provenance: {
+          mappingRef: "TG051 IMP-03 §20 Illa Glòries, Bloc A — L'edifici",
+          sourceLocator:
+            "proposta per totems _ Arquitectura i tipografia en diàleg.md > 51 Habitatges socials. Bloc A de l'Illa Glòries > [cat] > Descripció WEB ¶1",
+        },
+      },
+      architectureCopy: {
+        displayText:
+          "L'edifici forma part de la gran illa residencial de Glòries. Exemplifica una arquitectura centrada en la flexibilitat i la inclusió. La planta dels habitatges gira entorn d'un nucli central girat 45 graus, la qual cosa permet una disposició fluida i versàtil dels espais, permetent diferents configuracions en funció de les estructures familiars.",
+        provenance: {
+          mappingRef: "TG051 IMP-03 §20 Illa Glòries, Bloc A — Forma",
+          sourceLocator:
+            "proposta per totems _ Arquitectura i tipografia en diàleg.md > 51 Habitatges socials. Bloc A de l'Illa Glòries > [cat] > FORMA",
+        },
+      },
+      typographyCopy: {
+        displayText:
+          "Ella Brutalist és la variant més experimental d'una família que trasllada gestos cal·ligràfics a una construcció tipogràfica de tipus stencil. Les formes expressives, els talls i les tensions entre ple i buit posen a prova l'estructura de cada lletra. La seva força prové tant del dibuix contundent com de l'espai que el travessa.",
+        provenance: {
+          mappingRef: "TG051 IMP-03 §20 Illa Glòries, Bloc A × Ella Brutalist — Caràcters",
+          sourceLocator:
+            "TG051 approved editorial v0.1 sha256 83488f4148a7172a2ed99f30e6a34be713efec0fb5440ba68701e3732d9e4f17 > slot 20 > [CAT] CARÀCTERS",
+        },
+      },
+      dialogueCopy: {
+        displayText:
+          "Al bloc A d'Illa Glòries, un nucli girat organitza habitatges adaptables i les galeries exteriors amplien la relació entre espais privats i compartits. Ella Brutalist proposa una lectura paral·lela de la forma: una estructura precisa que admet interrupcions, obertures i gest. El vincle no és l'estil «brutalista», sinó la tensió entre ordre constructiu i llibertat d'ús.",
+        provenance: {
+          mappingRef: "TG051 IMP-03 §20 Illa Glòries, Bloc A × Ella Brutalist — Diàleg",
+          sourceLocator:
+            "TG051 approved editorial v0.1 sha256 83488f4148a7172a2ed99f30e6a34be713efec0fb5440ba68701e3732d9e4f17 > slot 20 > [CAT] DIÀLEG",
         },
       },
     },
@@ -3201,7 +4024,25 @@ export function findCaseBySlug(slug: string | null): CaseRecord | undefined {
 // ordinary public product surfaces until a later phase, without touching
 // their content. Re-enabling a hidden case is a one-line edit to this set —
 // never a CaseRecord rewrite, never a Passport/architecture change.
+// TG051 IMP-03: the nine digital-only identities displaced from active
+// slots 11-20 by the Catalog R2 roster (enumerated canonically as
+// `CATALOG_R2_NINE_DISPLACED_ARCHIVAL_SLUGS` in catalogR2Intake.ts). They
+// are ARCHIVED here, never deleted: their `CaseRecord`s above are untouched,
+// `findCaseBySlug` still searches the full `cases` array so every historical
+// `?case=<slug>` deep link keeps opening its dossier, their QR tokens and
+// hashes are unchanged, and `usePassport`'s persisted `known` set is
+// deliberately unfiltered so previously earned stamps survive this roster
+// change (they simply stop counting toward the active total of 20).
 export const HIDDEN_CASE_SLUGS: ReadonlySet<string> = new Set([
+  "pavello-mies-van-der-rohe",
+  "la-pedrera-casa-mila",
+  "torre-de-collserola",
+  "mercat-de-santa-caterina",
+  "macba",
+  "casa-planells",
+  "media-tic",
+  "casa-bloc",
+  "edifici-telefonica",
   "caixaforum-casaramona",
   "torre-glories",
   "biblioteca-jaume-fuster",
@@ -3244,8 +4085,8 @@ const SPECIMEN_MEDIA_BASE = `${import.meta.env.BASE_URL}media/specimens/`;
 
 export const SPECIMEN_MEDIA: Readonly<Record<string, CaseSpecimenMedia>> = {
   "casa-caracoles": {
-    src: `${SPECIMEN_MEDIA_BASE}casa-caracoles-a.svg`,
-    alt: "Especimen tipogràfic — lletra A/a, Glucosa (Cases dels Cargols)",
+    src: `${SPECIMEN_MEDIA_BASE}casa-caracoles-glucosa-yellow-aa.webp`,
+    alt: "Especimen tipogràfic — lletra A/a, Glucosa en groc (Cases dels Cargols)",
   },
   "casa-rodriguez-arias": {
     src: `${SPECIMEN_MEDIA_BASE}casa-rodriguez-arias-s.svg`,
