@@ -18,7 +18,34 @@ import PassportPane from "./PassportPane";
 // devtools-config imports until the destination is actually opened — in both
 // the canonical-production build (where it is never requested at all) and
 // the review build (DevTools ON), where it is still fetched only on demand.
-const DevTools = lazy(() => import("./DevTools"));
+//
+// TG051 (ADGARC-FB-125, amendment ADGARC-TG051-FB125-PUBLIC-DEVTOOLS-SCOPE-
+// AMENDMENT-20261020-v1): deferring the *fetch* was never the same thing as
+// not *emitting* the chunk. The 2026-10-20 forensic pass found
+// `dist/assets/DevTools-<hash>.js` (13,997 bytes) and one dynamic-import
+// edge from the entry chunk in the canonical PUBLIC build: because the
+// `import("./DevTools")` expression itself was unconditional, the module
+// stayed in the import graph, and chunks are assigned from that graph before
+// any minifier can observe that the render-time `DEVTOOLS_ENABLED` gate
+// below makes the pane unreachable. So the boundary has to sit at the import
+// *expression*, not at the render site — which is what this now is.
+//
+// `DEVTOOLS_ENABLED` is the same build-time constant as before, and
+// deliberately not `import.meta.env.DEV` alone: the review build is a
+// *production* Vite build that opts in through `VITE_ENABLE_DEVTOOLS=true`,
+// so gating on DEV would have deleted DevTools from review too.
+//
+// `null` when disabled makes this the single owner of the pane's
+// availability — the JSX below branches on `DevTools` itself rather than
+// reading the flag a second time, which keeps the two in lockstep by
+// construction and gives TypeScript the narrowing it needs. Review
+// behaviour is unchanged: still `lazy`, still inside `Suspense`, still
+// fetched only when the destination is actually opened.
+//
+// Whether the bundler then drops the chunk is a property of the build, not
+// of this source. `scripts/verify-public-build.mjs` asserts it, and it has
+// to be proven by a two-profile OPERATOR build; nothing here verifies it.
+const DevTools = DEVTOOLS_ENABLED ? lazy(() => import("./DevTools")) : null;
 
 export type MenuDestination = "info" | "about" | "settings" | "devtools" | "passport" | "credits";
 
@@ -468,9 +495,15 @@ function AppMenuDialog({
               before. The false branch is presentation only and adds no
               runtime capability; it states the unavailability and nothing
               else — no product version, no environment or path detail, and
-              none of the six gated DevTools sections. */}
+              none of the six gated DevTools sections.
+
+              TG051 (ADGARC-FB-125): the condition is now `DevTools` — the
+              lazily-imported component, which is `null` exactly when
+              `DEVTOOLS_ENABLED` is false — rather than that flag read a
+              second time. Same two branches, same gate value, one owner;
+              the unavailable state itself is untouched. */}
           {active === "devtools" &&
-            (DEVTOOLS_ENABLED ? (
+            (DevTools ? (
               <Suspense fallback={null}>
                 <DevTools {...devTools} />
               </Suspense>

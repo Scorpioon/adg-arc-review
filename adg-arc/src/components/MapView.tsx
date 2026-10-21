@@ -560,16 +560,25 @@ function buildAtlasStyle(raw: any, reducedMotion: boolean, paint: EffectiveMapPa
   };
 }
 
-// Only cases with a known map coordinate are plottable. As of TG006D all 10
-// canonical cases carry a coordinate (9 externally-sourced + DHub's existing
-// product coordinate — see data/cases.ts and the TG006D coordinate evidence
-// pack), so this filter is now effectively a no-op over the full set; it
-// stays in place as the honest guard for any future case a coordinate pack
-// doesn't yet cover, which would still be reachable via `?case=<slug>`.
-function mappableCases(cases: CaseRecord[]): Array<CaseRecord & { coordinates: NonNullable<CaseRecord["coordinates"]> }> {
-  return cases.filter(
-    (c): c is CaseRecord & { coordinates: NonNullable<CaseRecord["coordinates"]> } => c.coordinates !== null
-  );
+// Only cases whose marker location can actually be resolved are plottable.
+// Pre-TG051 this filtered on `coordinates !== null` alone — which, once the
+// nine Catalog R2 cases joined the active roster carrying an OPERATOR-
+// approved pedestrian visitPoint but deliberately no building coordinate
+// (`coordinates: null`, see data/cases.ts), silently removed them before
+// `toFeatureCollection` could ever consult the approved-visitPoint map: the
+// TG051 S0 defect (ADGARC-TG051-S0-MARKER-SCOPE-AMENDMENT-20261020-v1).
+//
+// Eligibility is now exactly "an approved (or DEV-pilot) visitPoint exists
+// for this slug, or the case carries its own `coordinates`" — expressed as
+// a null check on the shared resolver below, so this predicate and the
+// renderer can never disagree about which cases are mappable, or about
+// where a mappable case's marker sits. A case with neither stays unmappable
+// and, exactly as before, remains fully reachable via `?case=<slug>`.
+function mappableCases(
+  cases: CaseRecord[],
+  visitPointOverrides: ReadonlyMap<string, [number, number]>
+): CaseRecord[] {
+  return cases.filter((c) => resolveEffectiveCoordinate(c, visitPointOverrides) !== null);
 }
 
 // `visitPointOverrides` (Prompt 096, TG045/FB-113 Gate B1 marker/visitPoint
@@ -578,27 +587,36 @@ function mappableCases(cases: CaseRecord[]): Array<CaseRecord & { coordinates: N
 // share — never changing a feature's `id`/`properties` (slug, title), never
 // touching `cases.ts`, and never affecting a case with no override, which
 // always falls through to its ordinary `cases.ts` coordinate.
+//
+// TG051 S0: `visitPointOverrides` is now a required parameter — every call
+// site already passed `combinedVisitPointOverrides(...)`, and omitting it
+// would silently drop the nine visitPoint-only cases that this very seam is
+// what makes mappable.
 function toFeatureCollection(
   cases: CaseRecord[],
-  visitPointOverrides?: ReadonlyMap<string, [number, number]> | null
+  visitPointOverrides: ReadonlyMap<string, [number, number]>
 ): GeoJSON.FeatureCollection<GeoJSON.Point> {
-  return {
-    type: "FeatureCollection",
-    // ADGARC-FB-120 F1: feature identity is the canonical case slug, not the
-    // filtered array's ordinal — stable regardless of future reordering or
-    // filtering of `cases`. See the selection effect below for the matching
-    // setFeatureState producer.
-    features: mappableCases(cases).map((c) => {
-      const override = visitPointOverrides?.get(c.slug);
-      const coordinates: [number, number] = override ?? [c.coordinates.longitude, c.coordinates.latitude];
-      return {
-        type: "Feature",
-        id: c.slug,
-        geometry: { type: "Point", coordinates },
-        properties: { slug: c.slug, title: c.identity.name },
-      };
-    }),
-  };
+  const features: Array<GeoJSON.Feature<GeoJSON.Point>> = [];
+  for (const c of cases) {
+    // TG051 S0: exactly one Point per eligible slug, at the one effective
+    // location `mappableCases`, the camera focus and the dossier tether all
+    // resolve to as well. A case whose location cannot be resolved emits no
+    // feature at all — never a fabricated point, and never a null
+    // dereference.
+    const coordinates = resolveEffectiveCoordinate(c, visitPointOverrides);
+    if (!coordinates) continue;
+    features.push({
+      type: "Feature",
+      // ADGARC-FB-120 F1: feature identity is the canonical case slug, not
+      // the filtered array's ordinal — stable regardless of future
+      // reordering or filtering of `cases`. See the selection effect below
+      // for the matching setFeatureState producer.
+      id: c.slug,
+      geometry: { type: "Point", coordinates },
+      properties: { slug: c.slug, title: c.identity.name },
+    });
+  }
+  return { type: "FeatureCollection", features };
 }
 
 // Prompt 046-11: merges the OPERATOR-accepted 20-point production
@@ -620,15 +638,37 @@ function combinedVisitPointOverrides(
   return new Map([...CATALOG_R2_APPROVED_VISITPOINTS_BY_SLUG, ...pilotOverrides]);
 }
 
-// Resolves the exact same effective coordinate `toFeatureCollection` draws a
-// case's marker at, for the two effects (camera focus, dossier tether) that
-// otherwise read `coordinates` directly — so a selected case's camera/tether
-// target never silently diverges from where its marker is actually drawn.
+// The single resolver for where a case's marker actually is — one precedence
+// chain, shared by every map surface: the DEV-only pilot override, then the
+// OPERATOR-approved pedestrian visitPoint for this slug (both already merged
+// into `overrides` by `combinedVisitPointOverrides`, pilot winning on a
+// shared slug), then the case's own editorial/building `coordinates`.
+// `toFeatureCollection` (the drawn marker), `mappableCases` (eligibility)
+// and the camera-focus/dossier-tether effects all read it, so a selected
+// case's camera and tether can never diverge from where its marker is drawn,
+// and no second coordinate authority exists.
+//
+// TG051 S0: returns `null` — never a fabricated or borrowed point — for a
+// case with no override and no `coordinates`. `coordinates` is read only
+// behind that check, so no caller can dereference a null coordinate.
 function resolveEffectiveCoordinate(
-  c: CaseRecord & { coordinates: NonNullable<CaseRecord["coordinates"]> },
+  c: CaseRecord,
   overrides: ReadonlyMap<string, [number, number]>
-): [number, number] {
-  return overrides.get(c.slug) ?? [c.coordinates.longitude, c.coordinates.latitude];
+): [number, number] | null {
+  const override = overrides.get(c.slug);
+  if (override) return override;
+  return c.coordinates ? [c.coordinates.longitude, c.coordinates.latitude] : null;
+}
+
+// TG051 S0: the camera-focus zoom for a selected case. The nine
+// visitPoint-only Catalog R2 cases carry no `coordinates`, hence no authored
+// per-case focus zoom; they fall back to DEFAULT_ZOOM — already this file's
+// focus zoom for a deep-linked case before the focus effect refines it (see
+// the mount effect's `initialView`) — rather than borrowing another case's
+// value or inventing one. An authored per-case visit zoom for those nine
+// remains an OPERATOR data decision, not a MapView default.
+function resolveFocusZoom(c: CaseRecord): number {
+  return c.coordinates ? c.coordinates.zoom : DEFAULT_ZOOM;
 }
 
 // Single persistent map instance for the app's lifetime. Mounted once at the
@@ -715,10 +755,18 @@ const MapView = forwardRef<MapViewHandle, MapViewProps>(function MapView(
     // further down for what this actually guards against.
     let initTimeoutId: number | undefined;
 
-    const initialMappable = mappableCases(cases)[0];
-    const initialCenter = initialMappable
-      ? ([initialMappable.coordinates.longitude, initialMappable.coordinates.latitude] as [number, number])
-      : BARCELONA_CENTER;
+    // TG051 S0: resolved through the same precedence chain the rendered
+    // markers use (the DEV-only pilot overrides are still in flight here —
+    // see pilotVisitPointsPromise below — so in practice this is the
+    // production approved-visitPoint map), instead of reading `coordinates`
+    // directly. Unchanged in shape: still the first mappable case's
+    // location, still used only when a case is deep-linked, and still
+    // refined by the case-focus effect once the map loads.
+    const initialOverrides = combinedVisitPointOverrides(pilotVisitPointOverridesRef.current);
+    const initialMappable = mappableCases(cases, initialOverrides)[0];
+    const initialCenter: [number, number] =
+      (initialMappable ? resolveEffectiveCoordinate(initialMappable, initialOverrides) : null) ??
+      BARCELONA_CENTER;
 
     // TG006A editorial bearing microcorrection: with no deep-linked case,
     // the default initial camera is now the same curated home view used by
@@ -1049,18 +1097,25 @@ const MapView = forwardRef<MapViewHandle, MapViewProps>(function MapView(
     const map = mapRef.current;
     if (!map || !mapReady) return;
 
-    const mappable = mappableCases(cases);
+    // TG051 S0: hoisted out of the focus branch below because eligibility
+    // itself now depends on it — same ref, same value, same DEV-only
+    // precedence as before.
+    const overrides = combinedVisitPointOverrides(pilotVisitPointOverridesRef.current);
+    const mappable = mappableCases(cases, overrides);
     mappable.forEach((c) => {
       map.setFeatureState({ source: SOURCE_ID, id: c.slug }, { selected: c.slug === selectedSlug });
     });
 
     if (selectedSlug && selectedSlug !== lastFocusedRef.current) {
       const target = mappable.find((c) => c.slug === selectedSlug);
-      if (target) {
-        const overrides = combinedVisitPointOverrides(pilotVisitPointOverridesRef.current);
+      // TG051 S0: `center` is the marker's own resolved location and
+      // `resolveFocusZoom` guards the per-case zoom, so a visitPoint-only
+      // case focuses correctly without ever touching a null `coordinates`.
+      const center = target ? resolveEffectiveCoordinate(target, overrides) : null;
+      if (target && center) {
         map.easeTo({
-          center: resolveEffectiveCoordinate(target, overrides),
-          zoom: target.coordinates.zoom,
+          center,
+          zoom: resolveFocusZoom(target),
           duration: reducedMotion ? 0 : FOCUS_EASE_MS,
         });
       }
@@ -1076,21 +1131,28 @@ const MapView = forwardRef<MapViewHandle, MapViewProps>(function MapView(
     const map = mapRef.current;
     if (!map || !mapReady) return;
 
-    const target = mappableCases(cases).find((c) => c.slug === selectedSlug);
+    const overrides = combinedVisitPointOverrides(pilotVisitPointOverridesRef.current);
+    const target = mappableCases(cases, overrides).find((c) => c.slug === selectedSlug);
+    // TG051 S0: the tether anchors to the marker's own resolved location
+    // (the same `resolveEffectiveCoordinate` the feature and the camera
+    // use). That location is fixed for the lifetime of this effect — only
+    // its projection changes as the map moves — so it is resolved once here
+    // rather than per `move`, which also keeps `update` free of any
+    // nullable-coordinate handling.
+    const anchor = target ? resolveEffectiveCoordinate(target, overrides) : null;
     // TG006I Scope B: tether is a desktop-floating-panel-only affordance —
     // raised from the pre-TG006I 768px check to DESKTOP_MIN (1024px) now
     // that 768-1023px is its own tablet adaptive-sheet geometry (see
     // global.css), which the tether line would misalign against.
     const isDesktop = () => window.matchMedia(`(min-width: ${DESKTOP_MIN}px)`).matches;
 
-    if (!target || !isDesktop()) {
+    if (!target || !anchor || !isDesktop()) {
       setTetherPoint(null);
       return;
     }
 
-    const overrides = combinedVisitPointOverrides(pilotVisitPointOverridesRef.current);
     const update = () => {
-      const p = map.project(resolveEffectiveCoordinate(target, overrides));
+      const p = map.project(anchor);
       setTetherPoint({ x: p.x, y: p.y });
     };
 
