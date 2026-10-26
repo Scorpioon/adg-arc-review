@@ -90,6 +90,37 @@ const SECTION_LABEL_KEY: Record<Exclude<InfocardPageId, "cover">, TranslationKey
   specimen: "caseSheet.section.specimen",
 };
 
+// MTG01_R2 FB-011/FB-012 (OPERATOR, evidence 02/03/04_header_*.png): which of
+// the identity row's two divisions is lit on each page. Every page belongs to
+// exactly one half of the dossier — the building or the typeface — except
+// Diàleg, which is the page about their encounter and therefore lights both.
+//
+// Declared as a total `Record` over `InfocardPageId` rather than as a derived
+// rule (e.g. "ids starting with typography"), so adding a page to
+// `useInfocardPagination` is a compile error here until its header state is
+// stated explicitly — the state is editorial, not inferable from a name.
+// `typography-photo` keeps its entry even though it is hidden from public
+// pagination this same pass (FB-015): the record stays exhaustive, and the
+// page is correct the moment it is reinstated.
+const HEADER_SLOTS: Record<InfocardPageId, { building: boolean; typography: boolean }> = {
+  // P0-P4 — the building half.
+  cover: { building: true, typography: false },
+  "building-facts": { building: true, typography: false },
+  "building-highlight": { building: true, typography: false },
+  "building-prose": { building: true, typography: false },
+  "architecture-prose": { building: true, typography: false },
+  // P5-P7 — the typeface half.
+  "typography-photo": { building: false, typography: true },
+  "typography-sheet": { building: false, typography: true },
+  typography: { building: false, typography: true },
+  // P8 — the encounter: both lit (OPERATOR annotation on frame 34, "cuando se
+  // habla de la union de los dos edificios salen ambos activos").
+  dialogue: { building: true, typography: true },
+  // P9 — the specimen is a typeface artifact, so it stays typography-owned.
+  // Explicitly NOT withdrawn from the public sequence (FB-024).
+  specimen: { building: false, typography: true },
+};
+
 // TG041 (ADGARC-FB-110/FB-128): the lower navbar's numbered circles are one
 // per *real rendered page*, not a fixed five-chapter grouping — TG020-R3's
 // own chapter window (which collapsed every subpage of a chapter onto one
@@ -248,6 +279,12 @@ export default function InfocardDossier({
   const ordinalLabel = String(Math.max(ordinal, 0));
   const isCover = currentPage?.id === "cover";
   const isSpecimen = currentPage?.id === "specimen";
+  // MTG01_R2 FB-012: which header divisions are lit for the page being read.
+  // Falls back to the cover's own state only for the impossible-in-practice
+  // case of an empty descriptor list (the component has already returned null
+  // for a missing `activeCase` above), so this is never an invented state for
+  // a real page.
+  const headerSlots = currentPage ? HEADER_SLOTS[currentPage.id] : HEADER_SLOTS.cover;
   // Narrowed inline (`currentPage.id !== "cover"`, not the derived `isCover`
   // boolean) so TypeScript can discriminate `currentPage.id` down to
   // `Exclude<InfocardPageId, "cover">` before indexing the content-only
@@ -345,12 +382,14 @@ export default function InfocardDossier({
         // frame; it will start rendering real photographs the moment any
         // case record populates that optional field, with no code change
         // needed here.
-        return (
-          <InfocardTypographyPhotoPage
-            primaryFamily={activeCase.typography.primaryFamily}
-            photo={activeCase.typography.photo ?? null}
-          />
-        );
+        // MTG01_R2 FB-013: the typeface name is no longer passed — the
+        // two-division header above states it on every typography-owned page,
+        // so the page's own in-body copy of it is removed. FB-015 withdraws
+        // this step from the public sequence, so this branch is currently
+        // unreachable in the product; it is kept (and kept correct) because
+        // the withdrawal is a one-line, reversible change in
+        // useInfocardPagination.ts.
+        return <InfocardTypographyPhotoPage photo={activeCase.typography.photo ?? null} />;
       case "typography-sheet":
         // TG051 IMP-01 (OPERATOR-approved): the typography counterpart of
         // `building-facts` above — same shared fact-row grammar, resolved
@@ -452,19 +491,37 @@ export default function InfocardDossier({
         closeButtonRef={closeButtonRef}
       >
         <div className="infocard-dossier__panel">
-          <div className="infocard-dossier__row">
-            {/* TG018 Pass C (operator decision): the former third-slot
-                hairline is removed with no replacement — the row is now a
-                two-slot identity row.
-                TG028 (ADGARC-FB-107): the number circle and title now share
-                a top-aligned edge (was vertically centered) — see
-                `.infocard-dossier__row-left` in global.css. */}
-            <div className="infocard-dossier__row-left">
-              <span className="infocard-dossier__ordinal">{ordinalLabel}</span>
-              {/* TG028 (ADGARC-FB-107): renders `identity.displayNameLines`
-                  when a case supplies a deterministic editorial break,
-                  falling back to the plain name otherwise — a 20-case
-                  system, not a one-off per-case override. */}
+          {/* MTG01_R2 FB-011/FB-012: the identity row is now the Passport's
+              two-division header — a leading ordinal cell, the EDIFICI
+              division, and the TIPOGRAFIA division — with exactly the
+              geometry the OPERATOR mockups show (frames 32-34). Both
+              divisions are always present on every page; `data-active` is
+              what lights one, the other, or (on Diàleg) both. They are
+              deliberately plain `<span>`s, not buttons or tabs: the handoff
+              forbids any secondary click behaviour here without approval, so
+              there is no `onClick`, no `role="tab"` and no focusable target.
+              Rendered as a labelled group so the two divisions are
+              distinguishable to assistive tech, whose own state is carried in
+              words (`caseSheet.header.slotInactive`) and never by the visual
+              on/off treatment alone. */}
+          <div
+            className="infocard-dossier__row"
+            role="group"
+            aria-label={t("caseSheet.navLabel")}
+          >
+            <span className="infocard-dossier__ordinal">{ordinalLabel}</span>
+            {/* TG028 (ADGARC-FB-107): renders `identity.displayNameLines`
+                when a case supplies a deterministic editorial break, falling
+                back to the plain name otherwise — a 20-case system, not a
+                one-off per-case override. MTG01_R2 FB-025: full names still
+                wrap freely and are never ellipsized; the division's own
+                `min-width: 0` in global.css is what lets a long name (Torre
+                Baró and friends) wrap inside the narrower two-division row
+                instead of forcing the row to overflow. */}
+            <span
+              className="infocard-dossier__slot infocard-dossier__slot--building"
+              data-active={headerSlots.building ? "true" : "false"}
+            >
               <span className="infocard-dossier__case-name">
                 {(activeCase.identity.displayNameLines ?? [activeCase.identity.name]).map(
                   (line, index) => (
@@ -474,7 +531,30 @@ export default function InfocardDossier({
                   )
                 )}
               </span>
-            </div>
+              <span className="visually-hidden">
+                {headerSlots.building
+                  ? t("caseSheet.header.buildingSlot")
+                  : `${t("caseSheet.header.buildingSlot")} — ${t("caseSheet.header.slotInactive")}`}
+              </span>
+            </span>
+            {/* The typeface division states `typography.primaryFamily` — the
+                same non-nullable record field the typography sheet and
+                Caràcters pages already read, never a second or derived name.
+                This is also what makes FB-013's removal of the in-body
+                "Arlette" line a de-duplication rather than a loss. */}
+            <span
+              className="infocard-dossier__slot infocard-dossier__slot--typography"
+              data-active={headerSlots.typography ? "true" : "false"}
+            >
+              <span className="infocard-dossier__typeface-name">
+                {activeCase.typography.primaryFamily}
+              </span>
+              <span className="visually-hidden">
+                {headerSlots.typography
+                  ? t("caseSheet.header.typographySlot")
+                  : `${t("caseSheet.header.typographySlot")} — ${t("caseSheet.header.slotInactive")}`}
+              </span>
+            </span>
           </div>
 
           {stampFeedback && (

@@ -84,6 +84,10 @@ interface MapViewProps {
   menuOpen: boolean;
   onToggleMenu: () => void;
   menuTriggerRef: RefObject<HTMLButtonElement>;
+  // MTG01_R2 FB-030: threaded straight through to MapControls' new top group,
+  // for the same reason the three menu props above are — App owns what
+  // "open the Passport" means, MapView holds none of that state itself.
+  onOpenPassport: () => void;
 }
 
 const SOURCE_ID = "cases";
@@ -714,6 +718,7 @@ const MapView = forwardRef<MapViewHandle, MapViewProps>(function MapView(
     menuOpen,
     onToggleMenu,
     menuTriggerRef,
+    onOpenPassport,
   },
   ref
 ) {
@@ -1250,6 +1255,7 @@ const MapView = forwardRef<MapViewHandle, MapViewProps>(function MapView(
         menuOpen={menuOpen}
         onToggleMenu={onToggleMenu}
         menuTriggerRef={menuTriggerRef}
+        onOpenPassport={onOpenPassport}
         onZoomIn={handleZoomIn}
         onZoomOut={handleZoomOut}
         onRotate={handleRotate}

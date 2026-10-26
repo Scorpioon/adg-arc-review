@@ -85,6 +85,25 @@ export function InfoIcon() {
   );
 }
 
+// MTG01_R2 FB-030 (OPERATOR, evidence 07_map_information_button_position.png
+// "nuevo acceso directo al Pasaporte debajo de (i)"): the Passport shortcut's
+// own glyph. Deliberately distinct from every existing control in this file —
+// a booklet outline with a stamped mark inside it, reading as the physical
+// passport the product's own stamp vocabulary is built on, rather than
+// reusing InfoIcon (which already means "menu") or CompassIcon. Same
+// stroke-based single language, same 24-unit IconBase grid, as its
+// neighbours.
+export function PassportIcon() {
+  return (
+    <IconBase>
+      <rect x="5" y="3.5" width="14" height="17" rx="1.5" />
+      <line x1="8.5" y1="3.5" x2="8.5" y2="20.5" />
+      <circle cx="14" cy="10" r="2.75" />
+      <line x1="11.5" y1="15.5" x2="16.5" y2="15.5" />
+    </IconBase>
+  );
+}
+
 export function CloseIcon() {
   return (
     <IconBase>

@@ -246,13 +246,22 @@ export function InfocardHighlightedPhrasePage({ phrase }: InfocardHighlightedPhr
           {displayText}
         </p>
       )}
+      {/* MTG01_R2 FB-019 (evidence 02/05_quote_author_year_mockup.png): the
+          attribution is two stacked lines under the quotation — authorship
+          first, the bibliographic/date line second — not the single
+          "author · context" run TG028 introduced. The two values are the
+          record's own existing `attribution` and `bibliographicContext`
+          fields, rendered verbatim; nothing is parsed, split, reformatted or
+          synthesized to manufacture a bare year, and a record whose
+          `bibliographicContext` is null simply renders the one line it has.
+          The `·` separator element is removed rather than hidden: with the
+          two values on separate lines it had nothing left to separate. */}
       <footer className="infocard-page__attribution">
-        <cite>{attribution}</cite>
+        <cite className="infocard-page__attribution-line">{attribution}</cite>
         {bibliographicContext && (
-          <>
-            <span aria-hidden="true">·</span>
-            <span className="infocard-page__bibliographic-context">{bibliographicContext}</span>
-          </>
+          <span className="infocard-page__attribution-line infocard-page__bibliographic-context">
+            {bibliographicContext}
+          </span>
         )}
       </footer>
     </section>
@@ -398,15 +407,24 @@ export function InfocardProsePage({
 // pure-white empty frame `InfocardCoverPage`/`InfocardSpecimenPage` already
 // establish for missing media, never a fabricated placeholder, broken
 // `<img>`, or "pending" wording inside the frame itself.
+// MTG01_R2 FB-013 (OPERATOR, evidence 01_typography_name_p5_casa_fuster.png
+// "Quitar Arlette de allí"): the in-body typeface-name line is removed. The
+// two-slot Passport header introduced this same pass (InfocardDossier.tsx,
+// FB-011/FB-012) now states the typeface name once, on every typography-owned
+// page, so repeating it inside this page's own body was a duplicate reading of
+// the same fact — exactly the redundancy the feedback names. `primaryFamily`
+// is therefore no longer a prop of this component: it had no other consumer
+// here, and keeping it would have left an unused parameter rather than an
+// honest signature. The page is also temporarily hidden from public
+// pagination (FB-015); this correction is applied anyway so the step is
+// correct whenever it is reinstated.
 export interface InfocardTypographyPhotoPageProps {
-  primaryFamily: string;
   photo: CaseTypographyPhoto | null;
 }
 
-export function InfocardTypographyPhotoPage({ primaryFamily, photo }: InfocardTypographyPhotoPageProps) {
+export function InfocardTypographyPhotoPage({ photo }: InfocardTypographyPhotoPageProps) {
   return (
     <section className="infocard-page infocard-page--typography-photo">
-      <p className="infocard-page__meta-typeface">{primaryFamily}</p>
       <div
         className="infocard-page__typography-photo-frame"
         data-empty={photo ? undefined : "true"}

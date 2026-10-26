@@ -70,11 +70,41 @@ const NAV_ITEMS: Array<{ id: MenuDestination; labelKey: TranslationKey }> = [
 // TG023 corrective (ADGARC-FB-105, prompt 057): the `Crèdits` destination.
 // Reads the same `heroMedia` structured authority InfocardHeroCredit
 // (InfocardPages.tsx) already consumes for the dossier cover — never a
-// second, duplicated attribution dataset. One `.app-modal__section` per case
-// that carries `heroMedia`, reusing the existing About-destination section
-// chrome rather than inventing a new visual language; cases with no
-// `heroMedia` are simply absent (the same honest-omission discipline
-// `heroMedia: null` already enforces elsewhere) rather than listed empty.
+// second, duplicated attribution dataset. Cases with no `heroMedia` are
+// simply absent (the same honest-omission discipline `heroMedia: null`
+// already enforces elsewhere) rather than listed empty.
+//
+// MTG01_R2 FB-001/FB-002/FB-003/FB-004/FB-039 (OPERATOR, evidence
+// 10_credit_commons_triplicate.png): this pane used to render three rows per
+// case — `Crèdit`, `Drets / publicació`, `Procedència`. Two of them are gone,
+// and this is the task's highest-priority correction, because the defect was
+// not only redundancy:
+//
+//   * `Drets / publicació` restated the licence that the credit line already
+//     names in full ("Enfo, CC BY-SA 3.0, via Wikimedia Commons" followed by
+//     a bare "CC BY-SA 3.0"), which is the duplication the OPERATOR struck
+//     out in the evidence image.
+//   * `Procedència` published `heroMedia.provenance` verbatim. That field is
+//     an INTERNAL source-evidence record: for the project-permission cases it
+//     reads "Operator-authorized project-specific permission (TG051 handoff
+//     §Sources; internal credits reference requires this link and copyright
+//     line) — not Creative Commons or public domain", and for others it names
+//     dates on which assets were supplied. Task identifiers, handoff
+//     references and permission-process prose are audit evidence; a public
+//     credits screen is not where they belong.
+//
+// What replaces them is ONE concise line per case, built from
+// `heroMedia.credits` alone — the already-public, already-linked, verified
+// author/licence strings. Nothing is newly asserted here: the line says only
+// what the credit records themselves say, so a Commons case states its author,
+// licence and source, and a project-permission case states its rightsholder
+// and link without any licence being invented for it.
+//
+// Deliberately NOT done: `heroMedia.provenance` and `heroMedia.rightsStatus`
+// are left byte-identical in cases.ts. The handoff requires the private
+// source/permission evidence preserved unchanged — the correction is that it
+// is no longer RENDERED, not that it is deleted. Any future public surface
+// must build from `credits` the way this one and `InfocardHeroCredit` do.
 function CreditsPane({ cases }: { cases: CaseRecord[] }) {
   const t = useT();
   const withMedia = cases.filter(
@@ -82,43 +112,35 @@ function CreditsPane({ cases }: { cases: CaseRecord[] }) {
   );
 
   return (
-    <>
-      {withMedia.map((c) => {
-        const media = c.heroMedia;
-        return (
-          <section key={c.slug} className="app-modal__section">
-            <h3>{c.identity.name}</h3>
-            <dl className="credits-pane__meta">
-              <div className="credits-pane__row">
-                <dt>{t("credits.creditLabel")}</dt>
-                <dd>
-                  {media.credits.map((credit, index) => (
-                    <span key={credit.label}>
-                      {index > 0 && <span aria-hidden="true"> · </span>}
-                      {credit.url ? (
-                        <a href={credit.url} target="_blank" rel="noopener noreferrer">
-                          {credit.label}
-                        </a>
-                      ) : (
-                        credit.label
-                      )}
-                    </span>
-                  ))}
-                </dd>
-              </div>
-              <div className="credits-pane__row">
-                <dt>{t("credits.rightsLabel")}</dt>
-                <dd>{media.rightsStatus}</dd>
-              </div>
-              <div className="credits-pane__row">
-                <dt>{t("credits.provenanceLabel")}</dt>
-                <dd>{media.provenance}</dd>
-              </div>
-            </dl>
-          </section>
-        );
-      })}
-    </>
+    <section className="app-modal__section">
+      <h3>{t("credits.imagesTitle")}</h3>
+      <p className="app-modal__note">{t("credits.imagesNote")}</p>
+      <ul className="credits-pane__list">
+        {withMedia.map((c) => (
+          <li key={c.slug} className="credits-pane__entry">
+            <span className="credits-pane__case">{c.identity.name}</span>
+            {/* The one credit line. Multiple credits stay independently
+                linked and separated by a middot — GreenH@use's photographer +
+                studio pair, and Torre Baró's, are required to render together
+                and are never collapsed into a single string. */}
+            <span className="credits-pane__credit">
+              {c.heroMedia.credits.map((credit, index) => (
+                <span key={credit.label}>
+                  {index > 0 && <span aria-hidden="true"> · </span>}
+                  {credit.url ? (
+                    <a href={credit.url} target="_blank" rel="noopener noreferrer">
+                      {credit.label}
+                    </a>
+                  ) : (
+                    credit.label
+                  )}
+                </span>
+              ))}
+            </span>
+          </li>
+        ))}
+      </ul>
+    </section>
   );
 }
 
@@ -134,11 +156,17 @@ function CreditsPane({ cases }: { cases: CaseRecord[] }) {
 // the paired report for source-file -> slot traceability); `alt` reuses each
 // existing slot identity rather than any filename, per the OPERATOR's
 // accessibility instruction.
+//
+// MTG01_R2 FB-008: the OPERATOR-specified band order is Congrés → ADG →
+// Ajuntament. Reordering this array is the entire change — the footer renders
+// the list in source order, so no CSS ordering (which would leave the DOM and
+// therefore the reading order wrong for assistive tech) is involved. Sources,
+// filenames and `alt` identities are untouched.
 const PARTNER_LOGO_BASE = `${import.meta.env.BASE_URL}media/partners/`;
 const PARTNER_LOGOS = [
+  { src: `${PARTNER_LOGO_BASE}congres-arquitectura.svg`, alt: "CONGRÉS Arquitectura" },
   { src: `${PARTNER_LOGO_BASE}adg.svg`, alt: "ADG" },
   { src: `${PARTNER_LOGO_BASE}ajuntament-barcelona.png`, alt: "Ajuntament de Barcelona" },
-  { src: `${PARTNER_LOGO_BASE}congres-arquitectura.svg`, alt: "CONGRÉS Arquitectura" },
 ];
 
 function padOrdinal(n: number): string {
@@ -369,15 +397,25 @@ function AppMenuDialog({
                     system (global.css `.app-menu__partner-logo`) rather than
                     three hand-tuned sizes — equal allocated height, each
                     asset's own aspect ratio preserved via object-fit:
-                    contain. */}
-                {PARTNER_LOGOS.map((logo) => (
-                  <img
-                    key={logo.src}
-                    className="app-menu__partner-logo"
-                    src={logo.src}
-                    alt={logo.alt}
-                  />
-                ))}
+                    contain.
+                    MTG01_R2 FB-008: the band now also states what the marks
+                    are, inside the band itself, above the row. The marks are
+                    enlarged through the existing single
+                    `--partner-logo-height` custom property (global.css), so
+                    the band grows by exactly what the larger marks need and
+                    nothing else — the same one-property growth mechanism
+                    TG042 already established here. */}
+                <span className="app-menu__partners-label">{t("menu.partnersLabel")}</span>
+                <div className="app-menu__partner-row">
+                  {PARTNER_LOGOS.map((logo) => (
+                    <img
+                      key={logo.src}
+                      className="app-menu__partner-logo"
+                      src={logo.src}
+                      alt={logo.alt}
+                    />
+                  ))}
+                </div>
               </footer>
             )
           }
@@ -430,10 +468,19 @@ function AppMenuDialog({
                 <h3>{t("about.methodology.title")}</h3>
                 <p>{t("about.methodology.body")}</p>
               </section>
-              <section className="app-modal__section">
-                <h3>{t("about.credits.title")}</h3>
-                <p className="app-modal__note">{t("about.credits.note")}</p>
-              </section>
+              {/* MTG01_R2 FB-001/FB-003/FB-006: the "Equipo / Créditos"
+                  section is removed from Sobre. Its entire body was
+                  "Confirmación del equipo pendiente." — an internal
+                  production-status note published on a public screen, and a
+                  heading with nothing under it once that note is taken away.
+                  The honest form is to omit the section until there is a
+                  confirmed team to name, the same omission discipline
+                  `heroMedia: null` and the credits list already follow. Image
+                  attribution is unaffected: it has its own `Crèdits`
+                  destination, and the cartography credits below are
+                  untouched. The `about.credits.title`/`about.credits.note`
+                  keys are retained in the catalog, unused, so reinstating
+                  this section with real copy needs no new key. */}
               {/* TG010 S4 (ADGARC-FB-025): fuller source credits, in
                   addition to — never instead of — the required
                   attribution MapLibre's own AttributionControl keeps

@@ -43,6 +43,12 @@ export const es = {
   // is rather than renamed across the TranslationKey union for a label whose
   // text never changed.
   "menu.rootTitle": "Arquitectura i tipografia en diàleg",
+  // MTG01_R2 FB-008: the root menu's yellow partner band now names what the
+  // three marks are, inside the band itself. Transcribed verbatim in the
+  // OPERATOR's own Catalan wording (same verbatim-transcription convention as
+  // `menu.rootTitle` above), not translated into this catalog's Spanish
+  // chrome register.
+  "menu.partnersLabel": "Organitza i col·labora",
 
   // TG010 Final Experience P1 (ADGARC-DEC-010 §3-4): these two row labels
   // are transcribed verbatim from mockup 01 rather than kept as their prior
@@ -92,6 +98,19 @@ export const es = {
 
   "caseSheet.returnToMap": "Volver al mapa",
   "caseSheet.navLabel": "Navegación de casos",
+  // MTG01_R2 FB-011/FB-012: the Passport identity row is now two named
+  // divisions — the building and the typeface — whose on/off state says which
+  // half of the dossier the current page belongs to (evidence
+  // 02/03/04_header_*.png). The visible text of each slot is the case's own
+  // building name / primary typeface name; these two keys are the slots'
+  // accessible names only, so a screen reader can tell the two apart without
+  // relying on the visual on/off treatment. Deliberately NOT rendered as
+  // visible labels — the mockups show the names alone.
+  "caseSheet.header.buildingSlot": "Edificio",
+  "caseSheet.header.typographySlot": "Tipografía",
+  // MTG01_R2 FB-012: appended to the inactive slot's accessible name so the
+  // on/off state is never carried by the visual treatment alone.
+  "caseSheet.header.slotInactive": "no activo en esta página",
   "caseSheet.previous": "Anterior",
   "caseSheet.next": "Siguiente",
   // TG013-010 / TG036 (FB-119): the cover page's forward control — was a
@@ -120,7 +139,15 @@ export const es = {
   // TG049 Stage 1 Phase C A01 (OPERATOR-approved): new shared "Fotografia de
   // la tipografia" step's footer-pill/section label, between Forma and
   // Caràcters. Same deliberately-Catalan register as its sibling keys above.
-  "caseSheet.section.typographyPhoto": "Fotografia de la tipografia",
+  // MTG01_R2 FB-014: reduced to `Tipografia`. The OPERATOR review named
+  // "Fotografia de la tipografia" as wrong copy for this step's pill and
+  // required the short form. The key is unchanged (it still labels the
+  // typography-photograph step), so this is a value-only edit with one call
+  // site (InfocardDossier.tsx's SECTION_LABEL_KEY), confirmed before editing.
+  // The step itself is hidden from public pagination this same pass (FB-015,
+  // useInfocardPagination.ts) but keeps correct localized copy for whenever
+  // it is reinstated.
+  "caseSheet.section.typographyPhoto": "Tipografia",
   // TG049 Stage 1 Phase C A01 (OPERATOR-approved): renamed from "Tipografia"
   // now that the photo half of the former single page has its own page/key
   // above — this one single call site (SECTION_LABEL_KEY) confirmed before
@@ -131,7 +158,16 @@ export const es = {
   // form, following the same shorthand-vs-rendered-label pattern as its
   // sibling `caseSheet.section.typographyPhoto` above, and the same
   // deliberately-Catalan register as every other section key here.
-  "caseSheet.section.typographySheet": "Fitxa de la tipografia",
+  // MTG01_R2 FB-016/FB-017: reduced to `Fitxa`. The long form was the single
+  // label that could not fit `--pill-nav-width` and was rendering truncated
+  // (evidence 06_footer_pill_fitxa_clipping.png). The OPERATOR decision is
+  // the short form, which makes this page's pill read identically to the
+  // building sheet's own `caseSheet.section.facts` — deliberate: the two-slot
+  // header introduced this same pass (FB-011/FB-012) is what distinguishes a
+  // building Fitxa from a typography Fitxa, so the pill no longer has to
+  // carry that distinction in its own copy. Separate key retained (the two
+  // pages stay independently relabelable).
+  "caseSheet.section.typographySheet": "Fitxa",
   "caseSheet.section.typography": "Caràcters",
   "caseSheet.section.dialogue": "Diàleg",
   "caseSheet.section.specimen": "Espécimen",
@@ -177,9 +213,26 @@ export const es = {
   // TG023 corrective (ADGARC-FB-105, prompt 057): the `Crèdits` destination
   // — structured-data-backed, same Catalan register as `nav.credits` and the
   // dossier's own section labels above, not a re-translation of UI chrome.
-  "credits.creditLabel": "Crèdit",
-  "credits.rightsLabel": "Drets / publicació",
-  "credits.provenanceLabel": "Procedència",
+  //
+  // MTG01_R2 FB-001/FB-002/FB-003/FB-039: the former three row labels
+  // (`creditLabel` / `rightsLabel` / `provenanceLabel`) are REMOVED, not
+  // renamed. They drove the three-row block in evidence
+  // 10_credit_commons_triplicate.png, whose second and third rows restated
+  // the licence already named in row one and published the record's internal
+  // `provenance` prose — which carries task/handoff identifiers and
+  // permission-process language that must never reach a public surface. The
+  // destination now renders ONE concise credit line per case, built from
+  // `heroMedia.credits` alone (the same already-public, already-linked
+  // structured authority the dossier cover's own credit caption uses).
+  // `heroMedia.provenance` / `heroMedia.rightsStatus` are deliberately left
+  // untouched in cases.ts: they remain the private source-evidence record,
+  // they are simply no longer rendered anywhere public.
+  "credits.imagesTitle": "Imatges",
+  // Honest statement of what the single line below each case name is, so the
+  // list reads as attribution rather than as an unlabelled caption. No
+  // licence claim of its own — each line states its own terms.
+  "credits.imagesNote":
+    "Cada imatge es reprodueix amb l'autoria, la llicència o el permís que s'hi indica.",
 
   // TG018 Pass B (correction matrix §B): `passport.progress` ("1 de 10
   // paradas") is removed — its sole consumer, the rail's own count line,
@@ -239,6 +292,14 @@ export const es = {
   "passport.carouselNext": "Ver parada siguiente",
 
   "mapControls.groupLabel": "Navegación del mapa",
+  // MTG01_R2 FB-029/FB-030: the top-of-column map group — the existing
+  // Información/menu control, raised out of the bottom stack, plus the new
+  // dedicated Pasaporte shortcut directly beneath it (evidence
+  // 07_map_information_button_position.png). The shortcut opens the existing
+  // Pasaporte destination through the same App-owned menu state every other
+  // entry point uses; it grants no stamp and touches no QR state.
+  "mapControls.topGroupLabel": "Accesos directos del mapa",
+  "mapControls.passport": "Abrir el Pasaporte",
   "mapControls.panUp": "Desplazar arriba",
   "mapControls.panUpTooltip": "Desplazar arriba (↑, con el mapa enfocado)",
   "mapControls.panDown": "Desplazar abajo",

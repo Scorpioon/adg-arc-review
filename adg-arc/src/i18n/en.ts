@@ -19,14 +19,20 @@ export const en: Partial<Record<TranslationKey, string>> = {
   // "disabled" (unreachable), so these carry no activation risk, but `t()`
   // resolves them correctly the moment `en` is ever activated.
   "caseSheet.section.architecture": "Form",
-  "caseSheet.section.typographyPhoto": "Typography photograph",
+  // MTG01_R2 FB-014: tracks the `es`/`ca` rename to the short form.
+  "caseSheet.section.typographyPhoto": "Typeface",
   "caseSheet.section.typography": "Characters",
   "caseSheet.fact.architect": "Author",
   // TG051 IMP-01 (OPERATOR-approved): the five keys this pass adds in
   // `es.ts`, translated here for the same reason as the keys above — the
   // locale stays "disabled" (unreachable), so these carry no activation risk,
   // but `t()` resolves them correctly the moment `en` is ever activated.
-  "caseSheet.section.typographySheet": "Typography sheet",
+  // MTG01_R2 FB-016: tracks the `es`/`ca` rename to the short form. `en` has
+  // no entry for the building sheet's own `caseSheet.section.facts`, so that
+  // page falls back to the Catalan "Fitxa"; this key is given the matching
+  // English short form rather than left as the long label, which would have
+  // made the two sheets read inconsistently the moment `en` is activated.
+  "caseSheet.section.typographySheet": "Sheet",
   "caseSheet.fact.typeface": "Typeface",
   "caseSheet.fact.designer": "Designer",
   "caseSheet.fact.classification": "Classification",

@@ -17,6 +17,31 @@ export interface InfocardPageDescriptor {
   id: InfocardPageId;
 }
 
+// MTG01_R2 FB-015 (OPERATOR-approved): the "Fotografia de la tipografia"
+// step is temporarily withdrawn from the PUBLIC page sequence. No active case
+// carries a `typography.photo` asset yet (0/20, unchanged since TG049), so
+// every visitor reaching this step saw an empty white frame between Forma and
+// the typography sheet — the defect evidence 01_typography_name_p5_casa_
+// fuster.png shows.
+//
+// Expressed as ONE named constant rather than by deleting the descriptor, for
+// three reasons the handoff requires: the page, its component
+// (`InfocardTypographyPhotoPage`), its section label and its
+// `typography.photo` data field all stay in place and stay typography-owned;
+// reinstating the step is a one-line change here with no other edit anywhere;
+// and `InfocardPageId` keeps the member, so the SECTION_LABEL_KEY record in
+// InfocardDossier.tsx stays exhaustive and the label cannot silently rot while
+// the page is hidden.
+//
+// Consequence, deliberate and required by FB-017: page numbering is computed
+// over the VISIBLE descriptors below, so the sequence stays gapless (Forma is
+// followed directly by the typography Fitxa) rather than skipping a number.
+// P9/`specimen` is NOT affected — it is explicitly excluded from this
+// withdrawal (FB-024, and legacy ADGARC-FB-133's reconciliation).
+const PUBLICLY_HIDDEN_PAGES: ReadonlySet<InfocardPageId> = new Set<InfocardPageId>([
+  "typography-photo",
+]);
+
 // TG018 Pass C / correction matrix §G: internal navigation now numbers every
 // actual page/ficha (one number per descriptor below), never a fixed
 // five-chapter grouping — the former `chapter`/`jumpToChapter` concept this
@@ -63,7 +88,11 @@ function buildPageDescriptors(activeCase: CaseRecord | undefined): InfocardPageD
     { id: "specimen" }
   );
 
-  return descriptors;
+  // MTG01_R2 FB-015: the single filter point. Applied here, at the end of the
+  // one existing descriptor authority, so every consumer — page content, the
+  // numbered pip rail, prev/next, the footer pill and the header slot states —
+  // reads the same visible sequence with no second list to keep in sync.
+  return descriptors.filter((descriptor) => !PUBLICLY_HIDDEN_PAGES.has(descriptor.id));
 }
 
 export interface UseInfocardPaginationResult {

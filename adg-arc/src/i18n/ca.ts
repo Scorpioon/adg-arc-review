@@ -25,7 +25,10 @@ export const ca: Partial<Record<TranslationKey, string>> = {
   // explicitly here rather than left to the es fallback, for the same
   // no-activation-risk reason as `caseSheet.pageOrdinal` above.
   "caseSheet.section.architecture": "Forma",
-  "caseSheet.section.typographyPhoto": "Fotografia de la tipografia",
+  // MTG01_R2 FB-014: tracks the `es` rename to the short form. Identical
+  // string in both catalogs — the `es` value is already Catalan here by
+  // operator instruction (see es.ts's own comment on this key).
+  "caseSheet.section.typographyPhoto": "Tipografia",
   "caseSheet.section.typography": "Caràcters",
   "caseSheet.fact.architect": "Autor",
   // TG051 IMP-01 (OPERATOR-approved): the five keys this pass adds in
@@ -34,7 +37,9 @@ export const ca: Partial<Record<TranslationKey, string>> = {
   // and the link label are already Catalan in `es` by operator instruction, so
   // the genuine Catalan string is identical; the three fact labels are the
   // real Catalan forms of their Spanish counterparts.
-  "caseSheet.section.typographySheet": "Fitxa de la tipografia",
+  // MTG01_R2 FB-016: tracks the `es` rename to the short form, for the same
+  // reason as `typographyPhoto` above.
+  "caseSheet.section.typographySheet": "Fitxa",
   "caseSheet.fact.typeface": "Tipografia",
   "caseSheet.fact.designer": "Disseny",
   "caseSheet.fact.classification": "Classificació",

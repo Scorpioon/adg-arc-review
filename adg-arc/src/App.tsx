@@ -181,6 +181,20 @@ export default function App() {
     setMenuOpen((open) => !open);
   };
 
+  // MTG01_R2 FB-030: the map's new Passport shortcut. Deliberately expressed
+  // through the SAME App-owned menu state the trigger button and the DevTools
+  // hotkey already use — it opens the existing `passport` destination rather
+  // than introducing a second Passport surface or a parallel navigation path.
+  // It obeys the same overlay-exclusivity rule as `handleToggleMenu` (clear
+  // the case selection when transitioning the menu open), and it writes
+  // nothing to passport/stamp/QR-proof state: navigating to the Passport is
+  // not visiting a stop, and this control can never grant a stamp.
+  const handleOpenPassport = () => {
+    if (!menuOpen) setCaseSlug(null);
+    setMenuActive("passport");
+    setMenuOpen(true);
+  };
+
   // Cases-pane selection: same App-owned setCaseSlug as map/prev-next
   // selection. Closes the menu afterward — cleanest map-focused review per
   // the handoff's stated preference — CaseSheet opens and the map focuses
@@ -342,6 +356,7 @@ export default function App() {
           menuOpen={menuOpen}
           onToggleMenu={handleToggleMenu}
           menuTriggerRef={menuTriggerRef}
+          onOpenPassport={handleOpenPassport}
         />
         {/* TG016 (ADGARC-FB-046 / DEC-010 §11.2, §11.6): windowed circle-
             navigation control replacing the dropped S5B PassportMapOverlay —

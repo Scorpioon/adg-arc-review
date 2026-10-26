@@ -352,18 +352,78 @@ body,
    (below) only tightens gap/stack-offset on narrower tiers, it never drops
    a control. Replaces the former 3x3 D-pad grid plus separately-stacked
    zoom/rotate grids and the reduced-inventory tablet/mobile branches. */
+/* MTG01_R2 FB-029/FB-030: this is now the SHARED grammar of two map-chrome
+   columns (see MapControls.tsx) — the vertical stack geometry both groups
+   have in common. Each group's own anchoring lives in its modifier rule
+   below, so neither can inherit the other's position. */
 .map-controls {
   position: absolute;
-  /* TG010 S4: the 40px clearance over MapLibre's own bottom-left
-     AttributionControl is preserved, and now also clears a phone's home
-     indicator instead of sitting under it. */
-  bottom: max(40px, calc(env(safe-area-inset-bottom) + 28px));
   left: max(16px, env(safe-area-inset-left));
   z-index: var(--z-map-chrome);
   display: flex;
   flex-direction: column;
   align-items: center;
   gap: 6px;
+}
+
+/* The five map-camera controls (compass/reset, zoom, rotate) keep exactly the
+   bottom-left anchoring they have always had. */
+.map-controls--stack {
+  /* TG010 S4: the 40px clearance over MapLibre's own bottom-left
+     AttributionControl is preserved, and now also clears a phone's home
+     indicator instead of sitting under it. */
+  bottom: max(40px, calc(env(safe-area-inset-bottom) + 28px));
+}
+
+/* MTG01_R2 FB-029/FB-030 (evidence 07_map_information_button_position.png):
+   the (i)/menu control is raised to the top of the map column, with the new
+   Passport shortcut directly beneath it.
+
+   `--map-top-chrome-clearance` is the one declared reason this group is not
+   simply flush with the map's top edge: `.passport-map-navbar` already owns
+   the top of the map, and below 768px it stops being a narrow centred pill
+   and spans the full available width (see that control's own 767px rule), so
+   a flush top-left placement would sit underneath it. The token is composed
+   from the navbar's OWN sizing inputs — its circle diameter plus twice its
+   own padding, plus its border — rather than a measured literal, so the two
+   controls stay clear of each other if either is ever retuned. The evidence
+   capture is a desktop viewport, where the navbar is a centred pill and the
+   top-left corner is in fact free; the clearance costs nothing visible there
+   and is what makes the same placement safe on the phone widths the
+   evidence does not cover.
+
+   FLAGGED FOR OPERATOR VISUAL ACCEPTANCE at 380/480/767/768 — this is the
+   one geometric judgement in FB-029 that the supplied evidence does not
+   itself settle.
+
+   The clearance is restated per tier rather than written as a single
+   `var()` expression, deliberately: `--circle-map-diameter` and the navbar's
+   padding are declared ON `.passport-map-navbar` (component-scoped custom
+   properties, by design — see that rule), so they are NOT in this element's
+   inheritance chain and reading them here would silently resolve to the
+   unrelated `:root` fallback at exactly the tiers where the navbar overrides
+   them. Each tier below therefore mirrors that tier's own navbar inputs —
+   circle diameter + 2 x bar padding + 1px border top and bottom — and names
+   them in the comment so the correspondence is checkable. */
+.map-controls--top {
+  /* >=768px: 28px circle + 2 x --space-sm (12px) + 2px border. */
+  --map-top-chrome-clearance: 54px;
+  top: calc(max(12px, env(safe-area-inset-top)) + var(--map-top-chrome-clearance) + var(--space-sm));
+}
+
+/* <=767px: the navbar's padding tightens to 10px (its own 767px rule). */
+@media (max-width: 767px) {
+  .map-controls--top {
+    --map-top-chrome-clearance: 50px;
+  }
+}
+
+/* <=480px / coarse: the navbar's padding tightens to --space-xs (8px) and its
+   circles grow to 36px for the touch floor (FB-028, its own coarse rule). */
+@media (max-width: 480px), (pointer: coarse) {
+  .map-controls--top {
+    --map-top-chrome-clearance: 54px;
+  }
 }
 
 /* TG020-R3 (FB-074, corrected): narrower tiers get a tighter stack offset
@@ -529,10 +589,41 @@ body,
   padding: 0.35rem 0.4rem;
 }
 
+/* MTG01_R2 FB-026/FB-027 — STRUCTURAL HORIZONTAL-OVERFLOW FIX.
+   Evidence 08_mobile_overflow_cases_cargols.png (real iPhone, adg-fad.org)
+   shows the yellow Passport region and its footer row displaced to the LEFT,
+   clipping the first character of every fact label ("ño", "rquitecto/a",
+   "irección") and the footer pill, with bare white revealed down the right
+   edge — while the yellow topbar above stays correctly placed.
+
+   That exact signature identifies this element. `overflow-y: auto` with
+   `overflow-x` left at its initial `visible` does NOT leave the box
+   non-scrolling: per CSS Overflow, when one axis is a scrolling value and the
+   other is `visible`, the `visible` one computes to `auto`. So this body has
+   been a horizontal scroll container all along, and `.editorial-shell__topbar`
+   is its sibling, not its child — which is precisely why the topbar held its
+   position while everything inside the body shifted. Any descendant even
+   slightly wider than the viewport could scroll the whole dossier sideways,
+   and on a touch device an incidental horizontal swipe is enough to do it.
+
+   `overflow-x: hidden` makes the horizontal axis non-scrolling by declaration
+   rather than by hoping no descendant ever exceeds the width. `min-width: 0`
+   is the companion half: as a `flex: 1` item in a column flex container this
+   box otherwise refuses to size below its content's natural width, which is
+   what let an over-wide descendant push the box out in the first place.
+
+   This is a containment fix, not a masking one — the individual over-wide
+   descendants are corrected at their own rules in this same pass (the
+   two-division header's `min-width: 0`, the footer pill's
+   no-truncation sizing, the fact row's shrinkable label). Those keep content
+   legible; this guarantees the panel itself can never be panned off-screen
+   again while any of them regress. Vertical scrolling is untouched. */
 .editorial-shell__body {
   flex: 1;
+  min-width: 0;
   min-height: 0;
   overflow-y: auto;
+  overflow-x: hidden;
   padding: var(--space-md) 1.35rem var(--space-lg);
   font-size: 0.92rem;
   line-height: 1.55;
@@ -829,15 +920,40 @@ body,
    the body still absorbs the remaining space and its own overflow.
 
    Main-menu-specific, not part of the generic shell chrome. */
+/* MTG01_R2 FB-008: the band now carries its own label above the marks, so it
+   becomes a two-row column (label, then the marks row) rather than a single
+   wrapping row of images. The marks keep their own `flex-wrap` behaviour on
+   their new row below, so the narrow-width reflow TG042 established is
+   unchanged. */
 .app-menu__footer {
   flex: none;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.45rem;
+  padding: 0.85rem 1.1rem;
+  background: var(--canonical-yellow);
+}
+
+/* Small, quiet caption — the marks are the content, this only names them.
+   Canonical ink on canonical yellow (~14:1), never a muted ink, which on
+   this ground would fail contrast. */
+.app-menu__partners-label {
+  font-size: 0.7rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--canonical-ink);
+  text-align: center;
+}
+
+.app-menu__partner-row {
   display: flex;
   flex-wrap: wrap;
   align-items: center;
   justify-content: center;
-  gap: 0.6rem;
-  padding: 0.85rem 1.1rem;
-  background: var(--canonical-yellow);
+  gap: 0.9rem;
+  max-width: 100%;
 }
 
 /* TG030 corrective (ADGARC-FB-041, prompt 067): one shared logo-box contract
@@ -861,7 +977,13 @@ body,
      enough to read as a real size increase, small enough that `flex-wrap`
      still keeps all three marks on one row at the narrow widths FB-127
      requires checked first. */
-  --partner-logo-height: 38px;
+  /* MTG01_R2 FB-008 ("aumentar logos institucionales"): 38px -> 48px, through
+     the same single-property mechanism TG042's comment above describes — the
+     band has no height of its own, so this one value is the whole change and
+     the band grows by exactly what the larger marks need. Held at 48px rather
+     than larger so all three still fit one row at 380px, which is the
+     constraint TG042 already established for this band. */
+  --partner-logo-height: 48px;
   height: var(--partner-logo-height);
   width: auto;
   max-width: 100%;
@@ -1032,27 +1154,47 @@ body,
    `.app-modal__section`/`h3` case-heading chrome above and adds only the
    label/value row layout itself, matching `.app-modal__body`'s own font
    size/line-height rather than declaring new ones. */
-.credits-pane__meta {
-  margin: 0;
-}
+/* MTG01_R2 FB-002/FB-004: the three-row `dl` per case is replaced by one
+   editorial list — case name, then its single credit line. The former
+   `.credits-pane__meta` / `__row` / `__row dt` / `__row dd` rules are removed
+   rather than left orphaned: the markup they styled no longer exists
+   (AppMenuModal.tsx's CreditsPane). `--row dt`'s fixed `width: 8rem` was also
+   a latent narrow-viewport overflow of exactly the kind FB-026/FB-027 target.
 
-.credits-pane__row {
+   The list reads as one scannable column at every width — no fixed label
+   column, so nothing here can force horizontal overflow. */
+.credits-pane__list {
+  margin: 0.6rem 0 0;
+  padding: 0;
+  list-style: none;
   display: flex;
-  gap: var(--space-xs);
-  margin: 0.15rem 0;
+  flex-direction: column;
 }
 
-.credits-pane__row dt {
-  flex: none;
-  width: 8rem;
-  font-weight: 600;
+.credits-pane__entry {
+  display: flex;
+  flex-direction: column;
+  gap: 0.1rem;
+  padding: 0.55rem 0;
+  border-top: var(--stroke-hairline) solid var(--hairline);
+  min-width: 0;
 }
 
-.credits-pane__row dd {
-  margin: 0;
+/* The case name identifies the image; it is not a link and not a heading —
+   the destination already has one (`credits.imagesTitle`). */
+.credits-pane__case {
+  font-weight: 700;
 }
 
-.credits-pane__row a {
+/* The credit line itself: author/rightsholder, licence where one applies, and
+   the linked source. `overflow-wrap` guards a long Commons filename or studio
+   URL text from pushing the panel sideways. */
+.credits-pane__credit {
+  overflow-wrap: anywhere;
+  text-wrap: pretty;
+}
+
+.credits-pane__credit a {
   color: inherit;
   text-decoration: underline;
 }
@@ -1122,8 +1264,35 @@ body,
    than freshly-mounted elements. The viewport clips to exactly
    `--visible-count` circles; `prefers-reduced-motion` zeroes the transition
    via the existing blanket rule at the end of this file. */
+/* MTG01_R2 FB-031 (evidence 09_map_passport_rail_circles.png): this clip is
+   what cut the circles' selection halo and focus ring at the rail's own
+   edges. `.passport-stop-circle[data-current]` paints a 3px box-shadow ring
+   OUTSIDE its border box, and :focus-visible adds a 2px outline at 2px
+   offset — neither is part of the circle's layout box, so both fell outside
+   this `overflow: hidden` boundary and were sliced off at the top, bottom and
+   the two end circles.
+
+   `overflow: clip` with `overflow-clip-margin` is the exact mechanism for
+   this: it keeps the box non-scrollable (unlike any `auto`/`visible`
+   combination, which would hand this rail a scroll container it must not
+   have — the track is positioned by `translateX`, and a competing scroll
+   offset would desynchronise it from `--window-start`) while letting painted
+   decoration bleed a declared distance past the clip edge. `overflow: hidden`
+   is declared first as the fallback for an engine without `clip`, which then
+   simply keeps today's behaviour rather than breaking.
+
+   The margin is deliberately held at or below `--map-nav-gap` (6px, 5px
+   below 768px). That is what preserves DEC-010 §11.6's "never a partially
+   revealed circle": the nearest off-window circle's own edge sits exactly one
+   gap outside the clip boundary, so a bleed of at most one gap reveals
+   decoration only, never any part of a neighbouring circle. The width
+   formula is untouched — `box-sizing: border-box` is global, so no padding is
+   introduced here and the viewport still measures exactly `--visible-count`
+   circles plus the gaps between them. */
 .passport-map-navbar__viewport {
   overflow: hidden;
+  overflow: clip;
+  overflow-clip-margin: var(--map-nav-gap);
   width: calc(
     var(--visible-count) * var(--circle-map-diameter) +
       (var(--visible-count) - 1) * var(--map-nav-gap)
@@ -1230,6 +1399,22 @@ body,
   .passport-map-navbar {
     gap: var(--space-2xs);
     padding: var(--space-xs);
+    /* MTG01_R2 FB-028/FB-038: a 28px circle is well under the 44px touch
+       floor this tier applies everywhere else, and FB-028 names "escala /
+       touch targets" directly. Raised through the control's own
+       component-scoped custom property, so the viewport width formula, the
+       track's `translateX` step and the arrows all recompute from one value
+       and cannot drift — and so nothing outside this control is affected.
+       PassportMapNavbar.tsx measures `visibleCount` from the bar's live
+       width and these same live custom properties, so the window simply
+       shows fewer, larger circles with no TS change.
+       Deliberately 36px, not 44px, and deliberately NOT an invisible 44px
+       pseudo-element: at a 4-5px rail gap an oversized hit area would overlap
+       its neighbours' targets, which is the same trade-off (and the same
+       conclusion) the `.passport-stop-rail` coarse rule above already
+       records. The residual gap to the 44px floor is reported for OPERATOR
+       decision rather than closed by overlapping targets. */
+    --circle-map-diameter: 36px;
   }
 }
 
@@ -3030,43 +3215,87 @@ body,
    a distinct, correct hairline treatment instead — a subtle `--hairline`
    rule above the row, plus the stronger `--canonical-ink` rule below it
    (row → yellow content) that was always the real target boundary. */
+/* MTG01_R2 FB-011/FB-012 (evidence 02/03/04_header_*.png): the identity row
+   becomes the Passport's two-division header — ordinal cell | EDIFICI |
+   TIPOGRAFIA — divided by real vertical rules, exactly as the OPERATOR
+   mockups draw it.
+
+   `grid` rather than `flex` because the two editorial divisions must share
+   the row's remaining width on a declared basis, not on a content-driven one:
+   `1fr 1fr` is what stops a long building name from squeezing the typeface
+   division out of existence (and vice versa) on a narrow viewport. The
+   ordinal keeps `auto` so it is always exactly its own circle.
+
+   `align-items: stretch` is what makes the dividers below full-height rules
+   rather than text-height ticks. Row padding drops to 0 and moves onto the
+   cells, so each division's own inset is symmetric around its divider.
+   MTG01_R2 FB-026: no cell may force this row wider than the panel — every
+   cell below carries `min-width: 0` for that reason. */
 .infocard-dossier__row {
   flex: none;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: var(--space-sm);
-  padding: 1.1rem 1.35rem;
+  display: grid;
+  grid-template-columns: auto 1fr 1fr;
+  align-items: stretch;
   background: var(--surface);
   border-top: 1px solid var(--hairline);
   border-bottom: 1px solid var(--canonical-ink);
 }
 
-/* TG018 Pass C (operator decision, correction matrix §C): the former
-   third-slot hairline (`.infocard-dossier__row-right`) is removed with no
-   replacement — this is now a two-slot row, `align-items: center` (was
-   `baseline`) so the number circle and building title share one balanced
-   vertical composition instead of sitting on a text baseline. */
-/* TG028 (ADGARC-FB-107): `flex-start` (was `center`) so the number circle
-   and the title's own top edge align, holding for multiline titles too —
-   the title's own reduced line-height below (`__case-name`) is what keeps a
-   single-line title reading correctly against the same rule. */
-.infocard-dossier__row-left {
+/* The two editorial divisions. `data-active` is the ONLY channel that
+   differs between them — geometry, type size and weight are identical, so a
+   lit and an unlit division never change the row's shape (a layout shift on
+   page turn is exactly what the mockups' fixed header rules out).
+
+   Inactive is rendered as muted ink, matching the greyed "Geogrotesque
+   Stencil" in frames 33/34. It is not `opacity`, which would also fade the
+   divider, and not `display: none`, which would collapse the geometry. The
+   state is additionally stated in words inside each division
+   (InfocardDossier.tsx's `visually-hidden` span), so it is never carried by
+   colour alone. */
+.infocard-dossier__slot {
   display: flex;
-  align-items: flex-start;
-  gap: 0.65rem;
+  flex-direction: column;
+  justify-content: center;
+  /* MTG01_R2 FB-025: the shrink floor that lets a long name (Torre Baró,
+     Biblioteca Gabriel García Márquez) wrap INSIDE its own division instead
+     of widening the row. Paired with `overflow-wrap` on the names below, so
+     a single unbreakable token still yields rather than overflowing. */
   min-width: 0;
+  padding: 0.85rem 1rem;
+  border-left: 1px solid var(--canonical-ink);
+  color: var(--canonical-ink);
 }
+
+.infocard-dossier__slot[data-active="false"] {
+  color: var(--ink-muted);
+}
+
+/* TG018 Pass C / TG028 (ADGARC-FB-107): `.infocard-dossier__row-left` — the
+   former single flex cell holding the ordinal and the building title
+   together — is retired by MTG01_R2 FB-011. The ordinal is now the header
+   grid's own first column and the building title is the EDIFICI division, so
+   the wrapper has no remaining job; removed rather than left as an orphaned
+   selector. The behaviours it carried are preserved by the rules that
+   replaced it: `min-width: 0` lives on `.infocard-dossier__slot`, and the
+   ordinal/title top-alignment is now the divisions' shared vertical
+   centring, which reads correctly for one- and multi-line titles alike
+   because every division in the row has the same height by construction. */
 
 /* Pass F1B §4A: circled chapter-number marker (was plain bold text sized
    the same as the building name).
    Pass F1C: the row-scoped leading hairline this circle used to fake via its
    own `::before` is now the row's own real `border-top` above, so the
-   duplicate stub is removed. */
+   duplicate stub is removed.
+   MTG01_R2 FB-011: now the header grid's own leading cell (mockup frames
+   32-34 place it in its own division, before the first vertical rule). The
+   circle's dimensions/type are unchanged; it only gains the cell padding and
+   self-centring it used to inherit from `__row-left`. */
 .infocard-dossier__ordinal {
+  align-self: center;
   flex: none;
   width: 1.9rem;
   height: 1.9rem;
+  margin: 0.85rem 1rem;
   border-radius: 50%;
   border: 1px solid var(--canonical-ink);
   display: inline-flex;
@@ -3077,16 +3306,32 @@ body,
   line-height: 1;
 }
 
-.infocard-dossier__case-name {
+/* MTG01_R2 FB-011/FB-025: the two divisions' names share ONE type treatment
+   — the mockups render "Habitatges VPO de Torre Baró" and "Geogrotesque
+   Stencil" at identical size and weight, with state carried by ink alone. A
+   single selector list (rather than two near-identical rules) is what
+   guarantees they can never drift apart.
+
+   The size steps down from the former full-row clamp (1.35-1.75rem): each
+   name now has roughly half the row, so the old display size was the direct
+   cause of the clipped long names FB-025 reports. `overflow-wrap: anywhere`
+   is the last-resort guard — combined with the divisions' own `min-width: 0`
+   it means a very long single token yields instead of widening the row, and
+   FB-025's "sin elipsis destructiva" is honoured because nothing here
+   truncates: the name wraps to as many lines as it needs and the header grows
+   with it. */
+.infocard-dossier__case-name,
+.infocard-dossier__typeface-name {
   /* Pass F1 (Prompt 045 §4): full building name wraps naturally — no
      truncation. The section label that used to compete for this row's
      width moved to the footer pill below (§5). */
-  font-size: clamp(1.35rem, 3.2vw, 1.75rem);
+  font-size: clamp(0.95rem, 2.6vw, 1.15rem);
   font-weight: 700;
   /* TG028 (ADGARC-FB-107): reduced from the browser default so a wrapped
      or deterministically-broken multiline title reads as one tight
      heading rather than loosely spaced lines. */
-  line-height: 1.05;
+  line-height: 1.15;
+  overflow-wrap: anywhere;
 }
 
 /* TG028 (ADGARC-FB-107): one line per `identity.displayNameLines` entry
@@ -3140,9 +3385,24 @@ body,
   align-items: center;
   justify-content: center;
   gap: 0.35rem;
+/* MTG01_R2 FB-017 (evidence 06_footer_pill_fitxa_clipping.png): the pill was
+   `width: var(--pill-nav-width)` + `overflow: hidden` + `text-overflow:
+   ellipsis`, i.e. a hard-truncating box. "Fitxa de la tipografia" did not fit
+   and rendered cut off mid-word, with no ellipsis visible because the clip
+   fell inside the border radius.
+
+   Both halves of that are fixed. The label itself is shortened to "Fitxa"
+   (FB-016, i18n/es.ts), and the box becomes `min-width` + `width: auto`, so
+   the pill still OCCUPIES THE SAME WIDTH for every label in the system —
+   TG018 §H's "la pill siempre ocupa lo mismo" invariant, which every current
+   label satisfies comfortably — while a label that ever outgrows it widens
+   the pill instead of being cut. `text-overflow: ellipsis` is removed rather
+   than kept as a fallback: a footer label that needs an ellipsis is a copy
+   defect to fix, not a state to render. `white-space: nowrap` stays, so the
+   pill never becomes two lines. */
   height: var(--control-height);
-  width: var(--pill-nav-width);
-  padding: 0 var(--space-xs);
+  min-width: var(--pill-nav-width);
+  padding: 0 var(--space-sm);
   border: 1px solid var(--canonical-ink);
   border-radius: var(--pill-corner);
   background: var(--surface);
@@ -3150,8 +3410,6 @@ body,
   font-weight: 700;
   color: var(--canonical-ink);
   white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
 }
 
 /* Pass F1C §B: tighter cluster between the back arrow, page-nav rail, and
@@ -3974,16 +4232,31 @@ body,
    distinct third treatment the OPERATOR flagged). `line-height: 1.3` is the
    controlled compact leading for the (at most) two lines this run wraps to
    on narrow viewports. */
+/* MTG01_R2 FB-019 (evidence 02/05_quote_author_year_mockup.png): the
+   attribution is two stacked, centred lines beneath the quotation —
+   authorship on the first, the bibliographic/date line on the second — not
+   TG028's single wrapped "author · context" run. `column` replaces `row` +
+   `flex-wrap`, which also retires the reason the `·` separator existed
+   (removed in InfocardPages.tsx). The shared italic run, the compact leading
+   and the full canonical-ink strength TG041/TG022 established are all
+   unchanged: this is a direction change, not a restyle. `gap` tightens
+   because two deliberate lines need less separation than wrapped ones. */
 .infocard-page__attribution {
   display: flex;
-  flex-direction: row;
-  flex-wrap: wrap;
-  align-items: baseline;
-  justify-content: center;
-  gap: 0.35rem;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.1rem;
   font-size: 1rem;
   font-style: italic;
   line-height: 1.3;
+}
+
+/* Each line is its own block so a long bibliographic context wraps within
+   its own line rather than reflowing into the authorship line above it. */
+.infocard-page__attribution-line {
+  display: block;
+  text-align: center;
+  text-wrap: pretty;
 }
 
 /* TG022 P7 (FB-088 / P7-D1): the `opacity: 0.7` de-emphasis channel is
@@ -4355,9 +4628,17 @@ body,
     z-index: var(--z-dossier);
   }
 
+  /* MTG01_R2 FB-011: the row's own padding is gone — the two-division header
+     carries its inset on each division instead, so that the vertical rules
+     between them run the row's full height. Safe-area clearance still has to
+     be honoured here, so it is expressed as the EXTRA inset beyond the 1rem
+     the end cells already have: zero on a device with no inset (the common
+     case, since `env()` resolves to 0), and only the difference on a notched
+     one. Writing the former `max(1rem, env(...))` directly on the row would
+     now double the end cells' inset on every device. */
   .infocard-dossier__row {
-    padding: var(--space-sm) max(1rem, env(safe-area-inset-right)) var(--space-sm)
-      max(1rem, env(safe-area-inset-left));
+    padding-left: max(0px, calc(env(safe-area-inset-left) - 1rem));
+    padding-right: max(0px, calc(env(safe-area-inset-right) - 1rem));
   }
 
   .infocard-dossier__nav {
@@ -4391,9 +4672,12 @@ body,
      joins this override too — their shared base rule's `width:
      var(--pill-nav-width)` must step down together at this breakpoint, the
      same as every other property they already share. */
+  /* MTG01_R2 FB-017: `min-width`, matching the base rule's own switch away
+     from a hard `width` — this tier still steps the pill's reserved width
+     down, it just can no longer clip a label that needs more. */
   .infocard-dossier__nav-pill,
   .infocard-dossier__explore {
-    width: 6.5rem;
+    min-width: 6.5rem;
   }
 
   .infocard-dossier__page-pip {
