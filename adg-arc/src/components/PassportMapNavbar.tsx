@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState, type CSSProperties } from "react";
+import { TABLET_MIN } from "../config/breakpoints";
 import type { CaseRecord } from "../data/cases";
 import type { PassportState } from "../hooks/usePassport";
 import { useWindowedIndex } from "../hooks/useWindowedIndex";
@@ -34,7 +35,7 @@ const DESKTOP_VISIBLE = 5;
 // longer a self-sizing pill (TG042/FB-116: it spans the available top
 // width instead, arrows pinned to its true left/right edges), so unlike the
 // pill tier above, real on-screen space exists there to measure.
-const NARROW_MAX = 767;
+const NARROW_MAX = TABLET_MIN - 1;
 
 // TG042 Prompt 087 corrective (FB-116): below NARROW_MAX, `visibleCount`
 // must track how many whole circles the bar's now-real available width can

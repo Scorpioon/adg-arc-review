@@ -129,10 +129,8 @@ if (existsSync(AUTHORITY_HASH_MANIFEST_PATH)) {
     check("product hash manifest matches the operator-authority manifest exactly", false, String(err.message ?? err));
   }
 } else {
-  check(
-    "operator-authority hash manifest available for cross-check",
-    false,
-    `not found locally at ${AUTHORITY_HASH_MANIFEST_PATH} (non-fatal — skipped)`
+  console.log(
+    `[SKIP] operator-authority hash manifest cross-check — unavailable at ${AUTHORITY_HASH_MANIFEST_PATH} (operator-only)`
   );
 }
 

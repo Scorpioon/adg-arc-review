@@ -17,6 +17,7 @@ import {
 } from "./InfocardPages";
 import NavArrowGlyph from "./NavArrowGlyph";
 import { useInfocardPagination, type InfocardPageId } from "../hooks/useInfocardPagination";
+import { useLocalizedCase } from "../hooks/useLocalizedCase";
 
 // TG012 Pass C — final selected-case dossier. Composes the validated Pass A
 // data (cases.ts) through the validated Pass B primitives (InfocardPages)
@@ -122,6 +123,14 @@ export default function InfocardDossier({
   const t = useT();
   const { descriptors, currentPage, pageIndex, canGoPrevious, canGoNext, goPrevious, goNext, goToPage } =
     useInfocardPagination(activeCase);
+  // TG063 IMP-02B: single resolver boundary for editorial display text.
+  // `useLocalizedCase` requires a `CaseRecord` (unlike `useInfocardPagination`
+  // above), so this unconditional top-level call — required by the Rules of
+  // Hooks, since `activeCase` may still be undefined below — falls back to
+  // any already-imported `activeCases[0]` only to keep the call type-safe;
+  // that fallback result is never read, since the component returns null
+  // right below whenever `activeCase` itself is undefined.
+  const localizedCase = useLocalizedCase(activeCase ?? activeCases[0]);
   const reducedMotion = usePrefersReducedMotion();
 
   const panelRef = useRef<HTMLDivElement | null>(null);
@@ -276,7 +285,7 @@ export default function InfocardDossier({
         return (
           <InfocardCoverPage
             caseName={activeCase.identity.name}
-            heroMedia={activeCase.heroMedia}
+            heroMedia={localizedCase.heroMedia}
             isVisited={isVisited}
           />
         );
@@ -303,8 +312,8 @@ export default function InfocardDossier({
           />
         );
       case "building-highlight":
-        return activeCase.infocard.highlightedPhrase ? (
-          <InfocardHighlightedPhrasePage phrase={activeCase.infocard.highlightedPhrase} />
+        return localizedCase.infocard.highlightedPhrase ? (
+          <InfocardHighlightedPhrasePage phrase={localizedCase.infocard.highlightedPhrase} />
         ) : null;
       case "building-prose":
         // No in-body heading — the footer pill already carries the section
@@ -314,7 +323,7 @@ export default function InfocardDossier({
         return (
           <InfocardProsePage
             className="infocard-page--building"
-            copy={activeCase.infocard.buildingProse}
+            copy={localizedCase.infocard.buildingProse}
             emphasis={emphasisTerms}
           />
         );
@@ -324,7 +333,7 @@ export default function InfocardDossier({
         return (
           <InfocardProsePage
             className="infocard-page--architecture infocard-page--architecture-prose"
-            copy={activeCase.infocard.architectureCopy}
+            copy={localizedCase.infocard.architectureCopy}
             emphasis={emphasisTerms}
           />
         );
@@ -393,7 +402,7 @@ export default function InfocardDossier({
         return (
           <InfocardProsePage
             className="infocard-page--typography"
-            copy={activeCase.infocard.typographyCopy}
+            copy={localizedCase.infocard.typographyCopy}
             emphasis={emphasisTerms}
             meta={<p className="infocard-page__meta-typeface">{activeCase.typography.primaryFamily}</p>}
             footer={
@@ -414,7 +423,7 @@ export default function InfocardDossier({
         return (
           <InfocardProsePage
             className="infocard-page--dialogue"
-            copy={activeCase.infocard.dialogueCopy}
+            copy={localizedCase.infocard.dialogueCopy}
             emphasis={emphasisTerms}
           />
         );

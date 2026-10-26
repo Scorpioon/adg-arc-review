@@ -1737,7 +1737,17 @@ export const cases: CaseRecord[] = [
     },
     editorial: false,
     infocard: {
-      highlightedPhrase: null,
+      highlightedPhrase: {
+        kind: "synthesis",
+        displayText: "La forma, signe d'identitat.",
+        attribution: "Síntesi, Lluís Domènech i Montaner",
+        bibliographicContext: null,
+        provenance: {
+          mappingRef: "IMP-01B approved — Casa Fuster × Arlette — Diàleg synthesis",
+          sourceLocator:
+            "cases.ts dialogueCopy.displayText (TG051 IMP-03 §11, approved, unmodified) — compressed for P2 by IMP-01A, OPERATOR-approved for IMP-01B",
+        },
+      },
       buildingProse: {
         displayText:
           "Considerat un dels edificis més emblemàtics del modernisme català, el projecte va ser encarregat a l'arquitecte per la família Fuster el 1908 per a la seva pròpia residència.",
@@ -1823,7 +1833,17 @@ export const cases: CaseRecord[] = [
     },
     editorial: false,
     infocard: {
-      highlightedPhrase: null,
+      highlightedPhrase: {
+        kind: "synthesis",
+        displayText: "Una estructura funcional, una expressió pròpia.",
+        attribution: "Síntesi, Josep Lluís Sert",
+        bibliographicContext: null,
+        provenance: {
+          mappingRef: "IMP-01B approved — Casa López × Futura 100 — Diàleg synthesis",
+          sourceLocator:
+            "cases.ts dialogueCopy.displayText (TG051 IMP-03 §12, approved, unmodified) — compressed for P2 by IMP-01A, OPERATOR-approved for IMP-01B",
+        },
+      },
       buildingProse: {
         displayText:
           "Edifici racionalista en què l'arquitecte Josep Lluís Sert incorpora el llenguatge arquitectònic més purista d'aquest moviment arquitectònic; es pot considerar un dels projectes més significatius d'aquesta època.",
@@ -1876,14 +1896,15 @@ export const cases: CaseRecord[] = [
       movementStatus: "verified",
     },
     typography: {
-      primaryFamily: "Brut Grotesque",
-      designer: null,
+      primaryFamily: "Variex",
+      designer: "Zuzana Licko",
+      sourceUrl: "https://www.emigre.com/Fonts/Variex",
       secondaryStatus: "parked",
     },
     correlation: {
       sourceRationale:
         "Walden 7 planteja l'habitatge col·lectiu com una estructura vertical formada per volums modulars, patis i recorreguts interconnectats. La massa ceràmica vermella, els grans buits interiors i l'acumulació de cossos converteixen l'edifici en una arquitectura contundent, però al mateix temps pensada per afavorir la vida comunitària.\n\n" +
-        "Brut Grotesque trasllada aquesta contundència a la lletra: formes robustes, directes i de gran presència que funcionen gairebé com blocs construïts. El diàleg no depèn de l'ornament, sinó del pes, la repetició i la força estructural compartida entre edifici i tipografia.",
+        "Variex trasllada aquesta contundència a la lletra: formes robustes, directes i de gran presència que funcionen gairebé com blocs construïts. El diàleg no depèn de l'ornament, sinó del pes, la repetició i la força estructural compartida entre edifici i tipografia.",
       provenance: TG020_SOURCE,
     },
     coordinates: {
@@ -1939,7 +1960,7 @@ export const cases: CaseRecord[] = [
       },
       typographyCopy: {
         displayText:
-          "Brut Grotesque trasllada aquesta contundència a la lletra: formes robustes, directes i de gran presència que funcionen gairebé com blocs construïts.",
+          "Variex trasllada aquesta contundència a la lletra: formes robustes, directes i de gran presència que funcionen gairebé com blocs construïts.",
         provenance: {
           mappingRef: "TG020 Authority §Walden 7 — authored completion",
           sourceLocator: "ADGARC_TG020_PHASE1_AUTHORITY_v1.0.md > Walden 7 > Text explicatiu ¶2",
@@ -1996,7 +2017,17 @@ export const cases: CaseRecord[] = [
     },
     editorial: false,
     infocard: {
-      highlightedPhrase: null,
+      highlightedPhrase: {
+        kind: "synthesis",
+        displayText: "La repetició esdevé llenguatge.",
+        attribution: "Síntesi, Carlos Ferrater, Patrick Genard i Xavier Martí",
+        bibliographicContext: null,
+        provenance: {
+          mappingRef: "IMP-01B approved — Edifici Mediapro × Lo-Res — Diàleg synthesis",
+          sourceLocator:
+            "cases.ts dialogueCopy.displayText (TG051 IMP-03 §14, approved, unmodified) — compressed for P2 by IMP-01A, OPERATOR-approved for IMP-01B",
+        },
+      },
       buildingProse: {
         displayText:
           "L'edifici d'oficines, situat al front de la Diagonal, al districte 22@, és un clar exemple de com l'arquitectura pot respondre de manera especial a les característiques de l'entorn urbà i, en aquest cas concret, de com el seu volum s'ha modelat segons les alineacions dels carrers i les directrius visuals.",
@@ -2039,6 +2070,9 @@ export const cases: CaseRecord[] = [
     slug: "habitatges-industrialitzats-marroc",
     identity: {
       name: "Habitatges industrialitzats, Marroc 180",
+      // IMP-01 (MTG01 UX/UI Tranche 1): long-name overflow guard, same
+      // mechanism as biblioteca-ggm above.
+      displayNameLines: ["Habitatges industrialitzats,", "Marroc 180"],
       sourceName: "Edifici d'habitatges industrialitzats",
       date: { year: 2024, displayLabel: "2024" },
       architect: "Vivas Arquitectos i EXE Arquitectura",
@@ -2074,12 +2108,22 @@ export const cases: CaseRecord[] = [
         },
       ],
       provenance:
-        "Courtesy Constructora del Cardoner (image provider); architecture Vivas Arquitectos + EXE Arquitectura. Operator-authorized project-specific permission (TG051 handoff §Sources; work_materials/images 11-20 r2/11-20 credits r2.txt requires this link and copyright line) — not Creative Commons or public domain.",
+        "Courtesy Constructora del Cardoner (image provider); architecture Vivas Arquitectos + EXE Arquitectura. Operator-authorized project-specific permission (TG051 handoff §Sources; internal credits reference requires this link and copyright line) — not Creative Commons or public domain.",
       rightsStatus: "project-specific",
     },
     editorial: false,
     infocard: {
-      highlightedPhrase: null,
+      highlightedPhrase: {
+        kind: "synthesis",
+        displayText: "Una mateixa lògica constructiva, dues expressions.",
+        attribution: "Síntesi, Vivas Arquitectos i EXE Arquitectura",
+        bibliographicContext: null,
+        provenance: {
+          mappingRef: "IMP-01B approved — Marroc 180 × Keania One — Diàleg synthesis",
+          sourceLocator:
+            "cases.ts dialogueCopy.displayText (TG051 IMP-03 §15, approved, unmodified) — compressed for P2 by IMP-01A, OPERATOR-approved for IMP-01B",
+        },
+      },
       buildingProse: {
         displayText:
           "Edifici de 45 habitatges de protecció oficial, situat en l'entorn industrial del barri del Poblenou, ha estat projectat seguint principis de sostenibilitat que aposten per l'optimització dels temps d'execució i dels costos.",
@@ -2163,12 +2207,22 @@ export const cases: CaseRecord[] = [
         },
       ],
       provenance:
-        "Courtesy H ARQUITECTES, who are also the project architects; higher-resolution asset supplied by the studio on 2026-10-19 (1200x1600 base). Operator-authorized project-specific permission (TG051 handoff §Sources; work_materials/images 11-20 r2/11-20 credits r2.txt requires this link and copyright line) — not Creative Commons or public domain.",
+        "Courtesy H ARQUITECTES, who are also the project architects; higher-resolution asset supplied by the studio on 2026-10-19 (1200x1600 base). Operator-authorized project-specific permission (TG051 handoff §Sources; internal credits reference requires this link and copyright line) — not Creative Commons or public domain.",
       rightsStatus: "project-specific",
     },
     editorial: false,
     infocard: {
-      highlightedPhrase: null,
+      highlightedPhrase: {
+        kind: "synthesis",
+        displayText: "Estructura estable, llibertat d'ús.",
+        attribution: "Síntesi, H Arquitectes",
+        bibliographicContext: null,
+        provenance: {
+          mappingRef: "IMP-01B approved — Habitatges Socials 824 × Mon Hugo — Diàleg synthesis",
+          sourceLocator:
+            "cases.ts dialogueCopy.displayText (TG051 IMP-03 §16, approved, unmodified) — compressed for P2 by IMP-01A, OPERATOR-approved for IMP-01B",
+        },
+      },
       buildingProse: {
         displayText:
           "L'edifici, alineat amb el carrer de Josep Pla, s'articula en dos volums de sis plantes units per un sòcol.",
@@ -2253,7 +2307,17 @@ export const cases: CaseRecord[] = [
     },
     editorial: false,
     infocard: {
-      highlightedPhrase: null,
+      highlightedPhrase: {
+        kind: "synthesis",
+        displayText: "El buit que organitza i dona ritme.",
+        attribution: "Síntesi, Carme Pinós",
+        bibliographicContext: null,
+        provenance: {
+          mappingRef: "IMP-01B approved — Escola Massana × Kanat Latin — Diàleg synthesis",
+          sourceLocator:
+            "cases.ts dialogueCopy.displayText (TG051 IMP-03 §17, approved, unmodified) — compressed for P2 by IMP-01A, OPERATOR-approved for IMP-01B",
+        },
+      },
       buildingProse: {
         displayText:
           "Equipament públic que forma part d'un important projecte de renovació urbana de la plaça de la Gardunya, situada en la part posterior de l'antic mercat de la Boquería, en les Rambles de Barcelona.",
@@ -2342,7 +2406,17 @@ export const cases: CaseRecord[] = [
     },
     editorial: false,
     infocard: {
-      highlightedPhrase: null,
+      highlightedPhrase: {
+        kind: "synthesis",
+        displayText: "Obertura a allò imprevist.",
+        attribution: "Síntesi, Nug",
+        bibliographicContext: null,
+        provenance: {
+          mappingRef: "IMP-01B approved — La Escocesa / Nau Foseco × Sixten — Diàleg synthesis",
+          sourceLocator:
+            "cases.ts dialogueCopy.displayText (TG051 IMP-03 §18, approved, unmodified) — compressed for P2 by IMP-01A, OPERATOR-approved for IMP-01B",
+        },
+      },
       buildingProse: {
         displayText:
           "Situada en el districte industrial del Poble Nou, la intervenció arquitectònica transforma una part de l'antiga Fàbrica l'Escocesa en un espai per a producció artística i participació ciutadana.",
@@ -2389,6 +2463,9 @@ export const cases: CaseRecord[] = [
     slug: "vpo-torre-baro",
     identity: {
       name: "Habitatges VPO de Torre Baró",
+      // IMP-01 (MTG01 UX/UI Tranche 1): long-name overflow guard, same
+      // mechanism as biblioteca-ggm above.
+      displayNameLines: ["Habitatges VPO de", "Torre Baró"],
       sourceName: "Vivienda VPO en Torre Baró",
       date: { year: 2022, displayLabel: "2017 - 2022" },
       architect: "arquitectura dataAE, NARCH i Maira Arquitectes",
@@ -2435,7 +2512,17 @@ export const cases: CaseRecord[] = [
     },
     editorial: false,
     infocard: {
-      highlightedPhrase: null,
+      highlightedPhrase: {
+        kind: "synthesis",
+        displayText: "Conciliar sense esborrar les diferències.",
+        attribution: "Síntesi, arquitectura dataAE, NARCH i Maira Arquitectes",
+        bibliographicContext: null,
+        provenance: {
+          mappingRef: "IMP-01B approved — Torre Baró × FF Chambers Sans — Diàleg synthesis",
+          sourceLocator:
+            "cases.ts dialogueCopy.displayText (TG051 IMP-03 §19, approved, unmodified) — compressed for P2 by IMP-01A, OPERATOR-approved for IMP-01B",
+        },
+      },
       buildingProse: {
         displayText:
           "Aquest edifici d'habitatges socials està organitzat al voltant d'un espai central en forma d'atri que optimitza l'eficiència energètica del conjunt i conté amplis replans en l'escala que ofereixen espais de trobada entre els veïns.",
@@ -2515,7 +2602,17 @@ export const cases: CaseRecord[] = [
     },
     editorial: false,
     infocard: {
-      highlightedPhrase: null,
+      highlightedPhrase: {
+        kind: "synthesis",
+        displayText: "Tensió entre ordre i llibertat.",
+        attribution: "Síntesi, Cierto Estudio",
+        bibliographicContext: null,
+        provenance: {
+          mappingRef: "IMP-01B approved — Illa Glòries, Bloc A × Ella Brutalist — Diàleg synthesis",
+          sourceLocator:
+            "cases.ts dialogueCopy.displayText (TG051 IMP-03 §20, approved, unmodified) — compressed for P2 by IMP-01A, OPERATOR-approved for IMP-01B",
+        },
+      },
       buildingProse: {
         displayText:
           "El bloc A de 51 habitatges forma part de la poma Glòries destinada a VPO, que s'organitza en una illa compacta travessada per un passatge per als vianants. Cada parell de blocs s'articula entorn de patis veïnals, promovent la convivència i la vida comunitària.",
@@ -4123,5 +4220,45 @@ export const SPECIMEN_MEDIA: Readonly<Record<string, CaseSpecimenMedia>> = {
   "green-use-22": {
     src: `${SPECIMEN_MEDIA_BASE}green-use-22-q.svg`,
     alt: "Especimen tipogràfic — lletra Q/q, Bulevar (GREENH@USE)",
+  },
+  "casa-fuster": {
+    src: `${SPECIMEN_MEDIA_BASE}casa-fuster-arlette-proof.webp`,
+    alt: "Prova tipogràfica de dos glifs amb guies de construcció — Arlette (Casa Fuster)",
+  },
+  "casa-lopez-sert": {
+    src: `${SPECIMEN_MEDIA_BASE}casa-lopez-sert-futura100-proof.webp`,
+    alt: "Prova tipogràfica de dos glifs amb guies de construcció — Futura 100 (Casa López)",
+  },
+  "edifici-mediapro": {
+    src: `${SPECIMEN_MEDIA_BASE}edifici-mediapro-lores-proof.webp`,
+    alt: "Prova tipogràfica de dos glifs amb guies de construcció — Lo-Res (Edifici Mediapro)",
+  },
+  "habitatges-industrialitzats-marroc": {
+    src: `${SPECIMEN_MEDIA_BASE}habitatges-industrialitzats-marroc-keania-one-proof.webp`,
+    alt: "Prova tipogràfica de dos glifs amb guies de construcció — Keania One (Habitatges industrialitzats, Marroc 180)",
+  },
+  "habitatges-socials-824": {
+    src: `${SPECIMEN_MEDIA_BASE}habitatges-socials-824-mon-hugo-proof.webp`,
+    alt: "Prova tipogràfica de dos glifs amb guies de construcció — Mon Hugo (Habitatges Socials 824)",
+  },
+  "escola-massana": {
+    src: `${SPECIMEN_MEDIA_BASE}escola-massana-kanat-latin-proof.webp`,
+    alt: "Prova tipogràfica de dos glifs amb guies de construcció — Kanat Latin (Escola Massana)",
+  },
+  "la-escocesa-nau-foseco": {
+    src: `${SPECIMEN_MEDIA_BASE}la-escocesa-nau-foseco-sixten-proof.webp`,
+    alt: "Prova tipogràfica de dos glifs amb guies de construcció — Sixten (La Escocesa / Nau Foseco)",
+  },
+  "vpo-torre-baro": {
+    src: `${SPECIMEN_MEDIA_BASE}vpo-torre-baro-chambers-sans-proof.webp`,
+    alt: "Prova tipogràfica de dos glifs amb guies de construcció — FF Chambers Sans (Habitatges VPO de Torre Baró)",
+  },
+  "illa-glories-bloc-a": {
+    src: `${SPECIMEN_MEDIA_BASE}illa-glories-bloc-a-ella-brutalist-proof.webp`,
+    alt: "Prova tipogràfica de dos glifs amb guies de construcció — Ella Brutalist (Illa Glòries, Bloc A)",
+  },
+  "walden-7": {
+    src: `${SPECIMEN_MEDIA_BASE}walden-7-variex-proof.webp`,
+    alt: "Prova tipogràfica de dos glifs amb guies de construcció — Variex (Walden 7)",
   },
 };
