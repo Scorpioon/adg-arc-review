@@ -359,7 +359,7 @@ export const es = {
   "devtools.colorPicker.ariaLabel": "%{role} — selector de color",
   "devtools.zoomLod.title": "Zoom / nivel de detalle",
   "devtools.zoomLod.note":
-    "Densidad semántica por banda de zoom (FB031) — CIUDAD / DISTRITO / EDIFICIO. Controla el tratamiento ADG-ARC aplicado sobre el mapa base; los roles dejados en «heredado» no modifican el comportamiento de zoom propio de la capa base.",
+    "Densidad semántica por banda de zoom — CIUDAD / DISTRITO / EDIFICIO. Controla el tratamiento ADG-ARC aplicado sobre el mapa base; los roles dejados en «heredado» no modifican el comportamiento de zoom propio de la capa base.",
   "devtools.debug.currentZoom": "Zoom actual",
   "devtools.debug.currentBand": "Banda actual",
   "devtools.lod.districtLabel": "DISTRITO empieza en el zoom",

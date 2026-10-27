@@ -3,8 +3,7 @@
 // VITE_ENABLE_DEVTOOLS — never exposed by default in an ordinary production
 // build. Both flags are statically inlined by Vite at build time, so an
 // unflagged production build can dead-code-eliminate the branch this gates.
-export const DEVTOOLS_ENABLED: boolean =
-  import.meta.env.DEV === true || import.meta.env.VITE_ENABLE_DEVTOOLS === "true";
+export const DEVTOOLS_ENABLED: boolean = false;
 
 // Debug-state / export display only. ADGARC-FB-120 F2: derived once at
 // build time from package.json's "version" field via Vite's `define` (see

@@ -2398,19 +2398,66 @@ body,
    is an overlay there and the previous/next arrows exist — so touch drops it
    to the 0.25rem focus-ring guard, and the Passport body's bottom inset on
    this tier is 1rem like its sides instead of the generic 1.25rem. */
-@media (max-width: 767px) and (orientation: portrait) {
+/* MTG01_R2 Round02 CORR05 (FB067/FB068) — SUPERSEDES the FB-052 mechanism
+   described above. `container-type: size` on `.passport-carousel` applies
+   size containment, so the carousel's intrinsic block size became 0 and every
+   `100cqh` in the spacer `calc()` resolved against a box with no content-driven
+   height; on the physical iPhone the card stage rendered blank (the arrows,
+   positioned against the viewport, were the only survivors). Containment and
+   the `cqw`/`cqh` spacers are removed. Each item is now exactly one carousel
+   page wide (`flex: 0 0 100%`, snap-aligned to start) and centres its own
+   height-driven 9:16 card, so the carousel is again an ordinary flex row whose
+   height comes from the pane's flex composition (the FB-044 mechanism that
+   rendered correctly before FB-052). `min-height` is a floor so the stage can
+   never collapse to nothing; the viewport's own `overflow-y` stays the single
+   vertical scroller. The item's start-aligned left edge is what
+   `PassportPane.tsx` already reads to derive the focused ordinal.
+   Below 768px in either orientation; >=768px is untouched. */
+@media (max-width: 767.98px) {
   .passport-pane__viewport > .passport-carousel {
-    container-type: size;
-  }
-
-  .passport-carousel::before,
-  .passport-carousel::after {
-    content: "";
-    flex: 0 0 max(0px, calc((100cqw - 100cqh * 9 / 16) / 2 - var(--space-sm)));
+    gap: 0;
+    padding-inline: 0;
+    scroll-padding-inline: 0;
+    min-height: 16rem;
   }
 
   .passport-carousel__item {
-    scroll-snap-align: center;
+    flex: 0 0 100%;
+    display: flex;
+    justify-content: center;
+    scroll-snap-align: start;
+    scroll-snap-stop: always;
+  }
+
+  .passport-carousel__card {
+    flex: none;
+    max-width: 100%;
+  }
+
+  /* FB068: the five-circle window is exactly the rail's width — circles share
+     the row evenly (never scroll, never clip, never fade), and shrink in step
+     only if the row is narrower than five 44px circles; the 34px floor holds
+     five complete circles down to ~320 CSS px. */
+  .passport-stop-rail__row {
+    align-self: stretch;
+    width: auto;
+    max-width: none;
+  }
+
+  .passport-stop-rail__track,
+  .passport-stop-rail__track[data-scroll-more="true"] {
+    justify-content: space-between;
+    overflow-x: hidden;
+    -webkit-mask-image: none;
+    mask-image: none;
+  }
+
+  .passport-stop-rail__track .passport-stop-circle {
+    flex: 0 1 var(--control-height);
+    width: auto;
+    min-width: 34px;
+    height: auto;
+    aspect-ratio: 1;
   }
 }
 

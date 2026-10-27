@@ -25,11 +25,12 @@ interface PassportPaneProps {
 // scrolling after the window immediately resumes driving the indicator.
 const PROGRAMMATIC_SCROLL_MS = 700;
 
-// MTG01_R2 Round02 FB051 (CORR04): below this width the building rail shows a
-// window of at most RAIL_MOBILE_WINDOW circles instead of a scrolling strip of
-// all of them. Matches the existing <768px mobile tier; >=768px is unchanged.
+// MTG01_R2 Round02 FB051 (CORR04) / FB068 (CORR05): below this width the
+// building rail shows a window of at most RAIL_MOBILE_WINDOW circles instead of
+// a scrolling strip of all of them. Matches the existing <768px mobile tier;
+// >=768px is unchanged.
 const RAIL_MOBILE_QUERY = "(max-width: 767.98px)";
-const RAIL_MOBILE_WINDOW = 3;
+const RAIL_MOBILE_WINDOW = 5;
 
 function useRailWindowed(): boolean {
   const [windowed, setWindowed] = useState(() =>
@@ -49,10 +50,14 @@ function useRailWindowed(): boolean {
 }
 
 // First visible ordinal (1-based) of the contiguous mobile window around the
-// focused ordinal: centered when possible, clamped to the first/last buildings.
-// Presentation only — every case stays in `cases`, state and the carousel.
+// focused ordinal: centered when possible, clamped to the first/last buildings
+// (i=1 -> 1..5, i=4 -> 2..6, i=20 -> 16..20). Fewer than RAIL_MOBILE_WINDOW
+// cases show all. Presentation only — every case stays in `cases`, state and
+// the carousel.
 function railWindowStart(focused: number, total: number): number {
-  return Math.max(1, Math.min(focused - 1, total - (RAIL_MOBILE_WINDOW - 1)));
+  if (total <= RAIL_MOBILE_WINDOW) return 1;
+  const half = Math.floor(RAIL_MOBILE_WINDOW / 2);
+  return Math.max(1, Math.min(focused - half, total - (RAIL_MOBILE_WINDOW - 1)));
 }
 
 // TG011 Pass C (ADGARC-FB-043 / DEC-010 §11.3): the Pasaporte pane's own
@@ -367,6 +372,30 @@ export default function PassportPane({ passport, cases, onSelectCase }: Passport
     },
     []
   );
+
+  // FB068 (CORR05): the carousel's geometry changes across the 767<->768px
+  // boundary (one full-width page per card below it). Re-seat the track on the
+  // focused card instantly so the layout change can neither move the selection
+  // (the scroll handler would otherwise re-derive it mid-reflow) nor strand
+  // the visitor between two cards. Horizontal only; touches no other state.
+  const focusedOrdinalRef = useRef(focusedOrdinal);
+  focusedOrdinalRef.current = focusedOrdinal;
+  useEffect(() => {
+    if (typeof window.matchMedia !== "function") return;
+    const mql = window.matchMedia(RAIL_MOBILE_QUERY);
+    const onChange = () => {
+      programmaticUntilRef.current = Date.now() + 250;
+      window.requestAnimationFrame(() => {
+        const track = carouselRef.current;
+        const item = itemRefs.current.get(focusedOrdinalRef.current);
+        if (!track || !item) return;
+        const delta = item.getBoundingClientRect().left - track.getBoundingClientRect().left;
+        track.scrollTo({ left: track.scrollLeft + delta, behavior: "auto" });
+      });
+    };
+    mql.addEventListener("change", onChange);
+    return () => mql.removeEventListener("change", onChange);
+  }, []);
 
   const handleResetConfirmed = () => {
     passport.reset();
