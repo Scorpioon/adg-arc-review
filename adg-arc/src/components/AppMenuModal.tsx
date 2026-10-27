@@ -54,9 +54,15 @@ export type MenuDestination = "info" | "about" | "settings" | "devtools" | "pass
 // relationship can never drift between two independent string literals.
 export const APP_MENU_PANEL_ID = "app-menu-panel";
 
+// MTG01_R2 Round02 FB-057: editorial order is now 01 La ruta tipográfica (the
+// `info` destination, id unchanged), 02 Passaport, 03 Acerca de. Only the
+// array order and the `nav.info` label changed — destination ids, the
+// `MenuDestination` union and every caller that opens a destination by id
+// (MapControls' Passport shortcut, the DevTools hotkey) are untouched, because
+// the row ordinal is derived from this array's index and nothing else.
 const NAV_ITEMS: Array<{ id: MenuDestination; labelKey: TranslationKey }> = [
-  { id: "passport", labelKey: "nav.passport" },
   { id: "info", labelKey: "nav.info" },
+  { id: "passport", labelKey: "nav.passport" },
   { id: "about", labelKey: "nav.about" },
   { id: "settings", labelKey: "nav.settings" },
   { id: "devtools", labelKey: "nav.devtools" },
@@ -105,6 +111,76 @@ const NAV_ITEMS: Array<{ id: MenuDestination; labelKey: TranslationKey }> = [
 // source/permission evidence preserved unchanged — the correction is that it
 // is no longer RENDERED, not that it is deleted. Any future public surface
 // must build from `credits` the way this one and `InfocardHeroCredit` do.
+//
+// MTG01_R2 Round02 FB-060: the project's own credits now lead the screen, in
+// two groups, ahead of the unchanged per-image list. Every name, role label,
+// spelling and URL below is transcribed EXACTLY as the OPERATOR supplied it
+// (ROUND02_FEEDBACK_REGISTER.md) — proper-noun credits, kept here rather than
+// in the i18n catalog for the same reason PARTNER_LOGOS is: they are identities,
+// not UI chrome. Role labels are not normalised across ES/CA, except the two
+// Curació labels, whose accents were corrected in CORR04 (OPERATOR-approved);
+// names and URLs are untouched.
+interface CreditRow {
+  role: string;
+  // Plain text names, or a linked organisation. A row may carry both a
+  // prefix and a link ("Adaptat del Congrés — <link>").
+  text?: string;
+  link?: { label: string; url: string };
+}
+
+const TEAM_CREDITS: CreditRow[] = [
+  { role: "Equipo Técnico", text: "Aina Marcobal, Paola Calvet, Mireia Trias" },
+  { role: "Curació tipogràfica", text: "Marc Salinas" },
+  { role: "Curació arquitectònica", text: "Luis Calvet" },
+];
+
+const CONGRESS_CREDITS: CreditRow[] = [
+  {
+    role: "Crèdits Disseny Gràfic",
+    text: "Adaptat del Congrés —",
+    link: { label: "World Congress of Architects Barcelona · UIA 2026", url: "https://uia2026bcn.org/es/" },
+  },
+  { role: "Dirección de arte", link: { label: "Principi", url: "https://principiestudi.com/" } },
+  { role: "Comunicación", link: { label: "Labóh", url: "https://laboh.net/" } },
+  { role: "Diseño y desarrollo web", link: { label: "No somos nada", url: "https://nosomosnada.org/" } },
+];
+
+// The OPERATOR-approved public build credit sits in this group as its own
+// row. It is deliberately a single, self-contained string, not assembled
+// from fragments, so a future QA gate can match this exact context instead
+// of loosening the artifact scanner's ban on the project token elsewhere
+// (FB-062: documented in the report, scanner NOT changed in this movement).
+const ADG_ARC_CREDITS: CreditRow[] = [
+  { role: "Diseño gráfico y glifos", text: "Alex Gobern" },
+  { role: "Motion y desarrollo web", text: "Collapse Creative (Dev.Unit)" },
+];
+const BUILD_CREDIT = "Web construida con WRKOPS";
+
+// Group headings, transcribed from the OPERATOR's own sub-heads.
+const CONGRESS_GROUP_TITLE = "Crèdits Disseny Gràfic";
+const ADG_ARC_GROUP_TITLE = "Créditos específicos de adg-fad.org/adg-arc/";
+
+function CreditRows({ rows }: { rows: CreditRow[] }) {
+  return (
+    <dl className="credits-pane__rows">
+      {rows.map((row) => (
+        <div key={row.role} className="credits-pane__row">
+          <dt>{row.role}</dt>
+          <dd>
+            {row.text}
+            {row.text && row.link ? " " : null}
+            {row.link ? (
+              <a href={row.link.url} target="_blank" rel="noopener noreferrer">
+                {row.link.label}
+              </a>
+            ) : null}
+          </dd>
+        </div>
+      ))}
+    </dl>
+  );
+}
+
 function CreditsPane({ cases }: { cases: CaseRecord[] }) {
   const t = useT();
   const withMedia = cases.filter(
@@ -112,7 +188,30 @@ function CreditsPane({ cases }: { cases: CaseRecord[] }) {
   );
 
   return (
-    <section className="app-modal__section">
+    <>
+      <section className="app-modal__section">
+        <CreditRows rows={TEAM_CREDITS} />
+      </section>
+      <section className="app-modal__section">
+        <h3>{CONGRESS_GROUP_TITLE}</h3>
+        <CreditRows rows={CONGRESS_CREDITS} />
+      </section>
+      <section className="app-modal__section">
+        <h3>{ADG_ARC_GROUP_TITLE}</h3>
+        <CreditRows rows={ADG_ARC_CREDITS} />
+        <p className="credits-pane__build">{BUILD_CREDIT}</p>
+      </section>
+      {/* MTG01_R2 Round02 FB-060 (TG010 S4 / ADGARC-FB-025 history): the fuller
+          map-data credit, moved here from Acerca de — one instance. It is in
+          addition to, never instead of, the required attribution MapLibre's
+          own AttributionControl keeps rendering over the map (MapView.tsx,
+          untouched). The sentence that said so ("La atribución requerida
+          sigue mostrándose…") was internal explanation and is removed. */}
+      <section className="app-modal__section">
+        <h3>{t("credits.cartography.title")}</h3>
+        <p>{t("credits.cartography.body")}</p>
+      </section>
+      <section className="app-modal__section">
       <h3>{t("credits.imagesTitle")}</h3>
       <p className="app-modal__note">{t("credits.imagesNote")}</p>
       <ul className="credits-pane__list">
@@ -140,7 +239,8 @@ function CreditsPane({ cases }: { cases: CaseRecord[] }) {
           </li>
         ))}
       </ul>
-    </section>
+      </section>
+    </>
   );
 }
 
@@ -188,9 +288,6 @@ interface AppMenuModalProps {
   triggerRef: RefObject<HTMLButtonElement>;
   cases: CaseRecord[];
   onSelectCase: (slug: string) => void;
-  onResetMap: () => void;
-  onNorthUp: () => void;
-  onEditorialOrientation: () => void;
   devTools: DevToolsProps;
   passport: PassportState;
 }
@@ -224,9 +321,6 @@ export default function AppMenuModal({
   triggerRef,
   cases,
   onSelectCase,
-  onResetMap,
-  onNorthUp,
-  onEditorialOrientation,
   devTools,
   passport,
 }: AppMenuModalProps) {
@@ -238,9 +332,6 @@ export default function AppMenuModal({
       onSelectDestination={onSelectDestination}
       cases={cases}
       onSelectCase={onSelectCase}
-      onResetMap={onResetMap}
-      onNorthUp={onNorthUp}
-      onEditorialOrientation={onEditorialOrientation}
       devTools={devTools}
       passport={passport}
     />
@@ -255,9 +346,6 @@ interface AppMenuDialogProps {
   onSelectDestination: (destination: MenuDestination | null) => void;
   cases: CaseRecord[];
   onSelectCase: (slug: string) => void;
-  onResetMap: () => void;
-  onNorthUp: () => void;
-  onEditorialOrientation: () => void;
   devTools: DevToolsProps;
   passport: PassportState;
 }
@@ -282,9 +370,6 @@ function AppMenuDialog({
   onSelectDestination,
   cases,
   onSelectCase,
-  onResetMap,
-  onNorthUp,
-  onEditorialOrientation,
   devTools,
   passport,
 }: AppMenuDialogProps) {
@@ -454,59 +539,43 @@ function AppMenuDialog({
             <>
               <p>{t("info.p1")}</p>
               <p>{t("info.p2")}</p>
-              <p className="app-modal__note">{t("info.note")}</p>
+              {/* MTG01_R2 Round02 CORR04: the Review-provisional `info.note`
+                  sentence is no longer rendered (OPERATOR-approved); the
+                  catalog key is left in place, unrendered. */}
             </>
           )}
 
           {active === "about" && (
             <>
+              {/* MTG01_R2 Round02 FB-059: the two About paragraphs are the
+                  OPERATOR's editorial draft (EDITORIAL_COPY_PROPOSALS.md), not
+                  independently verified institutional copy. The former
+                  methodology paragraph is superseded by the second one, and
+                  the "Cartografía y datos" block moved out of this screen to
+                  `Crèdits` (FB-060) — one instance, in CreditsPane. The
+                  `Equipo / Créditos` omission recorded in FB-001/003/006 still
+                  holds: the real team now lives in `Crèdits` too. */}
               <section className="app-modal__section">
                 <h3>{t("about.project.title")}</h3>
                 <p>{t("about.project.body")}</p>
               </section>
               <section className="app-modal__section">
-                <h3>{t("about.methodology.title")}</h3>
-                <p>{t("about.methodology.body")}</p>
-              </section>
-              {/* MTG01_R2 FB-001/FB-003/FB-006: the "Equipo / Créditos"
-                  section is removed from Sobre. Its entire body was
-                  "Confirmación del equipo pendiente." — an internal
-                  production-status note published on a public screen, and a
-                  heading with nothing under it once that note is taken away.
-                  The honest form is to omit the section until there is a
-                  confirmed team to name, the same omission discipline
-                  `heroMedia: null` and the credits list already follow. Image
-                  attribution is unaffected: it has its own `Crèdits`
-                  destination, and the cartography credits below are
-                  untouched. The `about.credits.title`/`about.credits.note`
-                  keys are retained in the catalog, unused, so reinstating
-                  this section with real copy needs no new key. */}
-              {/* TG010 S4 (ADGARC-FB-025): fuller source credits, in
-                  addition to — never instead of — the required
-                  attribution MapLibre's own AttributionControl keeps
-                  rendering over the map. Plain project-authored text: no
-                  third-party attribution HTML is re-created here. */}
-              <section className="app-modal__section">
-                <h3>{t("about.credits.sourcesTitle")}</h3>
-                <p>{t("about.credits.sources")}</p>
-                <p className="app-modal__note">{t("about.credits.sourcesNote")}</p>
+                <h3>{t("about.proposal.title")}</h3>
+                <p>{t("about.proposal.body")}</p>
               </section>
             </>
           )}
 
           {active === "settings" && (
+            // MTG01_R2 Round02 FB-053: Settings shows the language selector
+            // and nothing else. The three map actions (reset view, north up,
+            // editorial orientation) and their helper note are no longer
+            // rendered here; MapView's imperative `reset` / `setNorthUp` /
+            // `setEditorialOrientation` handle methods are left in place, as
+            // is the map's own reset control (MapControls), so no capability
+            // is deleted — only this screen's exposure of it. `ca`/`en` stay
+            // listed-but-disabled exactly as `locales.ts` declares them.
             <div className="settings-actions">
-              <button type="button" className="settings-actions__btn" onClick={onResetMap}>
-                {t("settings.resetMap")}
-              </button>
-              <button type="button" className="settings-actions__btn" onClick={onNorthUp}>
-                {t("settings.northUp")}
-              </button>
-              <button type="button" className="settings-actions__btn" onClick={onEditorialOrientation}>
-                {t("settings.editorialOrientation")}
-              </button>
-              <p className="app-modal__note">{t("settings.note")}</p>
-
               <div className="settings-actions__lang-group">
                 <span className="settings-actions__lang-label">{t("settings.language.label")}</span>
                 <div className="lang-switch" role="group" aria-label={t("settings.language.label")}>

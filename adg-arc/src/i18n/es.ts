@@ -56,7 +56,9 @@ export const es = {
   // though it mixes languages across the five rows (see the paired
   // execution report for the flagged inconsistency this inherits).
   "nav.passport": "Passaport",
-  "nav.info": "Información",
+  // MTG01_R2 Round02 FB-057: the `info` destination is now the route page,
+  // row 01. OPERATOR-specified label, Spanish as written in the register.
+  "nav.info": "La ruta tipográfica",
   "nav.about": "Acerca de",
   "nav.settings": "Ajustes",
   "nav.devtools": "Dev Settings",
@@ -64,36 +66,44 @@ export const es = {
   // operator-locked exact label, not a translation of an English "Credits".
   "nav.credits": "Crèdits",
 
+  // MTG01_R2 Round02 FB-058: OPERATOR editorial draft (EDITORIAL_COPY_PROPOSALS.md
+  // §01), not independently verified institutional copy. «ruta» is the
+  // thematic city experience; nothing here claims a live walking-navigation
+  // route (P1 pending), and stamps are tied to the physical QR proof only.
   "info.p1":
-    "ADG-ARC explora relaciones entre arquitectura y tipografía en Barcelona, emparejando cada edificio con una tipografía elegida por su resonancia con él.",
+    "Barcelona se puede leer a través de sus edificios y de las letras que los acompañan. Esta ruta reúne veinte diálogos entre arquitectura y tipografía: diez paradas físicas señalizadas con un código QR y diez casos adicionales para explorar en formato digital.",
   "info.p2":
-    "El mapa es la forma principal de explorar la colección: desplázate, haz zoom y selecciona cualquiera de los 10 casos físicos de la ruta con código QR, además de 10 casos adicionales solo digitales, o explóralos desde el menú Casos.",
+    "Explora los puntos en el mapa o abre el Pasaporte para descubrir cada edificio y su tipografía. El Pasaporte organiza la colección y permite volver a cualquier caso. Los sellos se consiguen únicamente al verificar el QR correspondiente en las paradas físicas: seleccionar un edificio, acercarse en el mapa o marcarlo como visitado no concede un sello.",
+  // Retained unchanged: not part of the supplied draft. Flagged in the
+  // Round02 report (FB-062) as review-status wording to decide before public.
   "info.note":
     "Esta es una versión funcional de revisión. El diseño visual, los textos y el contenido son aún provisionales.",
 
+  // MTG01_R2 Round02 FB-059: OPERATOR editorial draft (§03), working text —
+  // NOT verified proof of an official contractual collaboration or authorship
+  // arrangement; it asserts only the participation/proposal the draft states.
   "about.project.title": "Proyecto",
   "about.project.body":
-    "ADG-ARC empareja edificios de Barcelona con tipografías seleccionadas por una correlación formal o conceptual entre la arquitectura y las letras.",
-  "about.methodology.title": "Metodología",
-  "about.methodology.body":
-    "Cada caso parte de un emparejamiento edificio/tipografía documentado en la fuente y de una argumentación escrita arquitectura-tipografía; la profundidad del tratamiento editorial varía actualmente caso por caso.",
+    "ADG-ARC propone una manera de mirar Barcelona desde el diálogo entre arquitectura y tipografía. En el contexto del World Congress of Architects Barcelona · UIA 2026 y de la participación de ADG-FAD, el proyecto invita a descubrir conexiones formales, culturales y gráficas entre edificios de la ciudad y las tipografías seleccionadas para acompañarlos.",
+  "about.proposal.title": "Propuesta",
+  "about.proposal.body":
+    "La propuesta de ADG pone el diseño gráfico en conversación con la arquitectura, trasladando esa relación a una colección explorable mediante mapa, fichas y Pasaporte. Cada caso presenta una lectura editorial propia sin sustituir las fuentes arquitectónicas ni las atribuciones de sus imágenes.",
   "about.credits.title": "Equipo / Créditos",
   "about.credits.note": "Confirmación del equipo pendiente.",
-  // TG010 S4 (ADGARC-FB-025): fuller source credits live here, in
-  // Acerca de. This is an *addition* to — never a replacement for — the
-  // required attribution MapLibre's own AttributionControl keeps rendering
-  // over the map itself (see MapView.tsx); no attribution markup is
-  // reconstructed by this app.
-  "about.credits.sourcesTitle": "Cartografía y datos",
-  "about.credits.sources":
-    "Mapa base servido por OpenFreeMap, con esquema de teselas OpenMapTiles y datos de los colaboradores de OpenStreetMap.",
-  "about.credits.sourcesNote":
-    "La atribución requerida sigue mostrándose de forma permanente sobre el propio mapa.",
 
-  "settings.resetMap": "Volver a DhUB / Restablecer mapa",
-  "settings.northUp": "Norte arriba",
-  "settings.editorialOrientation": "Orientación editorial",
-  "settings.note": "Estas son acciones puntuales del mapa, no preferencias guardadas.",
+  // MTG01_R2 Round02 FB-060: moved here from Acerca de (was
+  // `about.credits.sources*`). TG010 S4 (ADGARC-FB-025): an *addition* to —
+  // never a replacement for — the required attribution MapLibre's own
+  // AttributionControl keeps rendering over the map itself (see MapView.tsx);
+  // no attribution markup is reconstructed by this app. The former
+  // "La atribución requerida sigue mostrándose…" note is intentionally gone.
+  "credits.cartography.title": "Cartografía y datos",
+  "credits.cartography.body":
+    "Mapa base servido por OpenFreeMap, con esquema de teselas OpenMapTiles y datos de los colaboradores de OpenStreetMap.",
+
+  // MTG01_R2 Round02 FB-053: the map-action keys (`settings.resetMap`,
+  // `northUp`, `editorialOrientation`, `note`) are removed with the controls
+  // that used them — zero remaining call sites, confirmed before removal.
   "settings.language.label": "Idioma",
 
   "caseSheet.returnToMap": "Volver al mapa",

@@ -418,11 +418,31 @@ body,
   }
 }
 
-/* <=480px / coarse: the navbar's padding tightens to --space-xs (8px) and its
-   circles grow to 36px for the touch floor (FB-028, its own coarse rule). */
+/* <=480px / coarse: the navbar's padding tightens to its own quarter-rem
+   (4px, `--navbar-space-xs`, MTG01_R2 Round02 FB-061) and its circles grow to
+   36px for the touch floor (FB-028, its own coarse rule): 36px + 2 x 4px +
+   2px border = 46px. This was 54px while that padding was 8px; it follows the
+   navbar's own input so the gap between the bar and this group is the SAME
+   as the OPERATOR accepted on mobile (FB-049: mobile clearance unchanged) —
+   only the number that mirrors the bar changed, not the visible clearance. */
 @media (max-width: 480px), (pointer: coarse) {
   .map-controls--top {
-    --map-top-chrome-clearance: 54px;
+    --map-top-chrome-clearance: 46px;
+  }
+}
+
+/* MTG01_R2 Round02 FB-049 (evidence 01_desktop_map_top_controls_too_low.png):
+   DESKTOP ONLY. From 768px the navbar is a narrow centred capsule, so the
+   top-left corner is free of it (it is ~300px wide at most, nowhere near the
+   16px gutter column) and the clearance reserved above exists for the
+   full-width mobile bar, not for this tier. The group therefore aligns with
+   the navbar's own top edge instead of sitting a whole navbar-height below
+   it. Declared after the tier rules above, at equal specificity, so it wins
+   by order. Below 768px nothing here applies: the mobile placement the
+   OPERATOR accepted is untouched. */
+@media (min-width: 768px) {
+  .map-controls--top {
+    top: max(12px, env(safe-area-inset-top));
   }
 }
 
@@ -764,14 +784,52 @@ body,
    the operator's header-content -> filet distance. Top padding, horizontal
    inset, margin-top, flex ownership, gap and back-control geometry are
    unchanged at both tiers. */
+/* MTG01_R2 Round02 FB-054 (evidence 07/08/09/10): the full-width
+   `border-bottom` above (TG022 P4e / FB-102) is REPLACED, for every internal
+   destination except Passport, by two INSET hairlines — one above and one
+   below the header row — that start and end at the header's own horizontal
+   padding and never touch the panel's outer border. That is the same filet
+   grammar Passport already used for its upper rule (TG022 P4e-R2 / D-11,
+   below), now shared: the two filets are painted by `::before` / `::after`
+   pseudo-elements, because a border always spans its box edge to edge and
+   this geometry cannot be written as one. Passport keeps its own lower
+   filet on `.passport-pane__band` and so opts out of `::after` below —
+   which is also why Passport is "exempt" in FB-054's terms.
+   FB-102's single-owner property is preserved: this is still one declaration
+   set for all destinations, rendered through the one EditorialShell slot,
+   absent at root and non-scrolling.
+   The top padding is 1rem for every destination (it was 1.1rem here and 1rem
+   for Passport alone), so the filet-to-row distance no longer differs by
+   destination. */
 .app-menu__destination-header {
+  position: relative;
   flex: none;
   display: flex;
   align-items: center;
   gap: 8px;
   margin-top: var(--space-md);
-  padding: 1.1rem 1.35rem var(--space-md);
-  border-bottom: 1px solid var(--canonical-ink);
+  padding: 1rem 1.35rem var(--space-md);
+}
+
+/* Both filets resolve `left`/`right` against the padding box, so each tier's
+   own horizontal inset (1.35rem here, 1rem in the compact block below) is
+   what they honour. */
+.app-menu__destination-header::before,
+.app-menu__destination-header::after {
+  content: "";
+  position: absolute;
+  left: 1.35rem;
+  right: 1.35rem;
+  height: 1px;
+  background: var(--canonical-ink);
+}
+
+.app-menu__destination-header::before {
+  top: 0;
+}
+
+.app-menu__destination-header::after {
+  bottom: 0;
 }
 
 /* TG022 P4e-R2 (D-11) — THE PASSPORT UPPER FILET. Passport alone, and only
@@ -828,11 +886,17 @@ body,
    `--control-height` override in this file is `.infocard-dossier`'s at
    ≤380px, which never reaches `.app-menu`). The pre-header `margin-top` keeps
    its existing per-tier authority, untouched. */
+/* MTG01_R2 Round02 FB-054: the upper filet and the 1rem top padding are now
+   the shared base rule above (`::before`, every destination); what remains
+   Passport-specific is the zero bottom padding (the circles' 7px + 5px leg
+   owns that distance) and NO lower header filet — Passport's lower filet is
+   `.passport-pane__band`'s own border, below the circles. */
 .app-menu:has(.passport-pane) .app-menu__destination-header {
-  position: relative;
-  border-bottom: none;
-  padding-top: 1rem;
   padding-bottom: 0;
+}
+
+.app-menu:has(.passport-pane) .app-menu__destination-header::after {
+  display: none;
 }
 
 /* `left` starts the filet flush with the `01` ordinal circle's left edge: the
@@ -843,16 +907,6 @@ body,
    `right: 0` is the padding-box right edge — the same x the Passport lower filet
    ends at, so the two Passport filets share a right boundary and neither touches
    an outer menu border. */
-.app-menu:has(.passport-pane) .app-menu__destination-header::before {
-  content: "";
-  position: absolute;
-  top: 0;
-  left: 1.35rem;
-  right: 1.35rem;
-  height: 1px;
-  background: var(--canonical-ink);
-}
-
 /* TG019 Pass A (operator feedback §2): was a plain text glyph whose hover/
    active tint therefore read as a stray gray rectangle. Rebuilt as a
    circular control in the same design language as the other nav circles
@@ -925,13 +979,21 @@ body,
    wrapping row of images. The marks keep their own `flex-wrap` behaviour on
    their new row below, so the narrow-width reflow TG042 established is
    unchanged. */
+/* MTG01_R2 Round02 FB-056 (evidence 10_menu_rows_and_left_aligned_footer_logos.png):
+   the label and the marks are LEFT-aligned on the same baseline as the
+   numbered rows above (the body's own 1.35rem inset — 1rem in the compact
+   block below) instead of centred as a floating group, with more air around
+   them. No fixed-size slots are drawn: the OPERATOR's red boxes mark where
+   the marks go, not placeholders to add, so each mark keeps its own intrinsic
+   width and only the gaps between them are made equal (see
+   `.app-menu__partner-row`). */
 .app-menu__footer {
   flex: none;
   display: flex;
   flex-direction: column;
-  align-items: center;
-  gap: 0.45rem;
-  padding: 0.85rem 1.1rem;
+  align-items: flex-start;
+  gap: 0.75rem;
+  padding: 1.1rem 1.35rem 1.25rem;
   background: var(--canonical-yellow);
 }
 
@@ -944,15 +1006,20 @@ body,
   letter-spacing: 0.06em;
   text-transform: uppercase;
   color: var(--canonical-ink);
-  text-align: center;
+  text-align: left;
 }
 
+/* One `gap` is the only spacing between marks, so the gaps are equal by
+   construction. It scales down with the viewport (never below 1rem) so all
+   three still share one row at 380px, which is the constraint TG042 set for
+   this band; if a viewport is narrower still, `flex-wrap` reflows them and
+   `row-gap` keeps the vertical air. */
 .app-menu__partner-row {
   display: flex;
   flex-wrap: wrap;
   align-items: center;
-  justify-content: center;
-  gap: 0.9rem;
+  justify-content: flex-start;
+  gap: 1rem clamp(1rem, 4vw, 1.75rem);
   max-width: 100%;
 }
 
@@ -1034,6 +1101,12 @@ body,
     padding: 0.9rem var(--space-md) 1.25rem;
   }
 
+  /* MTG01_R2 Round02 FB-056: the footer's left edge follows the compact
+     tier's own 1rem body inset, as the rows above it do. */
+  .app-menu__footer {
+    padding-inline: var(--space-md);
+  }
+
   /* TG022 P1: the destination-header band is a sibling of the body now, so
      the compact tier's inset no longer reaches it by inheritance — it is
      restated here at exactly the body's own compact values (`0.9rem` top,
@@ -1046,12 +1119,31 @@ body,
      above and is deliberately not restated here. */
   .app-menu__destination-header {
     margin-top: 0.9rem;
-    padding: 1.1rem var(--space-md) var(--space-md);
+    padding: 1rem var(--space-md) var(--space-md);
   }
 
-  .app-menu:has(.passport-pane) .app-menu__destination-header::before {
+  /* MTG01_R2 Round02 FB-054: the shared inset filets follow this tier's own
+     1rem horizontal inset (was Passport's upper filet only). */
+  .app-menu__destination-header::before,
+  .app-menu__destination-header::after {
     left: 1rem;
     right: 1rem;
+  }
+}
+
+/* MTG01_R2 Round02 FB-052 (evidence 06_desktop_passport_title_excess_whitespace.png,
+   the circled band under the yellow topbar): on the wide desktop frame the
+   16px between the topbar and the upper filet reads as dead space above an
+   already generous header. Halved to 8px for every destination at ≥1024px —
+   shared header, so the frame stays consistent across destinations instead
+   of Passport being tuned alone. ONLY that outer margin moves: Passport's
+   operator-locked internal legs (filet -> row 16px, row -> circles 12px,
+   circles -> lower filet 12px, lower filet -> cards 12px — D-11) are not
+   touched. Flagged for OPERATOR visual acceptance: the screenshot marks the
+   area but not a target size. */
+@media (min-width: 1024px) {
+  .app-menu__destination-header {
+    margin-top: var(--space-xs);
   }
 }
 
@@ -1199,6 +1291,46 @@ body,
   text-decoration: underline;
 }
 
+/* MTG01_R2 Round02 FB-060: the project's own credit groups, ahead of the
+   per-image list. Same rule as the list above — one stacked column at every
+   width (role, then the people/organisation beneath it), no fixed label
+   column, so no long role or URL label can force horizontal overflow.
+   `.app-modal__section h3` already supplies the group heading chrome. */
+.credits-pane__rows {
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.55rem;
+}
+
+.credits-pane__row {
+  display: flex;
+  flex-direction: column;
+  gap: 0.1rem;
+  min-width: 0;
+}
+
+.credits-pane__row dt {
+  font-size: 0.78rem;
+  opacity: 0.7;
+}
+
+.credits-pane__row dd {
+  margin: 0;
+  font-weight: 700;
+  overflow-wrap: anywhere;
+}
+
+.credits-pane__row dd a {
+  color: inherit;
+  text-decoration: underline;
+}
+
+.credits-pane__build {
+  margin: 0.55rem 0 0;
+  font-weight: 700;
+}
+
 /* TG016 (ADGARC-FB-046 / ADGARC-DEC-010 §11.2, §11.6): map-top windowed
    circle-navigation control, replacing the dropped S5B PassportMapOverlay
    and its `.passport-rail*` rectangular-cell family entirely (sole consumer
@@ -1250,6 +1382,16 @@ body,
      uses for `--control-height` (component-scoped custom property, not
      :root). */
   --map-nav-gap: 6px;
+  /* MTG01_R2 Round02 FB-061 (evidence 14_devtools_navbar_space_xs_quarter_rem.png):
+     the OPERATOR tried `--space-xs: .25rem` in DevTools and liked it on THIS
+     bar — and only this bar. `--space-xs` is a root token with many unrelated
+     consumers (settings actions, dossier chrome, Passport, menus, map
+     controls), so it is NOT touched. The value is declared here instead, as
+     a component-scoped custom property in the same style as `--map-nav-gap`
+     above, and read by the two navbar rules that used `--space-xs` — the
+     <=767px outer gap and the <=480px/coarse padding. Nothing outside
+     `.passport-map-navbar` can resolve it. */
+  --navbar-space-xs: 0.25rem;
 }
 
 /* TG020-R3 (FB-063): replaces the former windowed-slice rendering (a fresh
@@ -1384,7 +1526,7 @@ body,
     transform: none;
     justify-content: space-between;
     border-radius: 16px;
-    gap: var(--space-xs);
+    gap: var(--navbar-space-xs);
     /* TG022 P8 (FB-093, P8-D3): symmetric, as above — no per-breakpoint
        height, the bar's natural content height composes from this padding. */
     padding: 10px;
@@ -1398,7 +1540,7 @@ body,
 @media (max-width: 480px), (pointer: coarse) {
   .passport-map-navbar {
     gap: var(--space-2xs);
-    padding: var(--space-xs);
+    padding: var(--navbar-space-xs);
     /* MTG01_R2 FB-028/FB-038: a 28px circle is well under the 44px touch
        floor this tier applies everywhere else, and FB-028 names "escala /
        touch targets" directly. Raised through the control's own
@@ -2225,6 +2367,70 @@ body,
   }
 }
 
+/* MTG01_R2 Round02 FB-052 (evidence 03 / 05_mobile_passport_card_offset_and_padding.png):
+   on a phone the 9:16 card takes its width from the carousel's height, so it
+   is ~55-60% of the panel and sat flush LEFT with a dead white strip on its
+   right, while the bottom gap was larger than either side. The card is now
+   centred, and the carousel stays an intentional native swipe track — nothing
+   is clipped, nothing is accidentally off-axis.
+
+   How, without touching the card's own sizing (FB-044's height-driven 9:16
+   is accepted and not reopened): the carousel becomes a `size` container so
+   `cqw`/`cqh` resolve to its own content box. The card's width is exactly
+   `100cqh * 9 / 16` (it is `height: 100%` of an item that stretches to that
+   box), so one empty spacer before the first card and one after the last,
+   each `(100cqw - card) / 2 - gap` wide, put the first/last card on the
+   carousel's centre line; `scroll-snap-align: center` then keeps every card
+   centred at rest. `max(0px, …)` keeps a card that is already as wide as the
+   box from producing a negative spacer. A browser without container-query
+   units drops these `calc()` declarations and keeps the previous start-aligned
+   track — the uncorrected composition, never a broken one.
+
+   Scoped to portrait <768px on purpose. `PassportPane.tsx` (outside this
+   movement's allowlist) derives the focused card as the one whose left edge
+   is nearest the track's left edge; with centre snapping that stays the
+   centred card only while the card is wider than about half the box, which
+   holds for portrait phones and not for a landscape phone or a wide tablet.
+   Reported for OPERATOR decision rather than widened here.
+
+   Bottom: the carousel's own 0.75rem bottom padding (the clearance for a
+   visible horizontal scrollbar) is surplus on a touch device — the scrollbar
+   is an overlay there and the previous/next arrows exist — so touch drops it
+   to the 0.25rem focus-ring guard, and the Passport body's bottom inset on
+   this tier is 1rem like its sides instead of the generic 1.25rem. */
+@media (max-width: 767px) and (orientation: portrait) {
+  .passport-pane__viewport > .passport-carousel {
+    container-type: size;
+  }
+
+  .passport-carousel::before,
+  .passport-carousel::after {
+    content: "";
+    flex: 0 0 max(0px, calc((100cqw - 100cqh * 9 / 16) / 2 - var(--space-sm)));
+  }
+
+  .passport-carousel__item {
+    scroll-snap-align: center;
+  }
+}
+
+@media (max-width: 767px) {
+  .editorial-shell__body:has(> .passport-pane) {
+    padding-bottom: var(--space-md);
+  }
+}
+
+@media (pointer: coarse) {
+  .passport-carousel {
+    padding-bottom: 0.25rem;
+    scrollbar-width: none;
+  }
+
+  .passport-carousel::-webkit-scrollbar {
+    display: none;
+  }
+}
+
 /* TG022 P4f (D-9 resolved by D-12 / D-12 binding) — P3's composition gate,
    widened, and P3 Mechanism C's surplus collector, deleted.
 
@@ -2954,17 +3160,30 @@ body,
      sources (MapView.tsx). Nothing here re-creates or re-parses that
      markup, and nothing removes it. Fuller credits were *added* alongside
      it in Acerca de (ADGARC-FB-025), not substituted for it. */
-  bottom: calc(env(safe-area-inset-bottom) + 96px);
-  transform: translateX(-50%);
+  /* MTG01_R2 Round02 FB-050 supersedes the bottom-anchored single-row pill
+     above: the hint is a readable card in the map's vertical middle. On a
+     ~667px phone the top group ends near y~150 and the bottom control column
+     starts near y~437, so a card of ~170px centred at 50% clears both; it
+     also sits well clear of the attribution row. The comment above about
+     the bottom-left column still holds as the reason the card is NOT
+     bottom-anchored any more. */
+  top: 50%;
+  transform: translate(-50%, -50%);
   z-index: var(--z-coachmark);
   display: flex;
-  align-items: center;
-  gap: 0.6rem;
-  /* Also capped so it can never reach back over the bottom-left column on
-     a wide phone/tablet. */
-  max-width: min(calc(100vw - 32px), 26rem);
-  padding: 0.55rem 0.7rem 0.55rem 0.9rem;
-  border-radius: 999px;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 1rem;
+  /* Viewport width minus a 16px gutter (or the safe-area inset, if larger)
+     on each side, capped so it stays a card, not a banner, on a tablet. */
+  width: min(
+    calc(100vw - max(16px, env(safe-area-inset-left)) - max(16px, env(safe-area-inset-right))),
+    24rem
+  );
+  max-height: calc(100dvh - 2 * max(16px, env(safe-area-inset-top)));
+  overflow-y: auto;
+  padding: 1.25rem;
+  border-radius: 16px;
   background: var(--surface);
   color: var(--ink);
   border: 1px solid rgba(90, 42, 18, 0.18);
@@ -2973,10 +3192,11 @@ body,
 
 .gesture-coachmark__text {
   margin: 0;
-  font-size: 0.82rem;
-  /* Was nowrap+ellipsis, which silently truncated the hint on narrow
-     phones — the copy now wraps to a second line instead. */
-  line-height: 1.3;
+  font-size: 1.05rem;
+  /* Wraps at word boundaries across the card's full width — the previous
+     narrow text column is what produced one-word lines. */
+  line-height: 1.45;
+  text-wrap: pretty;
 }
 
 .gesture-coachmark__dismiss {
@@ -2986,8 +3206,9 @@ body,
   border-radius: 999px;
   background: var(--map-accent, #ffed00);
   color: var(--canonical-ink, #1d1d1b);
-  padding: 0.35rem var(--space-sm);
-  font-size: 0.78rem;
+  padding: 0.6rem var(--space-md);
+  min-height: 44px;
+  font-size: 0.95rem;
   font-weight: 600;
   cursor: pointer;
 }
@@ -3009,16 +3230,14 @@ body,
    hint text itself steps up a touch — first-entry legibility, not a
    redesign: `.gesture-coachmark__dismiss`'s own shape/size and this
    control's position/z-index/attribution clearance are all unchanged. */
+/* MTG01_R2 Round02 FB-050: the ≤380px tier is no longer a separate
+   treatment — the card above is already full-width-minus-gutter, with
+   text at 1.05rem, at every phone width. Kept only to tighten the card's
+   inner padding on the narrowest phones. */
 @media (max-width: 380px) {
   .gesture-coachmark {
-    max-width: calc(100vw - 24px);
-    padding: 0.6rem 0.8rem;
-    border-radius: 16px;
-    gap: 0.5rem;
-  }
-
-  .gesture-coachmark__text {
-    font-size: 0.86rem;
+    padding: 1rem;
+    gap: 0.85rem;
   }
 }
 
@@ -3725,6 +3944,25 @@ body,
 
 .infocard-dossier__page-window::-webkit-scrollbar {
   display: none;
+}
+
+/* MTG01_R2 Round02 FB-051 (evidence 03/04): on a phone the numbered rail
+   shows AT MOST THREE circles — a sliding window centred on the active page,
+   pinned at the ends: (1) 2 3 · 1 (2) 3 · 2 (3) 4 · … · 7 8 (9) for nine
+   pages. No new mechanism: the active pip already auto-centres via the
+   effect in InfocardDossier.tsx (TG041), and the browser clamps `scrollLeft`
+   at both ends, which is exactly the "except boundaries" behaviour. All this
+   does is narrow the same track from five pips to three, with the same
+   exact-fit formula (3 pips + 2 gaps + the 3px-per-side focus padding), so
+   a fourth circle is never partially revealed. `--page-window-gap` and
+   `--control-height` already recompute at the ≤380px tier, so that tier
+   stays exact. The previous/next arrows on either side are untouched and
+   still walk every page; stamp state is a separate step and unaffected.
+   Scoped to <768px: tablet and desktop keep the five-pip window. */
+@media (max-width: 767px) {
+  .infocard-dossier__page-window {
+    width: calc(3 * var(--control-height) + 2 * var(--page-window-gap) + 6px);
+  }
 }
 
 .infocard-dossier__page-pip {

@@ -25,6 +25,36 @@ interface PassportPaneProps {
 // scrolling after the window immediately resumes driving the indicator.
 const PROGRAMMATIC_SCROLL_MS = 700;
 
+// MTG01_R2 Round02 FB051 (CORR04): below this width the building rail shows a
+// window of at most RAIL_MOBILE_WINDOW circles instead of a scrolling strip of
+// all of them. Matches the existing <768px mobile tier; >=768px is unchanged.
+const RAIL_MOBILE_QUERY = "(max-width: 767.98px)";
+const RAIL_MOBILE_WINDOW = 3;
+
+function useRailWindowed(): boolean {
+  const [windowed, setWindowed] = useState(() =>
+    typeof window !== "undefined" && typeof window.matchMedia === "function"
+      ? window.matchMedia(RAIL_MOBILE_QUERY).matches
+      : false
+  );
+  useEffect(() => {
+    if (typeof window.matchMedia !== "function") return;
+    const mql = window.matchMedia(RAIL_MOBILE_QUERY);
+    const onChange = () => setWindowed(mql.matches);
+    onChange();
+    mql.addEventListener("change", onChange);
+    return () => mql.removeEventListener("change", onChange);
+  }, []);
+  return windowed;
+}
+
+// First visible ordinal (1-based) of the contiguous mobile window around the
+// focused ordinal: centered when possible, clamped to the first/last buildings.
+// Presentation only — every case stays in `cases`, state and the carousel.
+function railWindowStart(focused: number, total: number): number {
+  return Math.max(1, Math.min(focused - 1, total - (RAIL_MOBILE_WINDOW - 1)));
+}
+
 // TG011 Pass C (ADGARC-FB-043 / DEC-010 §11.3): the Pasaporte pane's own
 // 1-20 circle rail. The S4 ordinal+tick cell rail this replaced (`.passport-
 // rail*`, once shared with the map's top-center overlay chrome) was removed
@@ -62,6 +92,9 @@ function PassportStopRail({
   reloadButtonRef: RefObject<HTMLButtonElement>;
 }) {
   const t = useT();
+  const windowed = useRailWindowed();
+  const windowStart = railWindowStart(focusedOrdinal, cases.length);
+  const windowEnd = Math.min(cases.length, windowStart + RAIL_MOBILE_WINDOW - 1);
   // TG022 Session 45 (FB-098 topology fix / P4f superseded): the stops-only
   // scroll owner. Reset used to be a `position: sticky` descendant of this
   // same box (P4f R1-R3), which made "no stop renders past Reset" a
@@ -118,6 +151,9 @@ function PassportStopRail({
         >
           {cases.map((stop, i) => {
             const ordinal = i + 1;
+            // FB051: on mobile only the three-circle window is mounted, so no
+            // partial/clipped circle can bleed into the viewport edge.
+            if (windowed && (ordinal < windowStart || ordinal > windowEnd)) return null;
             const isVisited = passport.visited.has(stop.slug);
             const isPhysical = stop.experienceType === "physical_digital";
 
@@ -126,8 +162,8 @@ function PassportStopRail({
                 {/* FB-043: the catalog boundary after the physical set.
                     Presentation only — it separates physical stops from
                     digital-only positions and has no bearing on the stamping
-                    denominator. */}
-                {ordinal === physicalCount + 1 && (
+                    denominator. Omitted in the mobile window (FB051). */}
+                {!windowed && ordinal === physicalCount + 1 && (
                   <span className="passport-stop-rail__divider" aria-hidden="true" />
                 )}
                 <PassportStopCircle

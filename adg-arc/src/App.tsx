@@ -4,7 +4,6 @@ import type { InfocardDossierAnchor } from "./components/InfocardDossier";
 import AppMenuModal, { type MenuDestination } from "./components/AppMenuModal";
 import PassportMapNavbar from "./components/PassportMapNavbar";
 import LoadingScreen from "./components/LoadingScreen";
-import GestureCoachmark from "./components/GestureCoachmark";
 import EntryCurtain from "./components/EntryCurtain";
 import { activeCases, findCaseBySlug, type CaseRecord } from "./data/cases";
 import { useCaseParam } from "./hooks/useCaseParam";
@@ -49,6 +48,61 @@ const InfocardDossier = lazy(() => import("./components/InfocardDossier"));
 // handoff requires ("must not ship in the normal production build"), not
 // just a hidden/disabled UI affordance.
 const RoutePilotPanel = import.meta.env.DEV ? lazy(() => import("./dev-pilot/RoutePilotPanel")) : null;
+
+// MTG01_R2 Round02 FB-050 (evidence 02_mobile_map_controls_and_unreadable_tip.png):
+// the first-entry gesture hint, replacing components/GestureCoachmark.tsx at
+// this one call site. That component rendered the text in a narrow pill beside
+// its dismiss button, which left the text column a few characters wide and
+// forced one-word lines on a phone. This is a readable centred card — text
+// above, a full-width dismiss action below — sized from the viewport and safe
+// areas in global.css (`.gesture-coachmark`), vertically centred so it clears
+// the top navbar / shortcut column and the bottom control column + attribution.
+//
+// It lives here, not in GestureCoachmark.tsx, because that file is outside
+// this movement's 13-file allowlist (STOP_SCOPE_AMENDMENT otherwise); the old
+// component is left byte-identical and is now unreferenced — see the report.
+//
+// A dialog for assistive technology (role + accessible name, focus moved to
+// the dismiss action, Escape dismisses) but deliberately NOT modal: no
+// backdrop, no focus trap, `aria-modal` false, so the map stays interactive
+// and the first real map gesture still dismisses it (`onUserInteraction` is
+// wired to the same `dismissCoachmark`). No gesture is invented — the copy is
+// the existing `coachmark.text`.
+function GestureHintDialog({ onDismiss }: { onDismiss: () => void }) {
+  const t = useT();
+  const dismissRef = useRef<HTMLButtonElement | null>(null);
+
+  useEffect(() => {
+    dismissRef.current?.focus({ preventScroll: true });
+  }, []);
+
+  useEffect(() => {
+    const onKeyDown = (e: KeyboardEvent) => {
+      if (e.key === "Escape") onDismiss();
+    };
+    window.addEventListener("keydown", onKeyDown);
+    return () => window.removeEventListener("keydown", onKeyDown);
+  }, [onDismiss]);
+
+  return (
+    <div
+      className="gesture-coachmark"
+      role="dialog"
+      aria-modal="false"
+      aria-label={t("coachmark.text")}
+    >
+      <p className="gesture-coachmark__text">{t("coachmark.text")}</p>
+      <button
+        ref={dismissRef}
+        type="button"
+        className="gesture-coachmark__dismiss"
+        onClick={onDismiss}
+      >
+        {t("coachmark.dismiss")}
+      </button>
+    </div>
+  );
+}
 
 // App owns all editorial/application state. The map is mounted once by
 // MapView and persists across state changes; no React Router is used —
@@ -309,9 +363,6 @@ export default function App() {
           triggerRef={menuTriggerRef}
           cases={activeCases}
           onSelectCase={handleCaseSelect}
-          onResetMap={() => mapViewRef.current?.reset()}
-          onNorthUp={() => mapViewRef.current?.setNorthUp()}
-          onEditorialOrientation={() => mapViewRef.current?.setEditorialOrientation()}
           passport={passport}
           devTools={{
             roles: paintOverrides.roles,
@@ -377,7 +428,7 @@ export default function App() {
             only, and only while no case is open, so a direct ?case=
             arrival's reading surface is never covered (ADGARC-FB-008). */}
         {deviceClass !== "desktop" && !activeCase && !coachmarkDismissed && (
-          <GestureCoachmark onDismiss={dismissCoachmark} />
+          <GestureHintDialog onDismiss={dismissCoachmark} />
         )}
         {/* TG045 (ADGARC-FB-113) Gate B1 — LOCAL DEVELOPMENT ONLY. `null`
             outside `import.meta.env.DEV` (see RoutePilotPanel's lazy()
