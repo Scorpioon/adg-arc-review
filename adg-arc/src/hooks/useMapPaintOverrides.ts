@@ -10,6 +10,7 @@ import {
   type EffectiveMapPaint,
   type MapPaintColor,
 } from "../config/mapPaint";
+import { DEVTOOLS_ENABLED } from "../config/devtools";
 
 // TG006E Scope F: local-development palette persistence only — never a
 // product-content store.
@@ -131,12 +132,12 @@ function persistOverrides(overrides: StoredOverrides): void {
 // properties global.css already declares in :root — no second color
 // pipeline for the CSS side.
 export function useMapPaintOverrides() {
-  const [overrides, setOverridesState] = useState<StoredOverrides>(() => readStoredOverrides());
+  const [overrides, setOverridesState] = useState<StoredOverrides>(() => (DEVTOOLS_ENABLED ? readStoredOverrides() : {}));
 
   const effective: EffectiveMapPaint = useMemo(() => {
     const merged = {} as EffectiveMapPaint;
     for (const role of EDITABLE_MAP_PAINT_ROLES) {
-      merged[role.id] = { ...MAP_PAINT_DEFAULTS[role.id], ...overrides[role.id] };
+      merged[role.id] = DEVTOOLS_ENABLED ? { ...MAP_PAINT_DEFAULTS[role.id], ...overrides[role.id] } : { ...MAP_PAINT_DEFAULTS[role.id] };
     }
     return merged;
   }, [overrides]);
@@ -154,6 +155,7 @@ export function useMapPaintOverrides() {
   // vice versa).
   const setOverride = useCallback(
     (role: EditableMapPaintRoleId, patch: { hex?: string; alpha?: number | string }): boolean => {
+      if (!DEVTOOLS_ENABLED) return false;
       const current = effective[role];
       let nextHex = current.hex;
       let nextAlpha = current.alpha;
@@ -180,6 +182,7 @@ export function useMapPaintOverrides() {
   );
 
   const reset = useCallback(() => {
+    if (!DEVTOOLS_ENABLED) return;
     setOverridesState({});
     persistOverrides({});
   }, []);

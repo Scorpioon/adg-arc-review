@@ -88,7 +88,7 @@ export interface MapPaintColor {
 
 export const MAP_PAINT_DEFAULTS: Record<EditableMapPaintRoleId, MapPaintColor> = {
   "map.background": { hex: "#D6D6D6", alpha: 0.63 },
-  "map.water.fill": { hex: "#FFED00", alpha: 0.26 },
+  "map.water.fill": { hex: "#FFED00", alpha: 1 },
   "map.building.fill": { hex: "#D6D6D6", alpha: 0.62 },
   "map.building.outline": { hex: "#1D1D1B", alpha: 0.61 },
   "map.road.fill": { hex: "#D6D6D6", alpha: 0.61 },
