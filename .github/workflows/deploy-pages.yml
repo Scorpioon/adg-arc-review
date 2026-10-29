@@ -1,10 +1,24 @@
 name: Deploy Pages (review)
 
-# TG006H Scope B: review-phase-only GitHub Pages deployment, manually
-# triggered (workflow_dispatch) rather than on every push to main. The app
-# lives in the nested ./adg-arc directory, not the outer repo root.
+# RELEASE-001 IMPLEMENT-B: this workflow NEVER compiles anything. The release
+# tool commits one sealed, prebuilt portable candidate under ./release/ and
+# dispatches this workflow with its release_id. The job only verifies that the
+# committed bytes are exactly the sealed candidate, then uploads release/site
+# verbatim to GitHub Pages.
+#
+#   release/site/                  the exact bytes to publish (includes release.json)
+#   release/MANIFEST.sha256        sha256 + path of every payload file (release.json excluded)
+#   release/RELEASE_SEAL.json      binds the sha256 + length of MANIFEST.sha256 AND of
+#                                  site/release.json (checked before either is trusted)
+#
+# Action refs are pinned to full commit SHAs (version kept as a trailing comment).
 on:
   workflow_dispatch:
+    inputs:
+      release_id:
+        description: "Sealed release id committed under release/ (ADGARC_<version>_<UTC>_<8 hex>)"
+        required: true
+        type: string
 
 permissions:
   contents: read
@@ -18,52 +32,173 @@ concurrency:
   cancel-in-progress: false
 
 jobs:
-  build:
+  verify-upload:
     runs-on: ubuntu-latest
+    env:
+      RELEASE_ID: ${{ inputs.release_id }}
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
 
-      - name: Setup Node
-        uses: actions/setup-node@v4
-        with:
-          node-version: 20
-          cache: npm
-          cache-dependency-path: adg-arc/package-lock.json
+      - name: Verify the prebuilt candidate (no compilation)
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          import hashlib, json, os, re, sys
 
-      - name: Install dependencies
-        working-directory: adg-arc
-        run: npm ci
+          rid = os.environ["RELEASE_ID"]
+          root = "release"
+          site = os.path.join(root, "site")
+          problems = []
 
-      # Derives the GitHub Pages project subpath from the actual repository
-      # name at run time (owner/repo from GITHUB_REPOSITORY) rather than a
-      # hardcoded/assumed repo name, per the handoff.
-      - name: Determine Pages base path
-        id: pages-base
-        run: echo "base=/${GITHUB_REPOSITORY#*/}/" >> "$GITHUB_OUTPUT"
+          def bad(msg):
+              problems.append(msg)
 
-      - name: Build (Pages base)
-        working-directory: adg-arc
-        env:
-          VITE_BASE: ${{ steps.pages-base.outputs.base }}
-          # TG006H corrective pass: the temporary board-review Pages build must
-          # be product-visible 1:1 with the accepted local DEV review
-          # experience, including Developer Tools and the D hotkey. Scoped to
-          # this review-only workflow; the final production-host DevTools
-          # policy is not decided here and may disable them later.
-          VITE_ENABLE_DEVTOOLS: "true"
-        run: npm run build
+          def sha(b):
+              return hashlib.sha256(b).hexdigest()
+
+          def read(path, cap):
+              if os.path.islink(path) or not os.path.isfile(path):
+                  sys.exit("::error::missing or non-regular file: " + path)
+              if os.path.getsize(path) > cap:
+                  sys.exit("::error::file too large: " + path)
+              with open(path, "rb") as f:
+                  return f.read()
+
+          idm = re.fullmatch(r"ADGARC_([0-9]+\.[0-9]+\.[0-9]+)_([0-9]{8}T[0-9]{6}Z)_([0-9a-f]{8})", rid)
+          if not idm:
+              sys.exit("::error::release_id has an invalid format")
+
+          # The committed release/ directory holds exactly three entries.
+          if os.path.islink(root) or not os.path.isdir(root):
+              sys.exit("::error::release/ is missing")
+          if set(os.listdir(root)) != {"site", "MANIFEST.sha256", "RELEASE_SEAL.json"}:
+              bad("release/ must contain exactly site, MANIFEST.sha256, RELEASE_SEAL.json")
+          for name in ("site", "MANIFEST.sha256", "RELEASE_SEAL.json"):
+              if os.path.islink(os.path.join(root, name)):
+                  bad("symlink at release/" + name)
+
+          # 1) the seal first
+          seal_bytes = read(os.path.join(root, "RELEASE_SEAL.json"), 65536)
+          seal = json.loads(seal_bytes)
+          ok_shape = (
+              seal.get("schema") == "adgarc.release.seal.v1"
+              and seal.get("release_id") == rid
+              and isinstance(seal.get("manifest"), dict)
+              and isinstance(seal.get("release_json"), dict)
+              and re.fullmatch(r"[0-9a-f]{64}", str(seal["manifest"].get("sha256", "")))
+              and re.fullmatch(r"[0-9a-f]{64}", str(seal["release_json"].get("sha256", "")))
+              and isinstance(seal["manifest"].get("bytes"), int)
+              and isinstance(seal["manifest"].get("entries"), int)
+              and isinstance(seal["release_json"].get("bytes"), int)
+              and seal.get("total_files") == seal["manifest"].get("entries", -2) + 1
+          )
+          if not ok_shape:
+              sys.exit("::error::RELEASE_SEAL.json is invalid or names a different release_id")
+          if idm.group(3) != seal["manifest"]["sha256"][:8]:
+              bad("release_id suffix is not bound to the sealed manifest")
+
+          # 2) both byte streams the seal authenticates
+          manifest_bytes = read(os.path.join(root, "MANIFEST.sha256"), 8 * 1024 * 1024)
+          if sha(manifest_bytes) != seal["manifest"]["sha256"] or len(manifest_bytes) != seal["manifest"]["bytes"]:
+              bad("MANIFEST.sha256 does not match the seal")
+          rj_bytes = read(os.path.join(site, "release.json"), 65536)
+          if sha(rj_bytes) != seal["release_json"]["sha256"] or len(rj_bytes) != seal["release_json"]["bytes"]:
+              sys.exit("::error::site/release.json does not match the seal")
+
+          # 3) only now trust release.json fields
+          rj = json.loads(rj_bytes)
+          if rj.get("schema") != "adgarc.release.v1" or rj.get("release_id") != rid:
+              bad("release.json does not describe this release_id")
+          if rj.get("manifest_sha256") != seal["manifest"]["sha256"]:
+              bad("release.json manifest_sha256 differs from the seal")
+          if rj.get("file_count") != seal["manifest"]["entries"]:
+              bad("release.json file_count differs from the seal")
+          if rj.get("base") != "./" or rj.get("product_version") != idm.group(1):
+              bad("release.json base/product_version invalid")
+
+          # 4) manifest syntax, path safety, sorting
+          SEG = re.compile(r"[A-Za-z0-9_][A-Za-z0-9._-]*")
+          RES = re.compile(r"(con|prn|aux|nul|com[0-9]|lpt[0-9])(\..*)?", re.I)
+          FORBID = ["_wrkops", "work_materials", ".claude", "claude.md", "_private"]
+          text = manifest_bytes.decode("utf-8")
+          if "\r" in text or not text.endswith("\n"):
+              bad("manifest must be LF-terminated without CR")
+          entries = []
+          prev = None
+          lower_seen = set()
+          for line in text.split("\n")[:-1]:
+              m = re.fullmatch(r"([0-9a-f]{64})  (.+)", line)
+              if not m:
+                  bad("malformed manifest line")
+                  continue
+              digest, rel = m.group(1), m.group(2)
+              segs = rel.split("/")
+              if len(rel) > 200 or any((not SEG.fullmatch(s)) or s.endswith(".") or RES.fullmatch(s) for s in segs):
+                  bad("unsafe manifest path: " + rel[:80])
+                  continue
+              if rel == "release.json":
+                  bad("manifest must not list release.json")
+              low = rel.lower()
+              if any(x in low for x in FORBID) or low.endswith(".map") or re.fullmatch(r"devtools(-[a-z0-9_-]+)?\.m?js", low.rsplit("/", 1)[-1]):
+                  bad("forbidden public path: " + rel)
+              if prev is not None and not (prev.encode() < rel.encode()):
+                  bad("manifest not strictly sorted/unique at " + rel)
+              if low in lower_seen:
+                  bad("manifest case collision: " + rel)
+              lower_seen.add(low)
+              prev = rel
+              entries.append((digest, rel))
+          if len(entries) != seal["manifest"]["entries"]:
+              bad("manifest entry count differs from the seal")
+
+          # 5) the entire file set: no extras, no links, no empty dirs
+          on_disk = {}
+          for dirpath, dirnames, filenames in os.walk(site, followlinks=False):
+              if not dirnames and not filenames and dirpath != site:
+                  bad("empty directory: " + dirpath)
+              for name in dirnames + filenames:
+                  full = os.path.join(dirpath, name)
+                  rel = os.path.relpath(full, site).replace(os.sep, "/")
+                  if os.path.islink(full):
+                      bad("symlink: " + rel)
+                  elif os.path.isfile(full):
+                      on_disk[rel] = full
+                  elif not os.path.isdir(full):
+                      bad("not a regular file or directory: " + rel)
+          listed = {rel for _, rel in entries}
+          if set(on_disk) != listed | {"release.json"}:
+              extra = sorted(set(on_disk) - listed - {"release.json"})[:10]
+              missing = sorted((listed | {"release.json"}) - set(on_disk))[:10]
+              bad("file set differs from the manifest; extra=%s missing=%s" % (extra, missing))
+          for digest, rel in entries:
+              full = on_disk.get(rel)
+              if full is None:
+                  continue
+              with open(full, "rb") as f:
+                  if sha(f.read()) != digest:
+                      bad("bytes differ from manifest: " + rel)
+          if "index.html" not in listed:
+              bad("index.html is not part of the payload")
+
+          if problems:
+              for p in problems[:30]:
+                  print("::error::" + p)
+              sys.exit(1)
+          print("candidate %s verified: %d payload files + release.json, seal ok" % (rid, len(entries)))
+          PY
 
       - name: Setup Pages
-        uses: actions/configure-pages@v5
+        uses: actions/configure-pages@983d7736d9b0ae728b81ab479565c72886d7745b # v5
 
       - name: Upload Pages artifact
-        uses: actions/upload-pages-artifact@v3
+        uses: actions/upload-pages-artifact@56afc609e74202658d3ffba0e8f6dda462b719fa # v3
         with:
-          path: adg-arc/dist
+          path: release/site
 
   deploy:
-    needs: build
+    needs: verify-upload
     runs-on: ubuntu-latest
     environment:
       name: github-pages
@@ -71,4 +206,4 @@ jobs:
     steps:
       - name: Deploy to GitHub Pages
         id: deployment
-        uses: actions/deploy-pages@v4
+        uses: actions/deploy-pages@d6db90164ac5ed86f2b6aed7e0febac5b3c0c03e # v4

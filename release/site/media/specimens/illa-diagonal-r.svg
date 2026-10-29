@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg id="BASE" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 1200">
+  <defs>
+    <style>
+      .cls-1 {
+        stroke-dasharray: 12.5 12.5;
+      }
+
+      .cls-1, .cls-2 {
+        fill: none;
+        stroke: #ffed00;
+        stroke-miterlimit: 10;
+        stroke-width: 2px;
+      }
+    </style>
+  </defs>
+  <g>
+    <path d="M167.22,255.94h540.68v257.81l-42.03,57.38,42.03,57.38v193.16h-77.59v-213.36H244.81v213.36h-77.59V255.94ZM630.32,533.96v-203.67H244.81v203.67h385.51Z"/>
+    <path d="M837.21,417.58h54.15l18.59,37.18,37.99-37.18h84.86v69.5h-122.85v334.59h-72.74v-404.1Z"/>
+  </g>
+  <line class="cls-2" y1="255.87" x2="1200" y2="255.87"/>
+  <g>
+    <line class="cls-2" x1="0" y1="417.35" x2="6.19" y2="417.35"/>
+    <line class="cls-1" x1="18.69" y1="417.35" x2="1187.56" y2="417.35"/>
+    <line class="cls-2" x1="1193.81" y1="417.35" x2="1200" y2="417.35"/>
+  </g>
+  <line class="cls-2" y1="821.69" x2="1200" y2="821.69"/>
+  <line class="cls-2" y1="983.29" x2="1200" y2="983.29"/>
+</svg>

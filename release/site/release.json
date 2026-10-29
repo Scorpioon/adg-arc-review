@@ -1,0 +1,23 @@
+{
+  "schema": "adgarc.release.v1",
+  "release_id": "ADGARC_0.0.18_20261029T164300Z_b59d6217",
+  "product_version": "0.0.18",
+  "built_utc": "2026-10-29T16:44:23.574Z",
+  "base": "./",
+  "manifest_sha256": "b59d62179496380f2da1f380483a3071d68b6d43e77e0f09bedec58728330071",
+  "file_count": 87,
+  "source": {
+    "head": "b38e729acf4eae5a34181192505be8d4ef509b8a",
+    "dirty": true,
+    "snapshot_sha256": "98f0a92fef2dba23c694528a948b1a46c994e30f0910f9ad6d8920adb01c6911"
+  },
+  "build": {
+    "node": "24.20.0",
+    "vite": "6.4.3",
+    "lockfile_sha256": "f876b2ac73432c781e0f1e2c2646a12001e7f55d8bd43df4898a485281abdfce"
+  },
+  "tool": {
+    "name": "adgrelease",
+    "version": "1.0.0"
+  }
+}
