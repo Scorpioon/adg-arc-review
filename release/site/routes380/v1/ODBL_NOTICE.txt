@@ -1,0 +1,15 @@
+ADG-ARC Route380 — Walking-route data publication and attribution
+
+Publication rights reviewed and approved by the project publisher: 2026-11-04.
+This dataset is approved for inclusion in the controlled release process; approval does not mean the files have already been deployed or verified on the live server.
+
+© OpenStreetMap contributors — https://www.openstreetmap.org/copyright
+Open Database License (ODbL) 1.0 — https://opendatacommons.org/licenses/odbl/1-0/
+OSMF Attribution Guidelines — https://osmfoundation.org/wiki/Attribution_Guidelines
+Routing engine: BRouter 1.7.10; software license MIT — https://github.com/abrensch/brouter/blob/master/LICENSE
+
+The downloadable dataset provides the complete collection of 380 directed 2D walking-route GeoJSON files and a manifest of per-route SHA256, recorded walking length, time and source lineage. The route data are made available under ODbL 1.0, including the share-alike conditions applicable to a derived database. This data-only notice does not apply ODbL to the website's software, editorial texts, photographs or visual design.
+
+Provenance: 323 routes are tied to the official E0_N40.rd5 snapshot of 2026-11-03T01:03:01Z; 57 routes preserve the old_rd5_unverified_vintage lineage. The exact date of the underlying raw OpenStreetMap PBF extract is UNKNOWN and is not inferred from the .rd5 snapshot. BRouter documents CGIAR/CIAT SRTM elevation sources used in segment generation — https://github.com/abrensch/brouter/blob/master/docs/developers/build_segments.md ; source acknowledgement: CGIAR-CSI / CIAT SRTM elevation database — https://bigdata.cgiar.org/srtm-90m-digital-elevation-database/ . No terrain DEM, elevations, original .rd5, WayTags/NodeTags, diagnostics or original router exports are redistributed with this dataset. This acknowledgement is not a claim of separate permission to redistribute any underlying DEM.
+
+The manifest's status value preserves the sanitizer's historical candidate-generation stage. The later publisher rights and geometry approval is documented separately; it supersedes the historical generation status for publication purposes, without changing the manifest or any route SHA256. A remote release is only complete once every one of the 380 files is uploaded and verified by SHA256 before the new application entrypoint is activated.
