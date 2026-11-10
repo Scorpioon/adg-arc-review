@@ -1,16 +1,16 @@
 {
   "schema": "adgarc.release.seal.v1",
-  "release_id": "ADGARC_0.0.18_20261109T195942Z_a892ccd9",
-  "sealed_utc": "2026-11-09T20:00:05.419Z",
+  "release_id": "ADGARC_0.0.18_20261110T133222Z_cffbb814",
+  "sealed_utc": "2026-11-10T13:32:44.878Z",
   "manifest": {
     "file": "MANIFEST.sha256",
-    "sha256": "a892ccd9b2ccd70692c2052cf73107906521c5d03657e8e10d5bc860007ca19e",
+    "sha256": "cffbb814686b8c1fe96b95b0adc55daa98b0cfc94142eba438b9386008d259eb",
     "bytes": 50407,
     "entries": 491
   },
   "release_json": {
     "path": "site/release.json",
-    "sha256": "f8a3c0503bc9b7ea4c05f1c73257b6a7b18e45f3166ee400095f12541f6366c2",
+    "sha256": "306f2801dd0cf14949fc8105b77a0830cae0f5fda2491163d5fa6abe4eb4b413",
     "bytes": 697
   },
   "total_files": 492,
