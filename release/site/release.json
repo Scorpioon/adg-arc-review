@@ -1,20 +1,20 @@
 {
   "schema": "adgarc.release.v1",
-  "release_id": "ADGARC_0.0.18_20261110T145412Z_3290939d",
+  "release_id": "ADGARC_0.0.18_20261111T154137Z_645471e0",
   "product_version": "0.0.18",
-  "built_utc": "2026-11-10T14:54:35.449Z",
+  "built_utc": "2026-11-11T15:42:01.228Z",
   "base": "./",
-  "manifest_sha256": "3290939d6dd17077e18b71e7e0bf72b89ec42de346e1629c01f253b1932a661f",
+  "manifest_sha256": "645471e0acd0ef1e645489120d02ffdac6b2e2fafb62830b1db1911ed4151482",
   "file_count": 491,
   "source": {
     "head": "b38e729acf4eae5a34181192505be8d4ef509b8a",
     "dirty": true,
-    "snapshot_sha256": "db95f3ea847dcd11d3c943ea4d37484f1628c6fd3cd1db715272aaaca6d78aec"
+    "snapshot_sha256": "06934bb449f3c1b12e98b99ed790d4578ebbb3dc2b3de18b1bb7e5022c7c24fe"
   },
   "build": {
     "node": "24.20.0",
-    "vite": "6.4.3",
-    "lockfile_sha256": "f876b2ac73432c781e0f1e2c2646a12001e7f55d8bd43df4898a485281abdfce"
+    "vite": "6.4.6",
+    "lockfile_sha256": "0f746593b71f857866051a8c4fcfb68158d35a3d180d8f7fa5b0fffd1d988f3c"
   },
   "tool": {
     "name": "adgrelease",
